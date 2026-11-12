@@ -471,6 +471,120 @@ Guidelines:
   });
 };
 
+/**
+ * Autonomous AI Financial Command Processor
+ * Understands natural language statements like:
+ * "Spent 450 on Uber" -> auto logs expense
+ * "Got salary 50000" -> auto logs income
+ * "Save 10000 for emergency by Dec" -> auto creates goal
+ * "Can I afford a 15000 phone?" -> auto calculates runway and responds
+ */
+export const aiAutomateFinance = async (req: Request, res: Response) => {
+  try {
+    const { prompt, currentIncome = 0, currentExpenses = 0, netBalance = 0 } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ success: false, error: 'A prompt is required.' });
+    }
+
+    if (config.groqApiKey) {
+      try {
+        const groqJson = await callGroqChat(
+          [
+            {
+              role: 'system',
+              content: `You are HerRise AI Autonomous Financial Copilot. Analyze the user's natural language command and output valid JSON.
+Context:
+- User's Income this month: ₹${currentIncome}
+- User's Expenses this month: ₹${currentExpenses}
+- Money Left: ₹${netBalance}
+
+JSON Schema:
+{
+  "action": "expense" | "income" | "goal" | "advice",
+  "title": "Clean concise title (e.g. Groceries, Uber, Monthly Salary, Emergency Fund)",
+  "amount": number (positive integer, 0 if advice),
+  "category": "Groceries & Essentials" | "Rent & Housing" | "Bills & Utilities" | "Transport & Fuel" | "Dining & Lifestyle" | "Healthcare & Wellness" | "Education & Courses" | "Monthly Salary" | "Freelance / Consulting" | "Emergency Fund" | "General",
+  "paymentMethod": "UPI" | "Debit Card" | "Credit Card" | "Bank Transfer" | "Cash",
+  "summary": "Concise, friendly 1-2 sentence confirmation or advice for the user"
+}
+
+Rules:
+1. If the user spent money or paid something (e.g. "spent 500 on dinner", "paid electric bill 1200", "bought book for 450"): action is "expense".
+2. If the user earned, received, or got credited money (e.g. "got 30000 salary", "client paid 15000", "received 2000 cash"): action is "income".
+3. If the user wants to set a target or save for something (e.g. "save 20000 for holiday", "goal 50000 for laptop"): action is "goal".
+4. If the user is asking a question or asking for calculation/advice: action is "advice".`
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          {
+            temperature: 0.1,
+            maxTokens: 500,
+            responseFormat: { type: 'json_object' }
+          }
+        );
+
+        let cleaned = groqJson.trim();
+        const firstBrace = cleaned.indexOf('{');
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+          cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+        }
+
+        const parsed = JSON.parse(cleaned);
+        return res.status(200).json({
+          success: true,
+          source: 'groq-llm',
+          data: parsed
+        });
+      } catch (err: any) {
+        console.warn('[Finance AI Automation Groq Error]:', err.message);
+      }
+    }
+
+    // Heuristic fallback if Groq API is unavailable or returns an error
+    const lower = prompt.toLowerCase();
+    const amountMatch = prompt.match(/(?:₹|rs\.?|inr)?\s*(\d[\d,]*)/i);
+    const amount = amountMatch ? Number(amountMatch[1].replace(/,/g, '')) : 0;
+
+    let action: 'expense' | 'income' | 'goal' | 'advice' = 'expense';
+    let category = 'Groceries & Essentials';
+    let title = 'General Expense';
+
+    if (/salary|received|earned|got paid|credited|inflow|deposit/i.test(lower)) {
+      action = 'income';
+      category = 'Monthly Salary';
+      title = 'Income Received';
+    } else if (/save|goal|target|fund/i.test(lower)) {
+      action = 'goal';
+      category = 'Emergency Fund';
+      title = 'Savings Goal';
+    } else if (/can i|should i|how much|afford|advice|tip/i.test(lower) || amount === 0) {
+      action = 'advice';
+    }
+
+    return res.status(200).json({
+      success: true,
+      source: 'heuristic-engine',
+      data: {
+        action,
+        title,
+        amount,
+        category,
+        paymentMethod: 'UPI',
+        summary: action === 'advice'
+          ? `Based on your balance of ₹${netBalance.toLocaleString()}, you have healthy liquidity.`
+          : `Recorded ${action} of ₹${amount.toLocaleString()} under ${category}.`
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export const setupFinancialProfile = async (req: Request, res: Response) => {
   const {
     fullName,

@@ -182,20 +182,18 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
           ].map((item) => (
             <div key={item.num} className="flex items-center gap-2">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  step === item.num
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step === item.num
                     ? 'bg-[#1e1b4b] text-emerald-400 ring-2 ring-emerald-500'
                     : step > item.num
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-100 text-slate-400'
-                }`}
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-100 text-slate-400'
+                  }`}
               >
                 {step > item.num ? <CheckCircle2 className="w-4 h-4" /> : item.num}
               </div>
               <span
-                className={`text-xs font-semibold hidden sm:inline ${
-                  step === item.num ? 'text-slate-900 font-bold' : 'text-slate-400'
-                }`}
+                className={`text-xs font-semibold hidden sm:inline ${step === item.num ? 'text-slate-900 font-bold' : 'text-slate-400'
+                  }`}
               >
                 {item.label}
               </span>
@@ -218,9 +216,8 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Money Left</span>
             <span
-              className={`text-sm font-black ${
-                netSurplusNum >= 0 ? 'text-emerald-400' : 'text-rose-400'
-              }`}
+              className={`text-sm font-black ${netSurplusNum >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}
             >
               {netSurplusNum >= 0 ? '+' : ''}₹{netSurplusNum.toLocaleString()}
             </span>

@@ -103,6 +103,14 @@ interface HerFinanceContextType {
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
   resetAllFinanceData: () => void;
+
+  // Fully Autonomous AI Command Runner
+  processAiCommand: (prompt: string) => Promise<{
+    success: boolean;
+    message: string;
+    action?: string;
+    data?: any;
+  }>;
 }
 
 const HerFinanceContext = createContext<HerFinanceContextType | undefined>(undefined);
@@ -561,6 +569,81 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
     showToast('Financial Profile Reset', 'Please enter your actual financial baseline', 'info');
   };
 
+  const processAiCommand = async (prompt: string) => {
+    if (!prompt || !prompt.trim()) {
+      return { success: false, message: 'Please enter a command or query.' };
+    }
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/finance/ai-automate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          currentIncome: totalIncome,
+          currentExpenses: totalExpenses,
+          netBalance: netBalance
+        })
+      });
+
+      const json = await res.json();
+      if (!json.success || !json.data) {
+        throw new Error(json.error || 'Failed to process command');
+      }
+
+      const { action, title, amount, category, paymentMethod, summary } = json.data;
+      const today = new Date().toISOString().split('T')[0];
+
+      if (action === 'expense' && amount > 0) {
+        addTransaction({
+          title: title || 'Expense',
+          amount: Number(amount),
+          type: 'expense',
+          category: category || 'Groceries & Essentials',
+          paymentMethod: paymentMethod || 'UPI',
+          date: today,
+          notes: 'AI Automated Entry: ' + prompt
+        });
+        showToast('AI Processed Expense', `Logged ₹${Number(amount).toLocaleString()} for ${title}`, 'success');
+        return { success: true, message: summary || `Logged expense of ₹${amount} for ${title}`, action, data: json.data };
+      } else if (action === 'income' && amount > 0) {
+        addTransaction({
+          title: title || 'Income Inflow',
+          amount: Number(amount),
+          type: 'income',
+          category: category || 'Monthly Salary',
+          paymentMethod: paymentMethod || 'Bank Transfer',
+          date: today,
+          notes: 'AI Automated Entry: ' + prompt
+        });
+        showToast('AI Processed Income', `Recorded ₹${Number(amount).toLocaleString()} from ${title}`, 'success');
+        return { success: true, message: summary || `Recorded income of ₹${amount} from ${title}`, action, data: json.data };
+      } else if (action === 'goal' && amount > 0) {
+        const oneYearAhead = new Date();
+        oneYearAhead.setFullYear(oneYearAhead.getFullYear() + 1);
+        addSavingsGoal({
+          title: title || 'Savings Goal',
+          targetAmount: Number(amount),
+          targetDate: oneYearAhead.toISOString().split('T')[0],
+          startDate: today,
+          color: '#0d9488',
+          category: (category as any) || 'Emergency Fund',
+          priority: 'high'
+        });
+        showToast('AI Created Goal', `Target ₹${Number(amount).toLocaleString()} for ${title}`, 'success');
+        return { success: true, message: summary || `Created goal of ₹${amount} for ${title}`, action, data: json.data };
+      } else {
+        // Advice or inquiry
+        return { success: true, message: summary, action: 'advice', data: json.data };
+      }
+    } catch (err: any) {
+      console.error('AI command execution failed:', err);
+      showToast('AI Automation Error', err.message || 'Could not reach AI service', 'error');
+      return { success: false, message: 'Sorry, I could not complete that request. Please try again.' };
+    }
+  };
+
   return (
     <HerFinanceContext.Provider
       value={{
@@ -601,7 +684,8 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
         markLessonComplete,
         markNotificationAsRead,
         clearAllNotifications,
-        resetAllFinanceData
+        resetAllFinanceData,
+        processAiCommand
       }}
     >
       {children}
