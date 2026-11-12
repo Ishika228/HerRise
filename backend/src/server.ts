@@ -3,6 +3,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import { config } from './config/env.js';
 import { connectDatabase } from './config/database.js';
+import { seedMongoIfEmpty } from './services/seedDatabase.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -85,8 +86,11 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`🩺 Health check: http://localhost:${config.port}/api/health`);
     console.log(`=========================================`);
 
-    // Initialize MongoDB connection
-    await connectDatabase();
+    // Initialize MongoDB connection & seed initial data
+    const connected = await connectDatabase();
+    if (connected) {
+      await seedMongoIfEmpty();
+    }
   });
 }
 

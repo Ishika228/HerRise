@@ -1,5 +1,13 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import { config } from './env.js';
+
+// Ensure DNS can resolve MongoDB Atlas SRV records
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore in environments where custom DNS is restricted
+}
 
 /**
  * Connect to MongoDB database with graceful fallback
@@ -15,10 +23,10 @@ export async function connectDatabase(): Promise<boolean> {
   try {
     mongoose.set('strictQuery', true);
     await mongoose.connect(uri, {
-      dbName: config.mongoDbName,
-      serverSelectionTimeoutMS: 4000
+      dbName: config.mongoDbName || 'HerRise',
+      serverSelectionTimeoutMS: 8000
     });
-    console.log(`🍃 [MongoDB] Connected successfully to database: ${config.mongoDbName}`);
+    console.log(`🍃 [MongoDB] Connected successfully to Atlas database: ${config.mongoDbName || 'HerRise'}`);
     return true;
   } catch (error: any) {
     console.warn(`⚠️ [MongoDB] Connection could not be established (${error.message}).`);
@@ -26,3 +34,4 @@ export async function connectDatabase(): Promise<boolean> {
     return false;
   }
 }
+
