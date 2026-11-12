@@ -21,6 +21,28 @@ export interface IUser extends Document {
     currency: string;
     currentSavings: number;
   };
+  resumeData?: {
+    headline?: string;
+    summary?: string;
+    skills?: string[];
+    experience?: Array<{
+      role: string;
+      company: string;
+      location?: string;
+      duration: string;
+      bullets: string[];
+    }>;
+    education?: Array<{
+      degree: string;
+      institution: string;
+      year?: string;
+      grade?: string;
+    }>;
+    certifications?: string[];
+    languages?: string[];
+    missingFields?: string[];
+    updatedAt?: Date;
+  };
   createdAt: Date;
 }
 
@@ -51,6 +73,32 @@ const UserSchema: Schema = new Schema(
       riskTolerance: { type: String, default: 'moderate' },
       currency: { type: String, default: 'INR' },
       currentSavings: { type: Number, default: 0 }
+    },
+    resumeData: {
+      headline: { type: String, default: '' },
+      summary: { type: String, default: '' },
+      skills: { type: [String], default: [] },
+      experience: [
+        {
+          role: { type: String },
+          company: { type: String },
+          location: { type: String },
+          duration: { type: String },
+          bullets: { type: [String], default: [] }
+        }
+      ],
+      education: [
+        {
+          degree: { type: String },
+          institution: { type: String },
+          year: { type: String },
+          grade: { type: String }
+        }
+      ],
+      certifications: { type: [String], default: [] },
+      languages: { type: [String], default: [] },
+      missingFields: { type: [String], default: [] },
+      updatedAt: { type: Date, default: Date.now }
     }
   },
   { timestamps: true }

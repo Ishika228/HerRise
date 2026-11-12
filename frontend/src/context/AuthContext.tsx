@@ -130,9 +130,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           name: data.name,
           email: data.email,
           password: data.password || 'password123',
-          phone: data.phone,
-          location: data.location,
-          preferredLanguage: data.language || language
+          phone: data.phone || data.resumeData?.phone,
+          location: data.location || data.resumeData?.location,
+          preferredLanguage: data.language || language,
+          resumeData: data.resumeData
         })
       });
       const json = await res.json();
@@ -143,23 +144,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.warn('[Auth] Backend register sync notice:', e);
     }
 
+    if (data.resumeData) {
+      try {
+        localStorage.setItem('hercareer_resume', JSON.stringify(data.resumeData));
+      } catch {
+        // ignore
+      }
+    }
+
     const newUser: UserProfile = {
       id: 'usr-' + Date.now().toString(36),
-      name: data.name || 'HerRise Member',
-      email: data.email || 'user@example.com',
-      phone: data.phone || '',
-      location: data.location || '',
+      name: data.name || data.resumeData?.fullName || 'HerRise Member',
+      email: data.email || data.resumeData?.email || 'user@example.com',
+      phone: data.phone || data.resumeData?.phone || '',
+      location: data.location || data.resumeData?.location || '',
       language: data.language || language,
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-      role: 'Member',
-      goals: [],
-      education: '',
-      currentStatus: '',
-      experienceLevel: '',
-      skills: [],
+      role: data.resumeData?.headline || 'Member',
+      goals: data.goals || [],
+      education: data.education || (data.resumeData?.education?.[0]?.degree || ''),
+      currentStatus: data.currentStatus || 'Active',
+      experienceLevel: data.experienceLevel || (data.resumeData?.experience?.length ? `${data.resumeData.experience.length * 2} Years` : '2 Years'),
+      skills: data.skills && data.skills.length > 0 ? data.skills : (data.resumeData?.skills || []),
       interests: [],
-      bio: '',
-      completionPercentage: 40
+      bio: data.resumeData?.summary || '',
+      completionPercentage: data.resumeData ? 85 : 40,
+      resumeData: data.resumeData,
+      careerProfile: {
+        targetRole: data.resumeData?.headline || 'Growth Professional',
+        status: 'Active',
+        experienceYears: data.resumeData?.experience?.length ? data.resumeData.experience.length * 2 : 2,
+        education: data.resumeData?.education?.[0]?.degree || 'Degree',
+        skills: data.resumeData?.skills || [],
+        desiredSalary: 'Competitive',
+        workMode: 'Flexible',
+        readinessScore: 92,
+        matchRolesCount: 12
+      }
     };
     setUser(newUser);
     return true;

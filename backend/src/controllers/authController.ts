@@ -4,7 +4,7 @@ import { store, User } from '../data/mockStore.js';
 import { UserModel } from '../models/UserModel.js';
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { name, email, password, phone, location, preferredLanguage } = req.body;
+  const { name, email, password, phone, location, preferredLanguage, resumeData } = req.body;
 
   if (!name || !email) {
     return res.status(400).json({ success: false, error: 'Name and email are required' });
@@ -21,12 +21,13 @@ export const registerUser = async (req: Request, res: Response) => {
       const userDoc = await UserModel.create({
         name,
         email: email.toLowerCase(),
-        phone: phone || '',
-        location: location || '',
+        phone: phone || (resumeData?.phone || ''),
+        location: location || (resumeData?.location || ''),
         preferredLanguage: preferredLanguage || 'English',
         goals: [],
-        skills: [],
-        profileCompleted: 40
+        skills: resumeData?.skills || [],
+        profileCompleted: resumeData ? 80 : 40,
+        resumeData: resumeData || undefined
       });
 
       return res.status(201).json({

@@ -21,6 +21,32 @@ export interface UserProfile {
   businessName?: string;
   businessCategory?: string;
   completionPercentage: number;
+  resumeData?: {
+    fullName: string;
+    email: string;
+    phone: string;
+    location: string;
+    linkedin?: string;
+    portfolio?: string;
+    headline: string;
+    summary: string;
+    skills: string[];
+    experience: Array<{
+      role: string;
+      company: string;
+      location?: string;
+      duration: string;
+      bullets: string[];
+    }>;
+    education: Array<{
+      degree: string;
+      institution: string;
+      year?: string;
+      grade?: string;
+    }>;
+    certifications?: string[];
+    languages?: string[];
+  };
 
   // Module Registration States & Profiles
   careerProfile?: {

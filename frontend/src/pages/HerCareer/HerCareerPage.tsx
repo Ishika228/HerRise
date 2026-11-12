@@ -18,7 +18,8 @@ import {
   Award,
   ChevronRight,
   TrendingUp,
-  User
+  User,
+  FileDown
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -27,6 +28,7 @@ import { StatCard } from '../../components/cards/StatCard';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
+import { downloadAtsPdf, downloadAtsWord, AtsResumeData } from '../../services/resumeExportService';
 import {
   initialJobs,
   initialResumeData,
@@ -145,9 +147,48 @@ export const HerCareerPage: React.FC = () => {
     showToast('Application Submitted!', `Applied to ${selectedJobForApply.company} successfully`, 'success');
   };
 
-  const handlePrintResume = () => {
-    showToast('Resume Downloaded', 'Demo PDF generated with your customized template', 'success');
-    window.print();
+  const getAtsResumePayload = (): AtsResumeData => ({
+    fullName: resume.personalInfo.fullName || user?.name || 'Candidate',
+    email: resume.personalInfo.email || user?.email || 'candidate@example.com',
+    phone: resume.personalInfo.phone || user?.phone || '+91 98765 43210',
+    location: resume.personalInfo.location || user?.location || 'India',
+    headline: user?.careerProfile?.targetRole || 'Professional Specialist',
+    summary: resume.summary || user?.bio || 'Experienced professional with demonstrated background in achieving measurable outcomes.',
+    skills: resume.skills && resume.skills.length > 0 ? resume.skills : (user?.skills || ['Leadership', 'Communication', 'Strategic Planning']),
+    experience: resume.experiences.map((e) => ({
+      role: e.role,
+      company: e.company,
+      location: '',
+      duration: `${e.startDate} - ${e.current ? 'Present' : e.endDate}`,
+      bullets: e.description ? e.description.split('\n').filter(Boolean) : ['Delivered key strategic objectives and optimized departmental workflows.']
+    })),
+    education: resume.education.map((ed) => ({
+      degree: ed.degree,
+      institution: ed.institution,
+      year: ed.year,
+      grade: ''
+    })),
+    languages: ['English']
+  });
+
+  const handleDownloadAtsPdf = () => {
+    try {
+      const data = getAtsResumePayload();
+      downloadAtsPdf(data);
+      showToast('ATS PDF Downloaded', 'Your clean standard ATS resume PDF is ready.', 'success');
+    } catch (e: any) {
+      showToast('Download Error', e.message || 'Could not download PDF', 'error');
+    }
+  };
+
+  const handleDownloadAtsWord = async () => {
+    try {
+      const data = getAtsResumePayload();
+      await downloadAtsWord(data);
+      showToast('ATS Word Downloaded', 'Your clean editable ATS resume Word (.docx) is ready.', 'success');
+    } catch (e: any) {
+      showToast('Download Error', e.message || 'Could not download Word document', 'error');
+    }
   };
 
   return (
@@ -605,17 +646,28 @@ export const HerCareerPage: React.FC = () => {
 
             {/* Right: Formatted Resume Live Preview Pane (6 cols) */}
             <div className="lg:col-span-6 space-y-3">
-              <div className="flex items-center justify-between px-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-2">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   Live Formatted Preview ({selectedTemplate.toUpperCase()} Template)
                 </span>
-                <button
-                  onClick={handlePrintResume}
-                  className="flex items-center gap-1.5 bg-[#4A154B] text-white px-4 py-1.5 rounded-xl text-xs font-bold hover:bg-[#350c36] cursor-pointer shadow-xs"
-                >
-                  <Download className="w-3.5 h-3.5 text-pink-300" />
-                  <span>Download / Print</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDownloadAtsPdf}
+                    className="flex items-center gap-1.5 bg-[#4A154B] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#350c36] cursor-pointer shadow-xs"
+                    title="Download clean ATS PDF"
+                  >
+                    <Download className="w-3.5 h-3.5 text-pink-300" />
+                    <span>Download PDF</span>
+                  </button>
+                  <button
+                    onClick={handleDownloadAtsWord}
+                    className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shadow-xs"
+                    title="Download clean ATS Word document"
+                  >
+                    <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Word (.docx)</span>
+                  </button>
+                </div>
               </div>
 
               {/* Printable Paper Card */}
