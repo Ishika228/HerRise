@@ -29,6 +29,8 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { StatCard } from '../../components/cards/StatCard';
 import { Modal } from '../../components/common/Modal';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import {
   curatedBusinessIdeas,
   sampleBusinessPlan,
@@ -37,26 +39,56 @@ import {
 import { BusinessPlan, RoadmapMilestone } from '../../types';
 
 export const HerBusinessPage: React.FC = () => {
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  // Registration Gate at Starting
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_business_setup_completed') === 'true';
+  });
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_business_setup_completed') !== 'true';
+  });
 
   // Tabs: Ideas, Feasibility, Pricing, Plan Builder, Roadmap
   const [activeTab, setActiveTab] = useState<'ideas' | 'pricing' | 'plan' | 'roadmap' | 'feasibility'>('ideas');
 
-  // Business plan state
-  const [businessPlan, setBusinessPlan] = useState<BusinessPlan>(sampleBusinessPlan);
+  // Business plan state dynamically personalized
+  const [businessPlan, setBusinessPlan] = useState<BusinessPlan>(() => ({
+    ...sampleBusinessPlan,
+    businessName: user?.businessProfile?.ventureName || sampleBusinessPlan.businessName,
+    category: user?.businessProfile?.industry || sampleBusinessPlan.category
+  }));
 
   // Roadmap milestones state
   const [milestones, setMilestones] = useState<RoadmapMilestone[]>(launchRoadmap);
 
-  // Pricing calculator state
+  // Pricing calculator state dynamically derived
   const [pricingCalc, setPricingCalc] = useState({
-    rawMaterialCost: 150,
+    rawMaterialCost: user?.businessProfile ? Math.round(user.businessProfile.monthlyFixedCosts * 0.005) || 150 : 150,
     packagingCost: 40,
     laborPerUnit: 60,
     shippingCost: 50,
     targetGrossMargin: 55, // 55%
-    monthlyFixedCost: 25000
+    monthlyFixedCost: user?.businessProfile?.monthlyFixedCosts || 25000
   });
+
+  const handleGateComplete = (data: any) => {
+    setIsSetupCompleted(true);
+    setGateOpen(false);
+    setBusinessPlan((prev) => ({
+      ...prev,
+      businessName: data.ventureName || prev.businessName,
+      category: data.industry || prev.category
+    }));
+    if (data.monthlyFixedCosts) {
+      setPricingCalc((prev) => ({
+        ...prev,
+        monthlyFixedCost: data.monthlyFixedCosts,
+        rawMaterialCost: data.averageUnitCost || prev.rawMaterialCost
+      }));
+    }
+  };
 
   // Feasibility assessment state
   const [feasibilityAnswers, setFeasibilityAnswers] = useState({
@@ -138,6 +170,40 @@ export const HerBusinessPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dynamic Setup Intake Prompt Banner */}
+        {!isSetupCompleted ? (
+          <div className="bg-rose-50 border border-rose-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-rose-100 text-[#e11d48] shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-900">Personalized Business Intake Required</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  Register your venture name, capital needs, and production costs to compute live break-even metrics and profit margins.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-pink-300" />
+              <span>Complete Business Registration</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
+            <span>✓ Verified Venture Active: <strong>{businessPlan.businessName}</strong> ({businessPlan.category})</span>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
+            >
+              Edit Venture Profile
+            </button>
+          </div>
+        )}
+
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -794,6 +860,14 @@ export const HerBusinessPage: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* Module Registration Gate at Starting */}
+      <ModuleRegistrationGate
+        module="business"
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onComplete={handleGateComplete}
+      />
     </DashboardLayout>
   );
 };

@@ -278,12 +278,31 @@ export const initialPreferences: UserPreferences = {
 
 // --- Storage API Helpers ---
 
+export function isFinanceSetupCompleted(): boolean {
+  return localStorage.getItem('herfinance_setup_completed') === 'true';
+}
+
+export const blankFinancialProfile: FinancialProfile = {
+  userId: 'usr-new',
+  fullName: '',
+  email: '',
+  monthlyIncome: 0,
+  incomeSources: [],
+  emergencyFundTargetMonths: 6,
+  monthlySavingsTarget: 0,
+  riskTolerance: 'moderate',
+  financialScore: 0,
+  currency: 'INR',
+  updatedAt: new Date().toISOString()
+};
+
 export function getStoredProfile(): FinancialProfile {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
-    return raw ? JSON.parse(raw) : initialFinancialProfile;
+    if (raw) return JSON.parse(raw);
+    return isFinanceSetupCompleted() ? initialFinancialProfile : blankFinancialProfile;
   } catch {
-    return initialFinancialProfile;
+    return isFinanceSetupCompleted() ? initialFinancialProfile : blankFinancialProfile;
   }
 }
 
@@ -294,9 +313,10 @@ export function saveStoredProfile(profile: FinancialProfile): void {
 export function getStoredTransactions(): TransactionRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    return raw ? JSON.parse(raw) : initialTransactionsList;
+    if (raw) return JSON.parse(raw);
+    return isFinanceSetupCompleted() ? initialTransactionsList : [];
   } catch {
-    return initialTransactionsList;
+    return isFinanceSetupCompleted() ? initialTransactionsList : [];
   }
 }
 
@@ -309,6 +329,18 @@ export function getStoredBudget(): BudgetRecord {
     const raw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
     if (raw) return JSON.parse(raw);
 
+    if (!isFinanceSetupCompleted()) {
+      return {
+        id: 'b-new',
+        userId: 'usr-new',
+        totalBudget: 0,
+        month: 'Current Month',
+        categories: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+
     // Compute initial spent from initial transactions
     const budget = { ...initialBudget };
     const txs = getStoredTransactions();
@@ -320,7 +352,17 @@ export function getStoredBudget(): BudgetRecord {
     });
     return budget;
   } catch {
-    return initialBudget;
+    return isFinanceSetupCompleted()
+      ? initialBudget
+      : {
+          id: 'b-new',
+          userId: 'usr-new',
+          totalBudget: 0,
+          month: 'Current Month',
+          categories: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
   }
 }
 
@@ -331,9 +373,10 @@ export function saveStoredBudget(budget: BudgetRecord): void {
 export function getStoredGoals(): SavingsGoalRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.GOALS);
-    return raw ? JSON.parse(raw) : initialSavingsGoalsList;
+    if (raw) return JSON.parse(raw);
+    return isFinanceSetupCompleted() ? initialSavingsGoalsList : [];
   } catch {
-    return initialSavingsGoalsList;
+    return isFinanceSetupCompleted() ? initialSavingsGoalsList : [];
   }
 }
 
@@ -357,9 +400,10 @@ export function saveStoredLessons(lessons: typeof comprehensiveFinancialLessons)
 export function getStoredNotifications(): NotificationItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    return raw ? JSON.parse(raw) : initialNotifications;
+    if (raw) return JSON.parse(raw);
+    return isFinanceSetupCompleted() ? initialNotifications : [];
   } catch {
-    return initialNotifications;
+    return isFinanceSetupCompleted() ? initialNotifications : [];
   }
 }
 

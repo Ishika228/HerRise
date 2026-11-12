@@ -108,7 +108,7 @@ export const FinancialReportsView: React.FC = () => {
   const handleExportJSON = () => {
     const reportData = {
       user: {
-        name: profile.fullName || 'Ananya Sharma',
+        name: profile.fullName || 'HerRise Member',
         currency: profile.currency,
         monthlyBaselineIncome: profile.monthlyIncome
       },
@@ -231,7 +231,7 @@ export const FinancialReportsView: React.FC = () => {
             </div>
             <h1 className="text-2xl font-black text-slate-900 mt-1">Monthly Financial Health Report</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Account Holder: <span className="font-semibold text-slate-800">{profile.fullName || 'Ananya Sharma'}</span> | Risk Tier:{' '}
+              Account Holder: <span className="font-semibold text-slate-800">{profile.fullName || 'HerRise Member'}</span> | Risk Tier:{' '}
               <span className="capitalize font-semibold text-slate-800">{profile.riskTolerance}</span> | Base Inflow: ₹
               {profile.monthlyIncome.toLocaleString()}
             </p>

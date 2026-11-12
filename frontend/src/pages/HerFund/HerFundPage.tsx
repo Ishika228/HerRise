@@ -20,6 +20,8 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { StatCard } from '../../components/cards/StatCard';
 import { Modal } from '../../components/common/Modal';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import {
   initialFundingSchemes,
   samplePitchDeckSlides,
@@ -28,10 +30,31 @@ import {
 import { FundingScheme, PitchDeckSlide } from '../../types';
 
 export const HerFundPage: React.FC = () => {
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  // Registration Gate at Starting
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_fund_setup_completed') === 'true';
+  });
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_fund_setup_completed') !== 'true';
+  });
 
   const [schemes, setSchemes] = useState<FundingScheme[]>(initialFundingSchemes);
   const [activeTab, setActiveTab] = useState<'schemes' | 'compare' | 'eligibility' | 'docs' | 'pitch'>('schemes');
+
+  // Dynamic Loan Readiness Score
+  const [loanReadinessScore, setLoanReadinessScore] = useState<number>(
+    user?.fundProfile?.loanReadinessScore || 88
+  );
+
+  const handleGateComplete = (data: any) => {
+    setIsSetupCompleted(true);
+    setGateOpen(false);
+    if (data.readinessScore) setLoanReadinessScore(data.readinessScore);
+    if (data.capitalNeeded) setAppliedAmount(String(data.capitalNeeded));
+  };
 
   // Filters
   const [selectedType, setSelectedType] = useState<string>('All');
@@ -90,6 +113,39 @@ export const HerFundPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dynamic Setup Intake Prompt Banner */}
+        {!isSetupCompleted ? (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-100 text-[#d97706] shrink-0">
+                <Landmark className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-900">Personalized Capital Intake Required</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  Input your enterprise turnover and funding needs to compute your live Loan Readiness Score and estimated EMI.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <span>Complete Capital Registration</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
+            <span>✓ Verified Enterprise Capital Active: <strong>{user?.fundProfile?.ventureName || 'Registered Enterprise'}</strong></span>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
+            >
+              Edit Capital Profile
+            </button>
+          </div>
+        )}
+
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -179,8 +235,8 @@ export const HerFundPage: React.FC = () => {
           />
           <StatCard
             title="Pre-Flight Readiness"
-            value="83%"
-            subtitle="5 of 6 KYC documents verified"
+            value={`${loanReadinessScore}%`}
+            subtitle="Based on your live profile"
             icon={FileCheck}
             iconColor="text-[#be185d]"
             bgColor="bg-pink-50"
@@ -587,6 +643,14 @@ export const HerFundPage: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      {/* Module Registration Gate at Starting */}
+      <ModuleRegistrationGate
+        module="fund"
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onComplete={handleGateComplete}
+      />
     </DashboardLayout>
   );
 };

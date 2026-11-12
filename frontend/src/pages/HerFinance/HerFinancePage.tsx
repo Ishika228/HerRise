@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
-import { PlusCircle, Wallet, PiggyBank, Receipt, DollarSign, Calendar, Tag, CreditCard } from 'lucide-react';
+import {
+  PlusCircle,
+  Wallet,
+  PiggyBank,
+  Receipt,
+  DollarSign,
+  Calendar,
+  Tag,
+  CreditCard,
+  AlertCircle,
+  Sliders,
+  Sparkles
+} from 'lucide-react';
 import { HerFinanceProvider, useHerFinance } from '../../context/HerFinanceContext';
 import { HerFinanceLayout, HerFinanceTab } from './HerFinanceLayout';
 import { Modal } from '../../components/common/Modal';
 import { useToast } from '../../context/ToastContext';
+import { FinancialSetupWizard } from './components/FinancialSetupWizard';
 
 // 10 Core Views
 import { HerFinanceDashboardView } from './views/HerFinanceDashboardView';
@@ -20,7 +33,16 @@ import { PaymentMethod, TransactionType } from '../../types/finance';
 
 const HerFinanceContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<HerFinanceTab>('dashboard');
-  const { addTransaction, addSavingsGoal, budget } = useHerFinance();
+  const {
+    addTransaction,
+    addSavingsGoal,
+    budget,
+    profile,
+    setupModalOpen,
+    setSetupModalOpen,
+    setupFinancialBaseline,
+    isSetupCompleted
+  } = useHerFinance();
   const { showToast } = useToast();
 
   // Modals state
@@ -201,8 +223,46 @@ const HerFinanceContent: React.FC = () => {
       onOpenAddExpenseModal={() => setExpenseModalOpen(true)}
       onOpenAddIncomeModal={() => setIncomeModalOpen(true)}
       onOpenAddGoalModal={() => setGoalModalOpen(true)}
+      onOpenSetupBaseline={() => setSetupModalOpen(true)}
     >
+      {/* Dynamic Profile Intake Prompt Banner if incomplete */}
+      {!isSetupCompleted && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900">Personalized Financial Baseline Needed</h4>
+              <p className="text-xs text-amber-700 leading-relaxed mt-0.5">
+                HerFinance requires your real income streams, monthly obligations, and savings targets to compute your
+                ledger without static demo numbers.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setSetupModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0f172a] hover:bg-slate-800 text-teal-400 font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Complete Setup Wizard</span>
+          </button>
+        </div>
+      )}
+
       {renderActiveView()}
+
+      {/* Interactive Financial Registration & Setup Intake Wizard */}
+      <FinancialSetupWizard
+        isOpen={setupModalOpen}
+        onClose={() => setSetupModalOpen(false)}
+        onSubmitSetup={setupFinancialBaseline}
+        initialData={{
+          fullName: profile.fullName,
+          email: profile.email,
+          currency: profile.currency
+        }}
+      />
 
       {/* Global Add Income Modal */}
       <Modal

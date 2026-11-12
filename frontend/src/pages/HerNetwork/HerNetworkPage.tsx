@@ -22,6 +22,7 @@ import { StatCard } from '../../components/cards/StatCard';
 import { Modal } from '../../components/common/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import {
   initialMentors,
   initialWorkshops,
@@ -34,12 +35,35 @@ export const HerNetworkPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
 
+  // Registration Gate at Starting
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_network_setup_completed') === 'true';
+  });
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_network_setup_completed') !== 'true';
+  });
+
   const [activeTab, setActiveTab] = useState<'mentors' | 'workshops' | 'feed' | 'stories'>('mentors');
 
   // Mentors state
   const [mentorsList, setMentorsList] = useState<Mentor[]>(initialMentors);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('All');
   const [searchMentor, setSearchMentor] = useState('');
+
+  // Dynamic Compatibility Match
+  const [matchScore, setMatchScore] = useState<number>(user?.networkProfile?.matchScore || 94);
+
+  const handleGateComplete = (data: any) => {
+    setIsSetupCompleted(true);
+    setGateOpen(false);
+    if (data.matchScore) setMatchScore(data.matchScore);
+    if (data.mentorshipDomain) {
+      if (data.mentorshipDomain.includes('Fundraising')) setSelectedIndustry('Venture & Angel Investing');
+      else if (data.mentorshipDomain.includes('Career')) setSelectedIndustry('Corporate HR & Leadership');
+      else if (data.mentorshipDomain.includes('Tech')) setSelectedIndustry('Technology & Engineering');
+      else if (data.mentorshipDomain.includes('Marketing')) setSelectedIndustry('Brand & Growth Marketing');
+    }
+  };
 
   // Workshops state
   const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
@@ -124,7 +148,7 @@ export const HerNetworkPage: React.FC = () => {
     if (!newPostContent.trim()) return;
     const newPost: CommunityPost = {
       id: 'post-' + Date.now().toString(36),
-      authorName: user?.name || 'Ananya Sharma',
+      authorName: user?.name || 'HerRise Member',
       authorAvatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
       authorRole: user?.role || 'Entrepreneur & Member',
       timeAgo: 'Just now',
@@ -152,7 +176,7 @@ export const HerNetworkPage: React.FC = () => {
               ...p.comments,
               {
                 id: 'c-' + Date.now().toString(36),
-                authorName: user?.name || 'Ananya Sharma',
+                authorName: user?.name || 'HerRise Member',
                 authorAvatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
                 content: text,
                 timeAgo: 'Just now'
@@ -170,6 +194,39 @@ export const HerNetworkPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dynamic Setup Intake Prompt Banner */}
+        {!isSetupCompleted ? (
+          <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-indigo-100 text-[#4f46e5] shrink-0">
+                <Users2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-900">Personalized Mentorship Intake Required</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  Specify your venture or career challenge to calculate your live Mentor Compatibility Score.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <span>Complete Mentorship Registration</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
+            <span>✓ Verified Sisterhood Profile Active: <strong>{user?.networkProfile?.mentorshipDomain || 'Mentorship Focus'}</strong></span>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
+            >
+              Edit Mentorship Focus
+            </button>
+          </div>
+        )}
+
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -634,6 +691,14 @@ export const HerNetworkPage: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      {/* Module Registration Gate at Starting */}
+      <ModuleRegistrationGate
+        module="network"
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onComplete={handleGateComplete}
+      />
     </DashboardLayout>
   );
 };

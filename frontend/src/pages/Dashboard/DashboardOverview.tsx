@@ -70,10 +70,12 @@ export const DashboardOverview: React.FC = () => {
                 <span>Her Future. Her Finance. Her Freedom.</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Welcome back, {user?.name || 'Ananya'}! 🌸
+                Welcome back, {user?.name || 'Empowered Member'}! 🌸
               </h1>
               <p className="text-xs sm:text-sm text-purple-100 leading-relaxed">
-                You have achieved <strong>75%</strong> of your 6-month emergency cushion goal and have <strong>1 upcoming mentorship workshop</strong> this week.
+                {totalIncome > 0
+                  ? `Your monthly verified inflow is ₹${totalIncome.toLocaleString()} with ₹${currentSavings.toLocaleString()} in accumulated liquid savings.`
+                  : 'Welcome to your unified HerRise AI ecosystem. Select any module to initialize your personalized live workspace.'}
               </p>
 
               {/* Goals chips */}

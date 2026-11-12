@@ -18,7 +18,7 @@ import { useToast } from '../../../context/ToastContext';
 import { Modal } from '../../../components/common/Modal';
 
 export const FinancialProfileView: React.FC = () => {
-  const { profile, updateProfile, resetAllFinanceData } = useHerFinance();
+  const { profile, updateProfile, resetAllFinanceData, setSetupModalOpen } = useHerFinance();
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -69,14 +69,25 @@ export const FinancialProfileView: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setConfirmResetOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4 text-rose-600" />
-          <span>Reset Demo Data</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSetupModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+          >
+            <Sliders className="w-4 h-4 text-teal-600" />
+            <span>Rerun Setup Wizard</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setConfirmResetOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4 text-rose-600" />
+            <span>Reset Demo Data</span>
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSaveProfile} className="space-y-6">

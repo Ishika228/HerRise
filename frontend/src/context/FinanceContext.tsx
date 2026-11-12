@@ -22,37 +22,64 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     try {
+      const hfTxs = localStorage.getItem('herfinance_transactions');
+      if (hfTxs) {
+        const parsed = JSON.parse(hfTxs);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
       const stored = localStorage.getItem('herrise_finance_transactions');
-      return stored ? JSON.parse(stored) : initialTransactions;
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return initialTransactions;
+      return [];
     }
   });
 
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(() => {
     try {
+      const hfGoals = localStorage.getItem('herfinance_goals');
+      if (hfGoals) {
+        const parsed = JSON.parse(hfGoals);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
       const stored = localStorage.getItem('herrise_finance_goals');
-      return stored ? JSON.parse(stored) : initialSavingsGoals;
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return initialSavingsGoals;
+      return [];
     }
   });
 
   const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(() => {
     try {
+      const hfBudgets = localStorage.getItem('herfinance_budgets');
+      if (hfBudgets) {
+        const parsed = JSON.parse(hfBudgets);
+        if (parsed?.categories && Array.isArray(parsed.categories) && parsed.categories.length > 0) {
+          return parsed.categories.map((c: any) => ({
+            category: c.categoryName,
+            allocated: c.limit,
+            spent: c.spent,
+            color: c.color
+          }));
+        }
+      }
       const stored = localStorage.getItem('herrise_finance_budget_categories');
-      return stored ? JSON.parse(stored) : initialBudgetCategories;
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return initialBudgetCategories;
+      return [];
     }
   });
 
   const [monthlyBudget, setMonthlyBudget] = useState<number>(() => {
     try {
+      const hfBudgets = localStorage.getItem('herfinance_budgets');
+      if (hfBudgets) {
+        const parsed = JSON.parse(hfBudgets);
+        if (parsed?.totalBudget) return Number(parsed.totalBudget);
+      }
       const stored = localStorage.getItem('herrise_finance_budget_total');
-      return stored ? Number(stored) : 55000;
+      return stored ? Number(stored) : 0;
     } catch {
-      return 55000;
+      return 0;
     }
   });
 

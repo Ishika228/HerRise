@@ -25,6 +25,8 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Modal } from '../../components/common/Modal';
 import { StatCard } from '../../components/cards/StatCard';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import {
   initialJobs,
   initialResumeData,
@@ -34,7 +36,16 @@ import {
 import { Job, ResumeData } from '../../types';
 
 export const HerCareerPage: React.FC = () => {
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  // Registration Gate at Starting
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_career_setup_completed') === 'true';
+  });
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_career_setup_completed') !== 'true';
+  });
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'jobs' | 'resume' | 'restart' | 'interview' | 'gap'>('jobs');
@@ -46,9 +57,44 @@ export const HerCareerPage: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('All');
   const [returneeOnly, setReturneeOnly] = useState(false);
 
-  // Resume builder state
-  const [resume, setResume] = useState<ResumeData>(initialResumeData);
+  // Resume builder state - dynamically customized to user
+  const [resume, setResume] = useState<ResumeData>(() => ({
+    ...initialResumeData,
+    summary: user?.careerProfile?.targetRole
+      ? `Goal-oriented professional targeting ${user.careerProfile.targetRole} roles with proven capability.`
+      : initialResumeData.summary,
+    personalInfo: {
+      ...initialResumeData.personalInfo,
+      fullName: user?.name || 'HerRise Member',
+      email: user?.email || 'member@herrise.org',
+      phone: user?.phone || '+91 98765 43210',
+      location: user?.location || 'Bengaluru, India'
+    },
+    skills: user?.careerProfile?.skills || initialResumeData.skills
+  }));
   const [selectedTemplate, setSelectedTemplate] = useState<'modern' | 'minimal' | 'executive'>('modern');
+
+  // Dynamic Readiness Score
+  const [readinessScore, setReadinessScore] = useState<number>(user?.careerProfile?.readinessScore || 85);
+
+  const handleGateComplete = (data: any) => {
+    setIsSetupCompleted(true);
+    setGateOpen(false);
+    if (data.readinessScore) setReadinessScore(data.readinessScore);
+    if (data.workMode) setSelectedWorkMode(data.workMode);
+    setResume((prev) => ({
+      ...prev,
+      summary: data.targetRole ? `Driven ${data.targetRole} professional with verified competencies.` : prev.summary,
+      personalInfo: {
+        ...prev.personalInfo,
+        fullName: user?.name || prev.personalInfo.fullName,
+        email: user?.email || prev.personalInfo.email,
+        phone: user?.phone || prev.personalInfo.phone,
+        location: user?.location || prev.personalInfo.location
+      },
+      skills: data.skills || prev.skills
+    }));
+  };
 
   // Job Application Modal
   const [selectedJobForApply, setSelectedJobForApply] = useState<Job | null>(null);
@@ -107,6 +153,40 @@ export const HerCareerPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dynamic Setup Intake Prompt Banner */}
+        {!isSetupCompleted ? (
+          <div className="bg-pink-50 border border-pink-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-pink-100 text-[#be185d] shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-900">Personalized Career Intake Required</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  Complete your registration details, sabbatical context, and target roles to calculate your live Career Readiness Score.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-pink-300" />
+              <span>Complete Career Registration</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
+            <span>✓ Verified Member Profile Active: <strong>{user?.careerProfile?.targetRole || 'Career Track'}</strong></span>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
+            >
+              Edit Intake Profile
+            </button>
+          </div>
+        )}
+
         {/* Top Header Card */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -197,8 +277,8 @@ export const HerCareerPage: React.FC = () => {
           />
           <StatCard
             title="Resume Match Index"
-            value="86%"
-            subtitle="For Growth Marketing roles"
+            value={`${readinessScore}%`}
+            subtitle={`Target: ${user?.careerProfile?.targetRole || 'Growth Track'}`}
             icon={TrendingUp}
             iconColor="text-indigo-700"
             bgColor="bg-indigo-50"
@@ -875,6 +955,14 @@ export const HerCareerPage: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      {/* Module Registration Gate at Starting */}
+      <ModuleRegistrationGate
+        module="career"
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onComplete={handleGateComplete}
+      />
     </DashboardLayout>
   );
 };

@@ -21,6 +21,60 @@ export interface UserProfile {
   businessName?: string;
   businessCategory?: string;
   completionPercentage: number;
+
+  // Module Registration States & Profiles
+  careerProfile?: {
+    targetRole: string;
+    status: string;
+    experienceYears: number;
+    education: string;
+    skills: string[];
+    desiredSalary: string;
+    workMode: string;
+    readinessScore: number;
+  };
+  businessProfile?: {
+    ventureName: string;
+    industry: string;
+    stage: string;
+    monthlyTargetRevenue: number;
+    seedCapitalNeeded: number;
+    monthlyFixedCosts: number;
+    monthlyVariableCosts: number;
+    breakEvenRevenue: number;
+    projectedNetProfit: number;
+  };
+  fundProfile?: {
+    ventureName: string;
+    capitalNeeded: number;
+    fundingType: string;
+    collateral: boolean;
+    annualTurnover: number;
+    loanReadinessScore: number;
+    estimatedEmi: number;
+  };
+  marketProfile?: {
+    storeName: string;
+    category: string;
+    productTitle: string;
+    price: number;
+    cost: number;
+    stock: number;
+    marginPercent: number;
+    projectedMonthlyRevenue: number;
+  };
+  learnProfile?: {
+    targetDomain: string;
+    currentLevel: string;
+    weeklyHours: number;
+    estimatedWeeks: number;
+  };
+  networkProfile?: {
+    mentorshipDomain: string;
+    primaryGoal: string;
+    meetingFrequency: string;
+    matchScore: number;
+  };
 }
 
 // Module 1: HerFinance Types

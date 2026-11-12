@@ -14,7 +14,8 @@ import {
   Calendar,
   ShieldCheck,
   ArrowUpRight,
-  TrendingDown
+  TrendingDown,
+  Sliders
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useHerFinance, DateFilterType } from '../../context/HerFinanceContext';
@@ -38,6 +39,7 @@ interface HerFinanceLayoutProps {
   onOpenAddExpenseModal: () => void;
   onOpenAddIncomeModal: () => void;
   onOpenAddGoalModal: () => void;
+  onOpenSetupBaseline?: () => void;
 }
 
 export const HerFinanceLayout: React.FC<HerFinanceLayoutProps> = ({
@@ -46,7 +48,8 @@ export const HerFinanceLayout: React.FC<HerFinanceLayoutProps> = ({
   children,
   onOpenAddExpenseModal,
   onOpenAddIncomeModal,
-  onOpenAddGoalModal
+  onOpenAddGoalModal,
+  onOpenSetupBaseline
 }) => {
   const { dateFilter, setDateFilter, unreadNotificationsCount, netBalance } = useHerFinance();
 
@@ -116,6 +119,17 @@ export const HerFinanceLayout: React.FC<HerFinanceLayoutProps> = ({
                 <PiggyBank className="w-4 h-4" />
                 <span>New Goal</span>
               </button>
+
+              {onOpenSetupBaseline && (
+                <button
+                  onClick={onOpenSetupBaseline}
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-600 hover:to-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                  title="Update your personalized income, expenses, and baseline setup"
+                >
+                  <Sliders className="w-4 h-4 text-teal-200" />
+                  <span>Setup Baseline</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

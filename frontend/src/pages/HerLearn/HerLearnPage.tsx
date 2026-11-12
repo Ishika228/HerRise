@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Download,
   Share2,
-  FileCheck
+  FileCheck,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -21,6 +22,7 @@ import { StatCard } from '../../components/cards/StatCard';
 import { Modal } from '../../components/common/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import {
   initialCourses,
   sampleQuizQuestions,
@@ -33,10 +35,28 @@ export const HerLearnPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
 
+  // Registration Gate at Starting
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_learn_setup_completed') === 'true';
+  });
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_learn_setup_completed') !== 'true';
+  });
+
   const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [activeTab, setActiveTab] = useState<'catalog' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('catalog');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleGateComplete = (data: any) => {
+    setIsSetupCompleted(true);
+    setGateOpen(false);
+    if (data.targetDomain) {
+      if (data.targetDomain.includes('AI')) setSelectedCategory('Artificial Intelligence');
+      else if (data.targetDomain.includes('FinTech') || data.targetDomain.includes('Finance')) setSelectedCategory('Financial Literacy');
+      else if (data.targetDomain.includes('Marketing')) setSelectedCategory('Digital Marketing');
+    }
+  };
 
   // Video Lesson Player State
   const [selectedCourseForLearning, setSelectedCourseForLearning] = useState<Course>(initialCourses[0]);
@@ -128,6 +148,39 @@ export const HerLearnPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dynamic Setup Intake Prompt Banner */}
+        {!isSetupCompleted ? (
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-blue-100 text-[#2563eb] shrink-0">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-900">Personalized Learning Intake Required</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  Select your target competency domain and available weekly study hours to calculate your certification timeline.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <span>Complete Academy Registration</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
+            <span>✓ Active Learning Track: <strong>{user?.learnProfile?.targetDomain || 'FinTech & AI Leadership'}</strong></span>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
+            >
+              Edit Study Plan
+            </button>
+          </div>
+        )}
+
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -642,6 +695,14 @@ export const HerLearnPage: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* Module Registration Gate at Starting */}
+      <ModuleRegistrationGate
+        module="learn"
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onComplete={handleGateComplete}
+      />
     </DashboardLayout>
   );
 };

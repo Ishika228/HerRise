@@ -7,14 +7,14 @@ import { Language } from '../../types';
 
 export const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
-    name: 'Ananya Sharma',
-    email: 'ananya.sharma@example.com',
-    phone: '+91 98765 43210',
-    location: 'Bengaluru, Karnataka',
-    password: 'password123',
-    confirmPassword: 'password123',
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    password: '',
+    confirmPassword: '',
     language: 'en' as Language,
-    agreedToTerms: true
+    agreedToTerms: false
   });
 
   const [loading, setLoading] = useState(false);

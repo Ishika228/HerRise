@@ -35,6 +35,26 @@ import { useToast } from './ToastContext';
 
 export type DateFilterType = 'this_month' | 'last_month' | 'last_3_months' | 'all';
 
+export interface FinancialSetupData {
+  fullName: string;
+  email: string;
+  location?: string;
+  currency: string;
+  monthlyIncome: number;
+  incomeSources: { name: string; amount: number; type: string }[];
+  monthlyExpenses: { category: string; amount: number }[];
+  currentSavings: number;
+  primaryGoal: {
+    title: string;
+    targetAmount: number;
+    currentAmount: number;
+    targetDate: string;
+    category: 'Emergency Fund' | 'Education' | 'New Laptop' | 'Travel' | 'Starting a Business' | 'Home Purchase' | 'General';
+  };
+  riskTolerance: 'conservative' | 'moderate' | 'aggressive';
+  emergencyFundTargetMonths: number;
+}
+
 interface HerFinanceContextType {
   profile: FinancialProfile;
   transactions: TransactionRecord[];
@@ -45,6 +65,12 @@ interface HerFinanceContextType {
   preferences: UserPreferences;
   dateFilter: DateFilterType;
   setDateFilter: (filter: DateFilterType) => void;
+
+  // Onboarding & Setup state
+  isSetupCompleted: boolean;
+  setupModalOpen: boolean;
+  setSetupModalOpen: (open: boolean) => void;
+  setupFinancialBaseline: (setupData: FinancialSetupData) => Promise<boolean>;
 
   // Filtered & computed metrics
   filteredTransactions: TransactionRecord[];
@@ -83,6 +109,14 @@ const HerFinanceContext = createContext<HerFinanceContextType | undefined>(undef
 
 export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { showToast } = useToast();
+
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herfinance_setup_completed') === 'true';
+  });
+
+  const [setupModalOpen, setSetupModalOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herfinance_setup_completed') !== 'true';
+  });
 
   const [profile, setProfile] = useState<FinancialProfile>(getStoredProfile);
   const [transactions, setTransactions] = useState<TransactionRecord[]>(getStoredTransactions);
@@ -378,16 +412,153 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
     showToast('Notifications Cleared', 'All alerts cleared', 'info');
   };
 
+  const setupFinancialBaseline = async (setupData: FinancialSetupData): Promise<boolean> => {
+    // 1. Sync to backend MongoDB Atlas
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      await fetch(`${backendUrl}/api/finance/setup-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(setupData)
+      });
+    } catch (err) {
+      console.warn('[HerFinance] Atlas sync notice:', err);
+    }
+
+    // 2. Profile
+    const updatedProfile: FinancialProfile = {
+      userId: 'usr-101',
+      fullName: setupData.fullName,
+      email: setupData.email,
+      monthlyIncome: setupData.monthlyIncome,
+      incomeSources: setupData.incomeSources as any,
+      emergencyFundTargetMonths: setupData.emergencyFundTargetMonths,
+      monthlySavingsTarget: Math.round(setupData.monthlyIncome * 0.2),
+      riskTolerance: setupData.riskTolerance,
+      financialScore: 85,
+      currency: setupData.currency,
+      updatedAt: new Date().toISOString()
+    };
+    setProfile(updatedProfile);
+
+    // 3. Category Budgets
+    const colors = ['#1e3a8a', '#0d9488', '#059669', '#d97706', '#e11d48', '#9333ea', '#2563eb', '#f59e0b'];
+    const totalExpenseBudget = setupData.monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const newCategories = setupData.monthlyExpenses
+      .filter((e) => e.amount > 0)
+      .map((e, idx) => ({
+        categoryId: `cat-${e.category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        categoryName: e.category,
+        limit: e.amount,
+        spent: 0,
+        color: colors[idx % colors.length]
+      }));
+
+    setBudget({
+      id: `budget-${Date.now()}`,
+      userId: 'usr-101',
+      month: new Date().toISOString().substring(0, 7),
+      totalBudget: totalExpenseBudget,
+      categories: newCategories,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    // 4. Savings Goals
+    const newGoalsList: SavingsGoalRecord[] = [];
+
+    // A. Liquid Emergency Cushion Reserve if savings entered
+    if (setupData.currentSavings > 0) {
+      const totalPlannedExpenses = setupData.monthlyExpenses.reduce((s, e) => s + e.amount, 0);
+      const targetRunwayAmt = totalPlannedExpenses * (setupData.emergencyFundTargetMonths || 6);
+      newGoalsList.push({
+        id: `goal-emergency-${Date.now()}`,
+        userId: 'usr-101',
+        title: 'Liquid Emergency Cushion',
+        targetAmount: targetRunwayAmt > 0 ? targetRunwayAmt : setupData.currentSavings * 1.5,
+        currentAmount: setupData.currentSavings,
+        targetDate: '2027-06-30',
+        startDate: new Date().toISOString().split('T')[0],
+        category: 'Emergency Fund',
+        status: 'active',
+        color: '#1e3a8a',
+        priority: 'high',
+        contributions: [
+          {
+            id: `contrib-em-${Date.now()}`,
+            goalId: `goal-emergency-${Date.now()}`,
+            amount: setupData.currentSavings,
+            date: new Date().toISOString().split('T')[0],
+            notes: 'Current liquid bank balance'
+          }
+        ],
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // B. User's Primary Savings Goal
+    if (setupData.primaryGoal && setupData.primaryGoal.title) {
+      newGoalsList.push({
+        id: `goal-primary-${Date.now()}`,
+        userId: 'usr-101',
+        title: setupData.primaryGoal.title,
+        targetAmount: setupData.primaryGoal.targetAmount,
+        currentAmount: setupData.primaryGoal.currentAmount || 0,
+        targetDate: setupData.primaryGoal.targetDate,
+        startDate: new Date().toISOString().split('T')[0],
+        category: setupData.primaryGoal.category,
+        status: 'active',
+        color: '#0d9488',
+        priority: 'high',
+        contributions: setupData.primaryGoal.currentAmount > 0 ? [
+          {
+            id: `contrib-pr-${Date.now()}`,
+            goalId: `goal-primary-${Date.now()}`,
+            amount: setupData.primaryGoal.currentAmount,
+            date: new Date().toISOString().split('T')[0],
+            notes: 'Initial opening deposit'
+          }
+        ] : [],
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    setGoals(newGoalsList);
+
+    // 5. Inflow Opening Transactions
+    const openingTxs: TransactionRecord[] = setupData.incomeSources.map((inc, i) => ({
+      id: `tx-inflow-${i + 1}-${Date.now()}`,
+      userId: 'usr-101',
+      title: inc.name || 'Verified Monthly Inflow',
+      amount: inc.amount,
+      type: 'income',
+      category: inc.name.toLowerCase().includes('salary') ? 'Monthly Salary' : 'Consulting / Freelance',
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Bank Transfer',
+      notes: 'User registered verified monthly inflow',
+      createdAt: new Date().toISOString()
+    }));
+    setTransactions(openingTxs);
+
+    // 6. Complete
+    localStorage.setItem('herfinance_setup_completed', 'true');
+    setIsSetupCompleted(true);
+    setSetupModalOpen(false);
+    return true;
+  };
+
   const resetAllFinanceData = () => {
+    localStorage.removeItem('herfinance_setup_completed');
+    setIsSetupCompleted(false);
+    setSetupModalOpen(true);
     setProfile(initialFinancialProfile);
-    setTransactions(initialTransactionsList);
+    setTransactions([]);
     setBudget(initialBudget);
-    setGoals(initialSavingsGoalsList);
+    setGoals([]);
     setLessons(comprehensiveFinancialLessons);
     setNotifications(initialNotifications);
     setPreferences(initialPreferences);
-    localStorage.clear();
-    showToast('Data Reset', 'Restored to clean demo fintech state', 'info');
+    showToast('Financial Profile Reset', 'Please enter your actual financial baseline', 'info');
   };
 
   return (
@@ -410,6 +581,10 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
         remainingBudget,
         emergencyFundCoverageMonths,
         unreadNotificationsCount,
+        isSetupCompleted,
+        setupModalOpen,
+        setSetupModalOpen,
+        setupFinancialBaseline,
         addTransaction,
         editTransaction,
         deleteTransaction,

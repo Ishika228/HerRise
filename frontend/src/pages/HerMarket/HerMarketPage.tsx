@@ -30,10 +30,13 @@ import { StatCard } from '../../components/cards/StatCard';
 import { Modal } from '../../components/common/Modal';
 import { useMarket } from '../../context/MarketContext';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import { sellerSalesAnalytics } from '../../data/mockData/marketData';
 import { Product } from '../../types';
 
 export const HerMarketPage: React.FC = () => {
+  const { user } = useAuth();
   const {
     products,
     cart,
@@ -52,6 +55,14 @@ export const HerMarketPage: React.FC = () => {
 
   const { showToast } = useToast();
 
+  // Registration Gate at Starting
+  const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_market_setup_completed') === 'true';
+  });
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    return localStorage.getItem('herrise_market_setup_completed') !== 'true';
+  });
+
   const [activeTab, setActiveTab] = useState<'shop' | 'seller' | 'cart'>('shop');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,8 +75,8 @@ export const HerMarketPage: React.FC = () => {
   // New Product Form State
   const [productForm, setProductForm] = useState({
     title: '',
-    sellerName: 'VedaBotanica (Pooja Verma)',
-    sellerLocation: 'Dehradun, Uttarakhand',
+    sellerName: user?.name ? `${user?.marketProfile?.storeName || 'Store'} (${user.name})` : 'Artisan Member Store',
+    sellerLocation: user?.location || 'India',
     price: '',
     originalPrice: '',
     category: 'Food' as Product['category'],
@@ -138,9 +149,61 @@ export const HerMarketPage: React.FC = () => {
     showToast('Order Placed Successfully!', `Order ${newOrder.id} confirmed with demo ${shippingDetails.paymentMethod}`, 'success');
   };
 
+  const handleGateComplete = (data: any) => {
+    setIsSetupCompleted(true);
+    setGateOpen(false);
+    if (data.productTitle && data.sellingPrice) {
+      addProduct({
+        title: data.productTitle,
+        category: data.category || 'Handmade Crafts',
+        price: Number(data.sellingPrice),
+        sellerName: data.storeName || 'My Artisan Store',
+        sellerLocation: user?.location || 'India',
+        image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80',
+        images: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'],
+        description: `Fresh handcrafted ${data.productTitle} curated with pure ingredients.`,
+        features: ['Natural Ingredients', 'Eco-friendly Packaging', 'Handmade with Love'],
+        inStock: true
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dynamic Setup Intake Prompt Banner */}
+        {!isSetupCompleted ? (
+          <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-emerald-100 text-[#059669] shrink-0">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-900">Personalized Merchant Intake Required</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  Register your boutique and initial product to compute unit margins and projected monthly revenue.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <span>Complete Merchant Registration</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
+            <span>✓ Verified Merchant Store Active: <strong>{user?.marketProfile?.storeName || 'Storefront'}</strong></span>
+            <button
+              onClick={() => setGateOpen(true)}
+              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
+            >
+              Edit Store Profile
+            </button>
+          </div>
+        )}
+
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -718,6 +781,14 @@ export const HerMarketPage: React.FC = () => {
           </button>
         </form>
       </Modal>
+
+      {/* Module Registration Gate at Starting */}
+      <ModuleRegistrationGate
+        module="market"
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onComplete={handleGateComplete}
+      />
     </DashboardLayout>
   );
 };

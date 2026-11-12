@@ -6,6 +6,7 @@ import { config } from '../config/env.js';
 import { TransactionModel } from '../models/TransactionModel.js';
 import { BudgetCategoryModel } from '../models/BudgetModel.js';
 import { SavingsGoalModel } from '../models/SavingsGoalModel.js';
+import { UserModel } from '../models/UserModel.js';
 
 export const getFinanceOverview = async (req: Request, res: Response) => {
   if (mongoose.connection.readyState === 1) {
@@ -467,6 +468,147 @@ Guidelines:
       response: `Based on your live verified inflow of ₹${totalIncome.toLocaleString()} and outgoings of ₹${totalExpenses.toLocaleString()}, you currently retain a net monthly surplus of ₹${net.toLocaleString()} (${Math.round((net / (totalIncome || 1)) * 100)}% savings rate). We recommend prioritizing an automated SIP of ₹${Math.round(net * 0.5).toLocaleString()} towards index equity and maintaining a 6-month liquid cushion.`,
       disclaimer: 'Financial Education Only – Not Regulated Financial Advice.'
     }
+  });
+};
+
+export const setupFinancialProfile = async (req: Request, res: Response) => {
+  const {
+    fullName,
+    email,
+    monthlyIncome,
+    incomeSources,
+    monthlyExpenses,
+    currentSavings,
+    primaryGoal,
+    riskTolerance,
+    emergencyFundTargetMonths,
+    currency
+  } = req.body;
+
+  if (!fullName || !email || !monthlyIncome) {
+    return res.status(400).json({ success: false, error: 'Name, email, and monthly income are required.' });
+  }
+
+  // If MongoDB is connected:
+  if (mongoose.connection.readyState === 1) {
+    try {
+      // 1. Update or create User
+      const user = await UserModel.findOneAndUpdate(
+        { email: email.toLowerCase() },
+        {
+          name: fullName,
+          email: email.toLowerCase(),
+          financialSetupCompleted: true,
+          financialProfile: {
+            monthlyIncome: Number(monthlyIncome),
+            incomeSources: incomeSources || [{ name: 'Primary Income', amount: Number(monthlyIncome), type: 'salary' }],
+            emergencyFundTargetMonths: Number(emergencyFundTargetMonths) || 6,
+            riskTolerance: riskTolerance || 'moderate',
+            currency: currency || 'INR',
+            currentSavings: Number(currentSavings) || 0
+          }
+        },
+        { upsert: true, new: true }
+      );
+
+      // 2. Rebuild budget categories from user's actual entered expenses
+      await BudgetCategoryModel.deleteMany({ userId: 'usr-101' });
+      const newBudgetDocs: any[] = [];
+      const colors = ['#1e3a8a', '#0d9488', '#059669', '#d97706', '#e11d48', '#9333ea', '#2563eb', '#f59e0b'];
+
+      if (Array.isArray(monthlyExpenses) && monthlyExpenses.length > 0) {
+        for (let i = 0; i < monthlyExpenses.length; i++) {
+          const exp = monthlyExpenses[i];
+          if (exp.amount > 0) {
+            newBudgetDocs.push({
+              userId: 'usr-101',
+              categoryId: `cat-${exp.category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+              categoryName: exp.category,
+              limit: Number(exp.amount),
+              spent: Number(exp.spent || 0),
+              color: colors[i % colors.length]
+            });
+          }
+        }
+      }
+
+      if (newBudgetDocs.length > 0) {
+        await BudgetCategoryModel.insertMany(newBudgetDocs);
+      }
+
+      // 3. Clear old goals and create user's goals
+      await SavingsGoalModel.deleteMany({ userId: 'usr-101' });
+      const goalsToCreate: any[] = [];
+
+      // A: Emergency Cushion Fund if currentSavings entered
+      if (Number(currentSavings) > 0) {
+        const totalExp = Array.isArray(monthlyExpenses)
+          ? monthlyExpenses.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0)
+          : 40000;
+        const targetRunway = (Number(emergencyFundTargetMonths) || 6) * totalExp;
+        goalsToCreate.push({
+          userId: 'usr-101',
+          title: 'Liquid Emergency Cushion',
+          targetAmount: targetRunway > 0 ? targetRunway : Number(currentSavings) * 1.5,
+          currentAmount: Number(currentSavings),
+          targetDate: '2027-06-30',
+          category: 'Emergency Fund',
+          status: 'active',
+          color: '#1e3a8a'
+        });
+      }
+
+      // B: Primary Goal
+      if (primaryGoal && primaryGoal.title && primaryGoal.targetAmount) {
+        goalsToCreate.push({
+          userId: 'usr-101',
+          title: primaryGoal.title,
+          targetAmount: Number(primaryGoal.targetAmount),
+          currentAmount: Number(primaryGoal.currentAmount || 0),
+          targetDate: primaryGoal.targetDate || '2027-04-30',
+          category: primaryGoal.category || 'General',
+          status: 'active',
+          color: '#0d9488'
+        });
+      }
+
+      if (goalsToCreate.length > 0) {
+        await SavingsGoalModel.insertMany(goalsToCreate);
+      }
+
+      // 4. Create opening transaction record for verified monthly income
+      await TransactionModel.deleteMany({ userId: 'usr-101' });
+      await TransactionModel.create({
+        userId: 'usr-101',
+        title: incomeSources?.[0]?.name || 'Baseline Monthly Income',
+        amount: Number(monthlyIncome),
+        type: 'income',
+        category: 'Monthly Salary',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: 'Bank Transfer',
+        notes: 'User verified baseline monthly inflow'
+      });
+
+      return res.status(200).json({
+        success: true,
+        source: 'mongodb-atlas',
+        message: 'Financial profile and custom budget successfully configured in MongoDB Atlas',
+        data: {
+          user,
+          budgetCount: newBudgetDocs.length,
+          primaryGoal
+        }
+      });
+    } catch (err: any) {
+      console.warn('[MongoDB Atlas] Profile setup error, falling back:', err.message);
+    }
+  }
+
+  // In-memory fallback
+  return res.status(200).json({
+    success: true,
+    source: 'in-memory',
+    message: 'Financial baseline profile registered successfully'
   });
 };
 

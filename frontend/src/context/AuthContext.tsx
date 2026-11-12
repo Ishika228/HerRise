@@ -91,10 +91,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (data: Partial<UserProfile> & { password?: string }): Promise<boolean> => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password || 'password123',
+          phone: data.phone,
+          location: data.location,
+          preferredLanguage: data.language || language
+        })
+      });
+      const json = await res.json();
+      if (json.success && json.user) {
+        console.log('[Auth] Registered user in MongoDB Atlas:', json.user);
+      }
+    } catch (e) {
+      console.warn('[Auth] Backend register sync notice:', e);
+    }
+
     const newUser: UserProfile = {
       ...defaultUserProfile,
       id: 'usr-' + Date.now().toString(36),
-      name: data.name || 'New Member',
+      name: data.name || 'HerRise Member',
       email: data.email || 'user@example.com',
       phone: data.phone || '+91 90000 00000',
       location: data.location || 'India',
