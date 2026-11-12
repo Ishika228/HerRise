@@ -1,0 +1,30 @@
+{
+  "name": "herrise-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HerRise AI – Her Future. Her Finance. Her Freedom. (Frontend & Backend Monorepo)",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev": "npm run dev:frontend",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "build": "npm run build:frontend && npm run build:backend",
+    "install:all": "npm install && npm --prefix frontend install && npm --prefix backend install"
+  },
+  "keywords": [
+    "herrise",
+    "fintech",
+    "women-empowerment",
+    "react",
+    "vite",
+    "express",
+    "typescript"
+  ],
+  "author": "HerRise AI Team",
+  "license": "MIT"
+}
