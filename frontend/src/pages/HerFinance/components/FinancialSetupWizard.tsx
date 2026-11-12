@@ -168,23 +168,23 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="HerFinance Profile Setup & Financial Baseline"
+      title="Set Up Your Monthly Budget"
       maxWidth="3xl"
     >
       <div className="space-y-6">
         {/* Progress Tracker Strip */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           {[
-            { num: 1, label: 'Identity & Currency' },
-            { num: 2, label: 'Income Streams' },
-            { num: 3, label: 'Monthly Commitments' },
-            { num: 4, label: 'Goals & Runway' }
+            { num: 1, label: 'Your Details' },
+            { num: 2, label: 'Monthly Income' },
+            { num: 3, label: 'Planned Expenses' },
+            { num: 4, label: 'Savings & Goals' }
           ].map((item) => (
             <div key={item.num} className="flex items-center gap-2">
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                   step === item.num
-                    ? 'bg-[#0f172a] text-teal-400 ring-2 ring-teal-500'
+                    ? 'bg-[#1e1b4b] text-emerald-400 ring-2 ring-emerald-500'
                     : step > item.num
                     ? 'bg-emerald-600 text-white'
                     : 'bg-slate-100 text-slate-400'
@@ -206,17 +206,17 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
         {/* Live Calculation Snapshot Ticker */}
         <div className="bg-slate-900 text-white p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Verified Monthly Inflow</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Monthly Income</span>
             <span className="text-sm font-extrabold text-white">₹{totalIncomeNum.toLocaleString()}</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Commitments</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Planned Expenses</span>
             <span className="text-sm font-extrabold text-slate-200">₹{totalExpenseNum.toLocaleString()}</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Calculated Net Surplus</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Money Left</span>
             <span
               className={`text-sm font-black ${
                 netSurplusNum >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -227,7 +227,7 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Savings Capacity</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Savings Rate</span>
             <span className="text-sm font-extrabold text-teal-400">{savingsRate}% Rate</span>
           </div>
         </div>
@@ -299,11 +299,11 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
         {step === 2 && (
           <div className="space-y-4">
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Primary Inflow Stream</h4>
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Main Income (Salary / Full-Time Work)</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
                   type="text"
-                  placeholder="Stream Name (e.g. TechCorp Salary, Primary Consulting)"
+                  placeholder="e.g. Monthly Salary, Primary Job"
                   value={primaryIncomeName}
                   onChange={(e) => setPrimaryIncomeName(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900"
@@ -326,14 +326,14 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  Secondary Inflows (Freelancing, Business, Investments)
+                  Extra Income (Freelance, Side Business, Gifts)
                 </h4>
                 <button
                   type="button"
                   onClick={handleAddSecondaryIncome}
                   className="flex items-center gap-1 text-xs text-teal-700 hover:text-teal-900 font-bold cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add Stream
+                  <Plus className="w-3.5 h-3.5" /> Add Extra Income
                 </button>
               </div>
 
@@ -381,8 +381,7 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
         {step === 3 && (
           <div className="space-y-4">
             <p className="text-xs text-slate-500">
-              Enter your estimated or typical monthly living commitments. These will directly configure your category
-              budgets and 80%/100% warning thresholds.
+              Enter how much you plan to spend in each category. This sets your monthly spending budget.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
@@ -535,7 +534,7 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{isSubmitting ? 'Syncing to MongoDB Atlas...' : 'Build My Live Financial Dashboard'}</span>
+              <span>{isSubmitting ? 'Saving to Database...' : 'Save My Monthly Budget'}</span>
             </button>
           )}
         </div>

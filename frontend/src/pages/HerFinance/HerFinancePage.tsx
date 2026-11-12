@@ -233,19 +233,18 @@ const HerFinanceContent: React.FC = () => {
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-amber-900">Personalized Financial Baseline Needed</h4>
+              <h4 className="text-xs font-bold text-amber-900">Personalize Your Monthly Budget</h4>
               <p className="text-xs text-amber-700 leading-relaxed mt-0.5">
-                HerFinance requires your real income streams, monthly obligations, and savings targets to compute your
-                ledger without static demo numbers.
+                Add your monthly income and spending goals to get tailored calculations and smart tips.
               </p>
             </div>
           </div>
           <button
             onClick={() => setSetupModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#0f172a] hover:bg-slate-800 text-teal-400 font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#1e1b4b] hover:bg-slate-800 text-emerald-300 font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Complete Setup Wizard</span>
+            <span>Set Monthly Budget</span>
           </button>
         </div>
       )}
@@ -268,12 +267,12 @@ const HerFinanceContent: React.FC = () => {
       <Modal
         isOpen={incomeModalOpen}
         onClose={() => setIncomeModalOpen(false)}
-        title="Record New Income Inflow"
+        title="Add Income"
       >
         <form onSubmit={handleAddIncome} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Income Source / Description
+              Where is this income from?
             </label>
             <input
               type="text"
@@ -379,7 +378,7 @@ const HerFinanceContent: React.FC = () => {
               type="submit"
               className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
             >
-              Save Inflow
+              Save Income
             </button>
           </div>
         </form>
@@ -389,12 +388,12 @@ const HerFinanceContent: React.FC = () => {
       <Modal
         isOpen={expenseModalOpen}
         onClose={() => setExpenseModalOpen(false)}
-        title="Record New Outgoing Expense"
+        title="Add Expense"
       >
         <form onSubmit={handleAddExpense} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Expense Item / Merchant
+              What did you spend on?
             </label>
             <input
               type="text"
@@ -499,9 +498,9 @@ const HerFinanceContent: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+              className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
             >
-              Record Outflow
+              Save Expense
             </button>
           </div>
         </form>
@@ -511,16 +510,16 @@ const HerFinanceContent: React.FC = () => {
       <Modal
         isOpen={goalModalOpen}
         onClose={() => setGoalModalOpen(false)}
-        title="Launch New Savings Goal"
+        title="Create a Savings Goal"
       >
         <form onSubmit={handleAddGoal} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Goal Purpose / Title
+              What are you saving for?
             </label>
             <input
               type="text"
-              placeholder="e.g. 6-Month Emergency Cushion, Laptop Upgrade, Seed Capital"
+              placeholder="e.g. Emergency Fund, New Laptop, Vacation, Course"
               value={goalForm.title}
               onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })}
               required
@@ -621,9 +620,9 @@ const HerFinanceContent: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#0f172a] hover:bg-slate-800 text-teal-400 text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
             >
-              Initiate Goal
+              Save Goal
             </button>
           </div>
         </form>
