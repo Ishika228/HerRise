@@ -18,7 +18,7 @@ import { JobApplication } from '../../../types/career';
 import { Modal } from '../../../components/common/Modal';
 
 export const ApplicationTrackerView: React.FC = () => {
-  const { applications, addApplication, updateApplicationStatus, deleteApplication } = useHerCareer();
+  const { applications, addApplication, updateApplicationStatus, deleteApplication, profile } = useHerCareer();
   const { showToast } = useToast();
 
   const [filterStatus, setFilterStatus] = useState<string>('All');
@@ -84,7 +84,7 @@ I remain very enthusiastic about the opportunity to contribute my skills in mode
 Thank you very much for your time and consideration.
 
 Warm regards,
-Ananya Sharma`;
+${profile.fullName || 'Candidate'}`;
   };
 
   return (
@@ -385,3 +385,4 @@ Ananya Sharma`;
     </div>
   );
 };
+

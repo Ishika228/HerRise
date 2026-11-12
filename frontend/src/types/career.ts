@@ -164,3 +164,4 @@ export interface CareerRestartNarrative {
   transferableSkillsIdentified: string[];
   recommendedComebackStrategy: string;
 }
+

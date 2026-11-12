@@ -90,90 +90,160 @@ interface HerCareerContextType {
   askCareerAssistant: (prompt: string) => Promise<void>;
 }
 
-const defaultInitialResume: ResumeData = {
-  id: 'res-default-1',
-  title: 'Full Stack Engineer Resume (ATS Optimized)',
-  template: 'modern',
-  personalInfo: {
-    fullName: 'Ananya Sharma',
-    email: 'ananya.sharma@example.com',
-    phone: '+91 98765 43210',
-    location: 'Bengaluru, India',
-    portfolioUrl: 'https://ananya-dev.portfolio.io',
-    linkedinUrl: 'https://linkedin.com/in/ananya-sharma-dev',
-    githubUrl: 'https://github.com/ananya-codes'
-  },
-  summary:
-    'Dedicated Full Stack Developer with 3+ years of experience designing and scaling modern React, TypeScript, and cloud-backed microservices. Proven success leading cross-functional UI rewrites, improving client-side load latency by 35%, and architecting robust REST endpoints. Passionate about engineering accessible and scalable software.',
-  experience: [
-    {
-      id: 'exp-1',
-      title: 'Senior Frontend Engineer',
-      company: 'TechWave Solutions',
-      location: 'Bengaluru, India',
-      startDate: '2023-01',
-      endDate: '2025-10',
-      current: false,
-      description: 'Led core web application development for enterprise logistics analytics.',
-      highlights: [
-        'Architected high-throughput React dashboards handling 100K+ daily analytics events with sub-second rendering.',
-        'Engineered reusable Tailwind design system adopted across 4 distributed engineering teams.',
-        'Spearheaded CI/CD test automation, reducing regression bug escape rates by 28%.'
-      ]
+export function buildPersonalizedResume(user: any): ResumeData {
+  let storedResume: any = null;
+  try {
+    const raw = localStorage.getItem('hercareer_resume');
+    if (raw) storedResume = JSON.parse(raw);
+  } catch {}
+
+  const name = user?.name || storedResume?.fullName || 'Professional Member';
+  const email = user?.email || storedResume?.email || 'member@herrise.org';
+  const phone = user?.phone || storedResume?.phone || '';
+  const location = user?.location || storedResume?.location || 'India';
+  const targetRole =
+    user?.careerProfile?.targetRole ||
+    user?.role ||
+    storedResume?.headline ||
+    'Full Stack Developer';
+
+  const userSkills: string[] =
+    user?.skills && user.skills.length > 0
+      ? user.skills
+      : storedResume?.skills && storedResume.skills.length > 0
+      ? storedResume.skills
+      : ['React', 'Node.js', 'Python', 'Java', 'SQL', 'MongoDB', 'HTML', 'CSS'];
+
+  const rawExp = storedResume?.experience || user?.resumeData?.experience;
+  const experience =
+    rawExp && Array.isArray(rawExp) && rawExp.length > 0
+      ? rawExp.map((e: any, idx: number) => ({
+          id: `exp-${idx + 1}`,
+          title: e.role || e.title || targetRole,
+          company: e.company || 'Professional Organization',
+          location: e.location || location,
+          startDate: e.duration ? e.duration.split('-')[0]?.trim() : '2023-01',
+          endDate: e.duration ? e.duration.split('-')[1]?.trim() : 'Present',
+          current: !e.duration || e.duration.toLowerCase().includes('present'),
+          description: `Key contributor delivering solutions for ${e.company || 'organization'}.`,
+          highlights:
+            Array.isArray(e.bullets || e.highlights) && (e.bullets || e.highlights).length > 0
+              ? e.bullets || e.highlights
+              : [
+                  `Spearheaded development initiatives, improving turnaround speed by 25%.`,
+                  `Collaborated across cross-functional teams to deliver key technical milestones.`
+                ]
+        }))
+      : [
+          {
+            id: 'exp-1',
+            title: targetRole,
+            company: 'Professional Organization',
+            location: location,
+            startDate: '2023-01',
+            endDate: 'Present',
+            current: true,
+            description: `Key contributor delivering scalable applications using ${userSkills.slice(0, 3).join(', ')}.`,
+            highlights: [
+              `Architected and optimized modern application modules utilizing ${userSkills.slice(0, 3).join(', ')}, accelerating feature delivery by 30%.`,
+              `Spearheaded quality engineering and test automation to maintain high system reliability.`,
+              `Collaborated with cross-functional stakeholders to deliver milestones ahead of schedule.`
+            ]
+          }
+        ];
+
+  const rawEdu = storedResume?.education || user?.resumeData?.education;
+  const education =
+    rawEdu && Array.isArray(rawEdu) && rawEdu.length > 0
+      ? rawEdu.map((edu: any, idx: number) => ({
+          id: `edu-${idx + 1}`,
+          degree: edu.degree || 'Bachelor of Technology in Computer Science',
+          institution: edu.institution || 'University / Institute',
+          year: edu.year || '2023',
+          grade: edu.grade || 'First Class'
+        }))
+      : [
+          {
+            id: 'edu-1',
+            degree: user?.education || 'Bachelor of Technology / Computer Science',
+            institution: 'University / Institute',
+            year: '2023',
+            grade: 'Distinction'
+          }
+        ];
+
+  const summary =
+    storedResume?.summary ||
+    user?.resumeData?.summary ||
+    user?.bio ||
+    `Driven and results-oriented ${targetRole} with proven capabilities in ${userSkills.slice(0, 4).join(', ')}. Passionate about building reliable, accessible, and high-performance digital solutions with measurable user impact.`;
+
+  return {
+    id: `res-${user?.id || 'usr-101'}`,
+    userId: user?.id || 'usr-101',
+    title: `${targetRole} Resume (ATS Optimized)`,
+    template: 'modern',
+    personalInfo: {
+      fullName: name,
+      email: email,
+      phone: phone,
+      location: location,
+      portfolioUrl: storedResume?.portfolio || '',
+      linkedinUrl: storedResume?.linkedin || '',
+      githubUrl: ''
     },
-    {
-      id: 'exp-2',
-      title: 'Software Developer',
-      company: 'Innovate Labs',
-      location: 'Pune, India',
-      startDate: '2021-06',
-      endDate: '2022-12',
-      current: false,
-      description: 'Contributed to full stack features using Node.js, Express, and MongoDB.',
-      highlights: [
-        'Built secure OAuth2 authentication flow and token refresh architecture.',
-        'Designed database aggregation pipelines decreasing database query response time by 40%.'
-      ]
-    }
-  ],
-  education: [
-    {
-      id: 'edu-1',
-      degree: 'B.Tech in Computer Science & Engineering',
-      institution: 'National Institute of Technology',
-      year: '2021',
-      grade: '8.8 CGPA'
-    }
-  ],
-  skills: {
-    technical: ['React.js', 'TypeScript', 'Node.js', 'Express', 'MongoDB', 'Tailwind CSS', 'Next.js', 'Git & GitHub'],
-    soft: ['Technical Leadership', 'Cross-functional Collaboration', 'Problem Solving', 'Mentorship'],
-    tools: ['Docker', 'Postman', 'Figma', 'VS Code', 'Jira']
-  },
-  projects: [
-    {
-      id: 'proj-1',
-      title: 'HerRise AI – Career & Fintech Ecosystem',
-      description: 'Designed full-stack personal finance and AI career companion tailored for modern women professionals.',
-      technologies: ['React', 'TypeScript', 'MongoDB', 'Tailwind CSS', 'Groq LLM'],
-      link: 'https://github.com/ananya-codes/herrise'
-    }
-  ],
-  certifications: [
-    {
-      id: 'cert-1',
-      name: 'AWS Certified Cloud Practitioner',
-      issuer: 'Amazon Web Services',
-      date: '2024'
-    }
-  ],
-  achievements: [
-    'Winner of 2024 All-India Women In Tech Hackathon (1st place out of 450 teams)',
-    'Published tech article on React State Architectures read by 20,000+ developers'
-  ],
-  languages: ['English (Fluent)', 'Hindi (Native)'],
-  qualityScore: 92
-};
+    summary,
+    experience,
+    education,
+    skills: {
+      technical: userSkills,
+      soft: ['Cross-functional Collaboration', 'Analytical Problem Solving', 'Strategic Execution', 'Clear Communication'],
+      tools: ['Git & GitHub', 'VS Code', 'Postman', 'Docker']
+    },
+    projects: [
+      {
+        id: 'proj-1',
+        title: `${targetRole} Portfolio Application`,
+        description: `Full stack responsive application built with ${userSkills.slice(0, 3).join(', ')}.`,
+        technologies: userSkills.slice(0, 4),
+        link: 'https://github.com'
+      }
+    ],
+    certifications: [
+      {
+        id: 'cert-1',
+        name: `${targetRole} Professional Specialist`,
+        issuer: 'Industry Recognized Credential',
+        date: '2024'
+      }
+    ],
+    achievements: [
+      `Recognized for outstanding delivery in ${targetRole} initiatives.`,
+      `Consistently achieved zero-defect deployment across release sprints.`
+    ],
+    languages: ['English (Fluent)', 'Hindi (Native)'],
+    qualityScore: 92,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+const buildProfileFromUser = (u: any): CareerProfile => ({
+  userId: u?.id || 'usr-101',
+  fullName: u?.name || 'Member',
+  email: u?.email || 'member@herrise.org',
+  phone: u?.phone || '',
+  location: u?.location || 'India',
+  headline: u?.careerProfile?.targetRole || u?.role || 'Full Stack Developer',
+  targetRole: u?.careerProfile?.targetRole || u?.role || 'Full Stack Developer',
+  experienceLevel: (u?.experienceLevel?.includes('Senior') ? 'senior' : 'mid') as any,
+  yearsOfExperience: u?.careerProfile?.experienceYears || 2,
+  currentStatus: 'seeking',
+  workModePreference: 'remote',
+  primarySkills: u?.skills && u.skills.length > 0 ? u.skills.slice(0, 4) : ['React', 'Node.js', 'Python'],
+  secondarySkills: u?.skills && u.skills.length > 4 ? u.skills.slice(4) : ['SQL', 'MongoDB'],
+  readinessScore: u?.careerProfile?.readinessScore || 90,
+  bio: u?.bio || ''
+});
 
 const HerCareerContext = createContext<HerCareerContextType | undefined>(undefined);
 
@@ -182,36 +252,10 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { showToast } = useToast();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-  // 1. Profile State
+  // 1. Profile State initialized dynamically from authenticated user
   const [profile, setProfile] = useState<CareerProfile>(() => {
-    const saved = localStorage.getItem('hercareer_profile');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return {
-      userId: user?.id || 'usr-101',
-      fullName: user?.name || 'Ananya Sharma',
-      email: user?.email || 'ananya.sharma@example.com',
-      phone: user?.phone || '+91 98765 43210',
-      location: user?.location || 'Bengaluru, India',
-      headline: 'Full Stack Engineer & AI Enthusiast',
-      targetRole: user?.careerProfile?.targetRole || 'Senior Frontend Engineer',
-      experienceLevel: 'mid',
-      yearsOfExperience: 3,
-      currentStatus: 'seeking',
-      workModePreference: 'remote',
-      primarySkills: ['React', 'TypeScript', 'Node.js', 'Tailwind CSS'],
-      secondarySkills: ['MongoDB', 'System Design', 'Git CI/CD'],
-      readinessScore: 88,
-      bio: 'Passionate software engineer building modern, accessible web applications and advocating for women in technology.'
-    };
+    return buildProfileFromUser(user);
   });
-
-  useEffect(() => {
-    localStorage.setItem('hercareer_profile', JSON.stringify(profile));
-  }, [profile]);
 
   const updateProfile = (updates: Partial<CareerProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
@@ -228,19 +272,62 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     readinessScore: 88
   });
 
-  // 3. Resumes State
+  // 3. Resumes State initialized dynamically from authenticated user
   const [resumes, setResumes] = useState<ResumeData[]>(() => {
-    const saved = localStorage.getItem('hercareer_resumes');
-    if (saved) {
-      try {
+    const personalized = buildPersonalizedResume(user);
+    try {
+      const saved = localStorage.getItem('hercareer_resumes');
+      if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return [defaultInitialResume];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Remove any stale hardcoded Ananya Sharma resumes
+          const valid = parsed.filter(
+            (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
+          );
+          if (valid.length > 0) return valid;
+        }
+      }
+    } catch {}
+    return [personalized];
   });
 
-  const [activeResume, setActiveResume] = useState<ResumeData>(() => resumes[0] || defaultInitialResume);
+  const [activeResume, setActiveResume] = useState<ResumeData>(() => resumes[0] || buildPersonalizedResume(user));
+
+  // Dynamic user sync: when authenticated user changes or logs in, calibrate profile & resume
+  useEffect(() => {
+    if (user && user.email) {
+      const personalized = buildPersonalizedResume(user);
+      const userProf = buildProfileFromUser(user);
+      setProfile(userProf);
+
+      setResumes((prev) => {
+        const filtered = prev.filter(
+          (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
+        );
+        const hasUserResume = filtered.some((r) => r.personalInfo.email === user.email || r.personalInfo.fullName === user.name);
+        if (!hasUserResume || filtered.length === 0) {
+          return [personalized, ...filtered];
+        }
+        return filtered;
+      });
+
+      setActiveResume((prev) => {
+        if (
+          !prev ||
+          prev.personalInfo?.fullName?.includes('Ananya') ||
+          prev.personalInfo?.email?.includes('ananya') ||
+          (user.name && prev.personalInfo.fullName !== user.name)
+        ) {
+          return personalized;
+        }
+        return prev;
+      });
+    }
+  }, [user?.id, user?.email, user?.name, user?.skills]);
+
+  useEffect(() => {
+    localStorage.setItem('hercareer_profile', JSON.stringify(profile));
+  }, [profile]);
 
   useEffect(() => {
     localStorage.setItem('hercareer_resumes', JSON.stringify(resumes));
@@ -886,3 +973,4 @@ export const useHerCareer = () => {
   }
   return context;
 };
+

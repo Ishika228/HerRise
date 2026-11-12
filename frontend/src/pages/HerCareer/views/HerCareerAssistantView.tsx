@@ -138,3 +138,4 @@ export const HerCareerAssistantView: React.FC = () => {
     </div>
   );
 };
+

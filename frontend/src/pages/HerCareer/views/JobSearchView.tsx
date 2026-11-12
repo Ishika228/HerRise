@@ -341,3 +341,4 @@ export const JobSearchView: React.FC = () => {
     </div>
   );
 };
+

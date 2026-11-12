@@ -250,3 +250,4 @@ export const CareerRestartView: React.FC = () => {
     </div>
   );
 };
+

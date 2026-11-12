@@ -317,3 +317,4 @@ export const ResumeAnalyzerView: React.FC = () => {
     </div>
   );
 };
+
