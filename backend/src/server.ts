@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import { config } from './config/env.js';
+import { connectDatabase } from './config/database.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -29,12 +31,27 @@ app.use(requestLogger);
 
 // API Health Check
 app.get('/api/health', (req: Request, res: Response) => {
+  const mongoStatusMap: Record<number, string> = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'HerRise AI Backend API Service',
     version: '1.0.0',
-    environment: config.nodeEnv
+    environment: config.nodeEnv,
+    database: {
+      type: 'mongodb',
+      status: mongoStatusMap[mongoose.connection.readyState] || 'disconnected',
+      dbName: config.mongoDbName
+    },
+    ai: {
+      groqConnected: !!config.groqApiKey
+    }
   });
 });
 
@@ -61,12 +78,15 @@ app.use(errorHandler);
 
 // Start Server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(config.port, () => {
+  app.listen(config.port, async () => {
     console.log(`=========================================`);
     console.log(`🌸 HerRise AI Backend API Server`);
     console.log(`🚀 Live on: http://localhost:${config.port}`);
     console.log(`🩺 Health check: http://localhost:${config.port}/api/health`);
     console.log(`=========================================`);
+
+    // Initialize MongoDB connection
+    await connectDatabase();
   });
 }
 

@@ -22,6 +22,8 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   jwtSecret: process.env.JWT_SECRET || 'herrise_secret_key_default',
-  groqApiKey: process.env.GROQ_API_KEY || ''
+  groqApiKey: process.env.GROQ_API_KEY || '',
+  mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/herrise_db',
+  mongoDbName: process.env.MONGODB_DB_NAME || 'herrise_db'
 };
 
