@@ -26,6 +26,13 @@ export const OnboardingPage: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
+  // If user already registered with goals & resume data, proceed straight to dashboard
+  React.useEffect(() => {
+    if (user?.goals && user.goals.length > 0 && user?.resumeData) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   // Step 1: Goals
   const goalOptions = [
     { id: 'g1', label: 'I want to manage my finances', icon: Wallet, color: 'text-purple-700 bg-purple-50' },

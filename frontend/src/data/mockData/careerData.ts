@@ -114,6 +114,44 @@ export const initialJobs: Job[] = [
     postedDate: '6 days ago',
     featured: false,
     returneeFriendly: true
+  },
+  {
+    id: 'job-7',
+    title: 'Full Stack Developer (MERN Stack)',
+    company: 'Zenith Tech Solutions',
+    logo: '🚀',
+    location: 'Remote / Hybrid (India)',
+    workMode: 'Remote',
+    employmentType: 'Full-time',
+    experienceLevel: 'Mid-level',
+    salaryRange: '₹14,00,000 - ₹20,00,000 / yr',
+    category: 'Technology & Engineering',
+    skills: ['React.js', 'Node.js', 'Express', 'MongoDB', 'JavaScript', 'TypeScript', 'Git'],
+    description: 'Build enterprise-grade modern web applications and microservices using the MERN stack. Inclusive culture with dedicated returnship and flexible mentorship tracks.',
+    isSaved: true,
+    hasApplied: false,
+    postedDate: 'Just now',
+    featured: true,
+    returneeFriendly: true
+  },
+  {
+    id: 'job-8',
+    title: 'Software Engineer - Python & Full Stack',
+    company: 'DataNova Intelligent Systems',
+    logo: '⚡',
+    location: 'Remote (Anywhere)',
+    workMode: 'Remote',
+    employmentType: 'Full-time',
+    experienceLevel: 'Mid-level',
+    salaryRange: '₹13,00,000 - ₹18,00,000 / yr',
+    category: 'Technology & Engineering',
+    skills: ['Python', 'React', 'SQL', 'Node.js', 'HTML/CSS', 'Git'],
+    description: 'Design and deploy scalable full stack systems, RESTful APIs, and data dashboards. Flexible hours with continuous learning stipends.',
+    isSaved: false,
+    hasApplied: false,
+    postedDate: '1 day ago',
+    featured: true,
+    returneeFriendly: true
   }
 ];
 

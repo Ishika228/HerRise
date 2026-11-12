@@ -4,7 +4,7 @@ import { store, User } from '../data/mockStore.js';
 import { UserModel } from '../models/UserModel.js';
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { name, email, password, phone, location, preferredLanguage, resumeData } = req.body;
+  const { name, email, password, phone, location, preferredLanguage, resumeData, goals } = req.body;
 
   if (!name || !email) {
     return res.status(400).json({ success: false, error: 'Name and email are required' });
@@ -18,15 +18,17 @@ export const registerUser = async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, error: 'An account with this email already exists' });
       }
 
+      const parsedGoals = Array.isArray(goals) ? goals : (goals ? [goals] : []);
+
       const userDoc = await UserModel.create({
         name,
         email: email.toLowerCase(),
         phone: phone || (resumeData?.phone || ''),
         location: location || (resumeData?.location || ''),
         preferredLanguage: preferredLanguage || 'English',
-        goals: [],
+        goals: parsedGoals,
         skills: resumeData?.skills || [],
-        profileCompleted: resumeData ? 80 : 40,
+        profileCompleted: resumeData ? 85 : 50,
         resumeData: resumeData || undefined
       });
 
@@ -48,6 +50,8 @@ export const registerUser = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'An account with this email already exists' });
   }
 
+  const parsedGoals = Array.isArray(goals) ? goals : (goals ? [goals] : []);
+
   const newUser: User = {
     id: `usr-${Date.now()}`,
     name,
@@ -55,9 +59,9 @@ export const registerUser = async (req: Request, res: Response) => {
     phone: phone || '',
     location: location || '',
     preferredLanguage: preferredLanguage || 'English',
-    goals: [],
-    skills: [],
-    profileCompleted: 40,
+    goals: parsedGoals,
+    skills: resumeData?.skills || [],
+    profileCompleted: resumeData ? 85 : 50,
     createdAt: new Date().toISOString()
   };
 

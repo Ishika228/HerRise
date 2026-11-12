@@ -127,13 +127,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: data.name,
-          email: data.email,
+          name: data.name || data.resumeData?.fullName,
+          email: data.email || data.resumeData?.email,
           password: data.password || 'password123',
           phone: data.phone || data.resumeData?.phone,
           location: data.location || data.resumeData?.location,
           preferredLanguage: data.language || language,
-          resumeData: data.resumeData
+          resumeData: data.resumeData,
+          goals: data.goals || []
         })
       });
       const json = await res.json();
