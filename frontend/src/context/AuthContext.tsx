@@ -19,7 +19,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
       const stored = localStorage.getItem('herrise_user_session');
-      return stored ? JSON.parse(stored) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.name?.includes('Ananya') || parsed?.email?.includes('ananya')) {
+          localStorage.removeItem('herrise_user_session');
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }

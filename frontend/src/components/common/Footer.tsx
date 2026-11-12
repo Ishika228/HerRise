@@ -158,14 +158,6 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Demo Notice Banner */}
-        <div className="mt-8 p-4 rounded-xl bg-purple-950/40 border border-purple-800/30 flex items-start sm:items-center gap-3 text-xs text-purple-200/90">
-          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
-          <p className="leading-relaxed">
-            <strong className="text-white font-semibold">Demo Notice:</strong> HerRise AI is an interactive frontend application built with realistic simulated data. All loan offers, job postings, financial products, user testimonials, and mentor bookings are illustrative demonstrations created to showcase full platform functionality.
-          </p>
-        </div>
-
         {/* Bottom Bar */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
           <p>© 2026 HerRise AI Platform. All rights reserved.</p>

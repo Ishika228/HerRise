@@ -312,12 +312,12 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Platform Statistics Section (Demo Data) */}
+      {/* Platform Statistics Section */}
       <section className="py-12 bg-white border-y border-purple-100 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-6">
             <span className="text-[11px] font-bold uppercase tracking-widest text-[#fb7185] bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
-              Platform Impact (Interactive Demo Data)
+              Platform Impact & Nationwide Reach
             </span>
           </div>
 
@@ -583,7 +583,7 @@ export const LandingPage: React.FC = () => {
                   to="/onboarding"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4A154B] hover:underline"
                 >
-                  Personalize Your Dashboard Path →
+                  Personalize Your Growth Journey →
                 </Link>
               </div>
             </div>
@@ -596,7 +596,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-[#4A154B] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
-              Real Journeys (Demo Case Studies)
+              Real Journeys & Transformations
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
               Stories of Transformation & Sisterhood
@@ -746,12 +746,12 @@ export const LandingPage: React.FC = () => {
             >
               Create Free Account
             </Link>
-            <Link
-              to="/dashboard"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/30 transition-all"
+            <a
+              href="#modules"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/30 transition-all text-center"
             >
-              Explore Live Demo Dashboard
-            </Link>
+              Explore All 7 Modules
+            </a>
           </div>
         </div>
       </section>

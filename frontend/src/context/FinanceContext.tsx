@@ -22,12 +22,15 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     try {
       const hfTxs = localStorage.getItem('herfinance_transactions');
-      if (hfTxs) {
+      if (hfTxs && !hfTxs.includes('tx-101') && !hfTxs.includes('Consulting Retainer')) {
         const parsed = JSON.parse(hfTxs);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
       const stored = localStorage.getItem('herrise_finance_transactions');
-      return stored ? JSON.parse(stored) : [];
+      if (stored && !stored.includes('tx-101') && !stored.includes('Consulting Retainer')) {
+        return JSON.parse(stored);
+      }
+      return [];
     } catch {
       return [];
     }
@@ -36,12 +39,15 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(() => {
     try {
       const hfGoals = localStorage.getItem('herfinance_goals');
-      if (hfGoals) {
+      if (hfGoals && !hfGoals.includes('goal-emergency') && !hfGoals.includes('180000')) {
         const parsed = JSON.parse(hfGoals);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
       const stored = localStorage.getItem('herrise_finance_goals');
-      return stored ? JSON.parse(stored) : [];
+      if (stored && !stored.includes('goal-emergency') && !stored.includes('180000')) {
+        return JSON.parse(stored);
+      }
+      return [];
     } catch {
       return [];
     }
@@ -50,7 +56,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(() => {
     try {
       const hfBudgets = localStorage.getItem('herfinance_budgets');
-      if (hfBudgets) {
+      if (hfBudgets && !hfBudgets.includes('53000') && !hfBudgets.includes('usr-101')) {
         const parsed = JSON.parse(hfBudgets);
         if (parsed?.categories && Array.isArray(parsed.categories) && parsed.categories.length > 0) {
           return parsed.categories.map((c: any) => ({

@@ -101,6 +101,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick })
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Return to Website Button */}
+        <Link
+          to="/"
+          className="flex items-center gap-1.5 bg-white hover:bg-purple-50 text-[#4A154B] border border-purple-200 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+          title="Return to Main Marketing Website"
+        >
+          <Globe className="w-3.5 h-3.5 text-[#4A154B]" />
+          <span className="hidden sm:inline">Main Website</span>
+        </Link>
+
         {/* Quick AI Assistant Launch Pill */}
         <button
           onClick={() => navigate('/ai-assistant')}

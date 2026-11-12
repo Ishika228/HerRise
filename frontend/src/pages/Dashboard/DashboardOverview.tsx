@@ -41,6 +41,13 @@ export const DashboardOverview: React.FC = () => {
   const { orders } = useMarket();
   const navigate = useNavigate();
 
+  // If visitor is unauthenticated, redirect to the marketing website
+  React.useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
   const enrolledCourse = initialCourses.find((c) => c.isEnrolled) || initialCourses[0];
   const upcomingWorkshop = initialWorkshops[0];
 

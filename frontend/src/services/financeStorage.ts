@@ -300,7 +300,14 @@ export const blankFinancialProfile: FinancialProfile = {
 export function getStoredProfile(): FinancialProfile {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.fullName?.includes('Ananya') || parsed?.email?.includes('ananya') || parsed?.monthlyIncome === 145000) {
+        localStorage.removeItem(STORAGE_KEYS.PROFILE);
+        return blankFinancialProfile;
+      }
+      return parsed;
+    }
     return blankFinancialProfile;
   } catch {
     return blankFinancialProfile;
@@ -314,10 +321,16 @@ export function saveStoredProfile(profile: FinancialProfile): void {
 export function getStoredTransactions(): TransactionRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    if (raw) return JSON.parse(raw);
-    return isFinanceSetupCompleted() ? initialTransactionsList : [];
+    if (raw) {
+      if (raw.includes('tx-101') || raw.includes('Consulting Retainer') || raw.includes('Artisan Infusions')) {
+        localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
+        return [];
+      }
+      return JSON.parse(raw);
+    }
+    return [];
   } catch {
-    return isFinanceSetupCompleted() ? initialTransactionsList : [];
+    return [];
   }
 }
 
@@ -328,42 +341,33 @@ export function saveStoredTransactions(transactions: TransactionRecord[]): void 
 export function getStoredBudget(): BudgetRecord {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
-    if (raw) return JSON.parse(raw);
-
-    if (!isFinanceSetupCompleted()) {
-      return {
-        id: 'b-new',
-        userId: 'usr-new',
-        totalBudget: 0,
-        month: 'Current Month',
-        categories: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+    if (raw) {
+      if (raw.includes('usr-101') || raw.includes('53000')) {
+        localStorage.removeItem(STORAGE_KEYS.BUDGETS);
+      } else {
+        return JSON.parse(raw);
+      }
     }
 
-    // Compute initial spent from initial transactions
-    const budget = { ...initialBudget };
-    const txs = getStoredTransactions();
-    budget.categories = budget.categories.map((cat) => {
-      const spent = txs
-        .filter((t) => t.type === 'expense' && (t.category === cat.categoryName || cat.categoryName.includes(t.category) || t.category.includes(cat.categoryName)))
-        .reduce((sum, t) => sum + t.amount, 0);
-      return { ...cat, spent };
-    });
-    return budget;
+    return {
+      id: 'b-new',
+      userId: 'usr-new',
+      totalBudget: 0,
+      month: 'Current Month',
+      categories: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
   } catch {
-    return isFinanceSetupCompleted()
-      ? initialBudget
-      : {
-          id: 'b-new',
-          userId: 'usr-new',
-          totalBudget: 0,
-          month: 'Current Month',
-          categories: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+    return {
+      id: 'b-new',
+      userId: 'usr-new',
+      totalBudget: 0,
+      month: 'Current Month',
+      categories: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
   }
 }
 
@@ -374,10 +378,16 @@ export function saveStoredBudget(budget: BudgetRecord): void {
 export function getStoredGoals(): SavingsGoalRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.GOALS);
-    if (raw) return JSON.parse(raw);
-    return isFinanceSetupCompleted() ? initialSavingsGoalsList : [];
+    if (raw) {
+      if (raw.includes('goal-emergency') || raw.includes('MacBook') || raw.includes('180000')) {
+        localStorage.removeItem(STORAGE_KEYS.GOALS);
+        return [];
+      }
+      return JSON.parse(raw);
+    }
+    return [];
   } catch {
-    return isFinanceSetupCompleted() ? initialSavingsGoalsList : [];
+    return [];
   }
 }
 

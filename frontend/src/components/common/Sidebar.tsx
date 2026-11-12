@@ -15,7 +15,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useMarket } from '../../context/MarketContext';
@@ -63,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="flex flex-col h-full bg-white border-r border-purple-100 select-none">
       {/* Brand Header */}
       <div className="h-20 flex items-center justify-between px-4 border-b border-purple-100">
-        <NavLink to="/dashboard" className="flex items-center gap-3 overflow-hidden">
+        <NavLink to="/" className="flex items-center gap-3 overflow-hidden" title="HerRise AI Website">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#e11d48] flex items-center justify-center text-white shrink-0 shadow-md">
             <Sparkles className="w-5 h-5 text-pink-200" />
           </div>
@@ -89,6 +90,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        {/* Back to Website Link */}
+        <div className="pb-3">
+          <NavLink
+            to="/"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-[#4A154B] bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200/80 transition-all group shadow-2xs"
+            title="Return to Main Website"
+          >
+            <Globe className="w-4 h-4 text-[#4A154B] shrink-0 group-hover:rotate-12 transition-transform" />
+            {!collapsed && <span>Main Website</span>}
+          </NavLink>
+        </div>
+
         <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
           {!collapsed ? 'Modules & Platform' : '•••'}
         </div>

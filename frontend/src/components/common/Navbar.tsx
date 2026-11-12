@@ -27,9 +27,6 @@ export const Navbar: React.FC = () => {
                 <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-[#3b0764] via-[#4A154B] to-[#be185d] bg-clip-text text-transparent">
                   HerRise<span className="text-[#fb7185] font-black">AI</span>
                 </span>
-                <span className="hidden sm:inline-flex items-center text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-purple-50 text-[#4A154B] border border-purple-200">
-                  Demo
-                </span>
               </div>
               <p className="text-[11px] font-medium text-gray-500 tracking-wide hidden sm:block">
                 Her Future. Her Finance. Her Freedom.
