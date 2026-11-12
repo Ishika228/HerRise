@@ -531,3 +531,4 @@ export function downloadAtsPdf(data: AtsResumeData): void {
   const safeName = (data.fullName || 'Candidate').replace(/\s+/g, '_');
   pdf.save(`${safeName}_ATS_Resume.pdf`);
 }
+

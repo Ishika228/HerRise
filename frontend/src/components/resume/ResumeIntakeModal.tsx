@@ -369,28 +369,6 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
               Upload your existing resume for automated AI extraction, or build a brand-new ATS-optimized resume in under 2 minutes.
             </p>
           </div>
-
-          {/* Download Quick Pills if Resume has content */}
-          {(resumeData.summary || resumeData.experience.length > 0) && (
-            <div className="flex sm:flex-col gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleDownloadPdf}
-                className="flex items-center gap-1.5 bg-white text-[#4A154B] px-3.5 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-pink-50 transition-all cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download PDF</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadWord}
-                className="flex items-center gap-1.5 bg-purple-900/60 hover:bg-purple-900 text-white border border-purple-400/40 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-              >
-                <FileDown className="w-3.5 h-3.5" />
-                <span>Download Word (.docx)</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Tab Switcher */}
@@ -786,44 +764,26 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                   </div>
                 </div>
 
-                {/* Instant Download & Proceed Bar */}
+                {/* Extracted Details Verified & Save Bar */}
                 <div className="bg-purple-50/60 p-5 rounded-2xl border border-purple-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
                     <h5 className="text-sm font-extrabold text-[#4A154B] flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>ATS-Compliant Resume Ready</span>
+                      <span>Resume Details Extracted Successfully</span>
                     </h5>
                     <p className="text-xs text-gray-600 mt-0.5">
-                      Formatted in single-column standard typography for 100% parser readability.
+                      Review or edit your extracted details above before continuing to your profile.
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleDownloadPdf}
-                      className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Download PDF</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDownloadWord}
-                      className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
-                    >
-                      <FileDown className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Download Word (.docx)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleFinalSubmit}
-                      className="flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer"
-                    >
-                      <span>Save & Complete Profile</span>
-                      <ArrowRight className="w-4 h-4 text-pink-300" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFinalSubmit}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    <span>Save & Continue to Profile</span>
+                    <ArrowRight className="w-4 h-4 text-pink-300" />
+                  </button>
                 </div>
               </div>
             )}
@@ -1441,3 +1401,4 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     </div>
   );
 };
+

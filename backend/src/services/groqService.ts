@@ -9,6 +9,7 @@ export interface GroqChatOptions {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  responseFormat?: { type: 'json_object' };
 }
 
 /**
@@ -49,7 +50,8 @@ export async function callGroqChat(
           model,
           messages,
           temperature,
-          max_tokens
+          max_tokens,
+          ...(options.responseFormat ? { response_format: options.responseFormat } : {})
         })
       });
 
