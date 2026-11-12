@@ -129,3 +129,44 @@ export function generateHerFinanceAIResponse(
   };
 }
 
+/**
+ * Asynchronously query the Groq LLM API on the backend with client fallback
+ */
+export async function fetchHerFinanceAIResponse(
+  userQuery: string,
+  context: FinanceAIContext
+): Promise<{ text: string; actionSuggestion?: { label: string; tab: string }; source: 'groq-llm' | 'context-engine' }> {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+  try {
+    const res = await fetch(`${backendUrl}/api/finance/ai-consult`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: userQuery })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.data?.response) {
+        return {
+          text: data.data.response,
+          source: data.source || 'groq-llm',
+          actionSuggestion: { label: 'Review Budget Limits', tab: 'budget' }
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[HerFinance] Backend Groq query failed, falling back to local context engine:', err);
+  }
+
+  // Graceful fallback to grounded local intelligence
+  const localResult = generateHerFinanceAIResponse(userQuery, context);
+  return {
+    ...localResult,
+    source: 'context-engine'
+  };
+}
+
+

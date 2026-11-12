@@ -1,4 +1,20 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+
+// Look for .env in backend/ directory first, then root/current working directory
+const candidates = [
+  path.resolve(process.cwd(), 'backend', '.env'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '..', '..', '.env')
+];
+
+for (const envPath of candidates) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    break;
+  }
+}
 dotenv.config();
 
 export const config = {

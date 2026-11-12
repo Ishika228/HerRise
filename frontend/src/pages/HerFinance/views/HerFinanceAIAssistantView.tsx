@@ -15,7 +15,10 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useHerFinance } from '../../../context/HerFinanceContext';
-import { generateHerFinanceAIResponse } from '../../../services/financeAiService';
+import {
+  generateHerFinanceAIResponse,
+  fetchHerFinanceAIResponse
+} from '../../../services/financeAiService';
 import { HerFinanceTab } from '../HerFinanceLayout';
 
 interface ChatMessage {
@@ -81,7 +84,7 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
   const savingsRate =
     totalIncome > 0 ? Math.max(0, Math.round((netBalance / totalIncome) * 100)) : 0;
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const query = (textToSend || inputQuery).trim();
     if (!query) return;
 
@@ -96,9 +99,8 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
     setInputQuery('');
     setIsTyping(true);
 
-    // Context-aware response generation with slight human-like delay
-    setTimeout(() => {
-      const response = generateHerFinanceAIResponse(query, {
+    try {
+      const response = await fetchHerFinanceAIResponse(query, {
         profile,
         transactions,
         goals,
@@ -115,8 +117,29 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+    } catch (err) {
+      console.error('Error fetching AI response:', err);
+      // Fallback
+      const fallbackResponse = generateHerFinanceAIResponse(query, {
+        profile,
+        transactions,
+        goals,
+        activeBudget: budget,
+        hasUserPermission: true
+      });
+
+      const aiMsg: ChatMessage = {
+        id: 'ai-' + Date.now(),
+        sender: 'ai',
+        text: fallbackResponse.text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actionSuggestion: fallbackResponse.actionSuggestion
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+    } finally {
       setIsTyping(false);
-    }, 600);
+    }
   };
 
   const handleClearHistory = () => {
@@ -188,8 +211,12 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-slate-900">HerFinance AI Copilot</h3>
+                <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  Groq LPU™ Cloud AI
+                </span>
                 <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
                   Grounded In User Ledger
                 </span>

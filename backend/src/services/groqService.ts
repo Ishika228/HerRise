@@ -13,7 +13,7 @@ export interface GroqChatOptions {
 
 /**
  * Call Groq Cloud API using native fetch
- * Supported models include: 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'
+ * Supported models on this key: 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'openai/gpt-oss-120b'
  */
 export async function callGroqChat(
   messages: GroqChatMessage[],
@@ -26,34 +26,49 @@ export async function callGroqChat(
     return 'GROQ_API_KEY is missing. Please set your key in backend/.env to enable live AI responses.';
   }
 
-  const model = options.model || 'llama-3.3-70b-versatile';
+  const modelCandidates = [
+    options.model || 'qwen/qwen3.8-27b',
+    'openai/gpt-oss-20b',
+    'openai/gpt-oss-120b'
+  ];
+
   const temperature = options.temperature ?? 0.7;
   const max_tokens = options.maxTokens ?? 1024;
 
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens
-      })
-    });
+  let lastError: any = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq API returned HTTP ${response.status}: ${errorText}`);
+  for (const model of modelCandidates) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature,
+          max_tokens
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Groq API returned HTTP ${response.status} for ${model}: ${errorText}`);
+      }
+
+      const data: any = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        return content;
+      }
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[GroqService] Model ${model} failed, trying next candidate...`);
     }
-
-    const data: any = await response.json();
-    return data.choices?.[0]?.message?.content || 'No response generated from Groq.';
-  } catch (error: any) {
-    console.error('[GroqService Error]:', error);
-    throw error;
   }
+
+  throw lastError || new Error('All Groq model candidates failed.');
 }
+
