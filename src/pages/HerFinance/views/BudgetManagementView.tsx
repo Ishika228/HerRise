@@ -401,3 +401,4 @@ export const BudgetManagementView: React.FC = () => {
     </div>
   );
 };
+

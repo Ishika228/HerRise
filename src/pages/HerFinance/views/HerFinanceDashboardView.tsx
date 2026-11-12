@@ -355,3 +355,4 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
     </div>
   );
 };
+

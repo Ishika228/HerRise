@@ -73,3 +73,4 @@ export async function processReceiptOcr(fileOrTemplateUrl: string): Promise<OcrE
     detectedPaymentMethod: 'UPI'
   };
 }
+

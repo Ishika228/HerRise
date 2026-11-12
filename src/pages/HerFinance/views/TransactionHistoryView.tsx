@@ -223,3 +223,4 @@ export const TransactionHistoryView: React.FC = () => {
     </div>
   );
 };
+

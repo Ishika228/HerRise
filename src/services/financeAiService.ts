@@ -128,3 +128,4 @@ export function generateHerFinanceAIResponse(
     actionSuggestion: { label: 'Overview Dashboard', tab: 'dashboard' }
   };
 }
+

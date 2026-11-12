@@ -373,3 +373,4 @@ $$\\text{FIRE Number} = \\text{Annual Living Expenses} \\times 25$$
     completed: false
   }
 ];
+

@@ -329,3 +329,4 @@ export const FinancialLearningView: React.FC = () => {
     </div>
   );
 };
+
