@@ -32,42 +32,53 @@ export interface UserProfile {
     desiredSalary: string;
     workMode: string;
     readinessScore: number;
+    matchRolesCount?: number;
   };
   businessProfile?: {
     ventureName: string;
+    pitch?: string;
     industry: string;
     stage: string;
     monthlyTargetRevenue: number;
     seedCapitalNeeded: number;
     monthlyFixedCosts: number;
-    monthlyVariableCosts: number;
-    breakEvenRevenue: number;
-    projectedNetProfit: number;
+    monthlyVariableCosts?: number;
+    averageUnitCost?: number;
+    breakEvenRevenue?: number;
+    projectedNetProfit?: number;
   };
   fundProfile?: {
-    ventureName: string;
+    ventureName?: string;
+    enterpriseName?: string;
     capitalNeeded: number;
     fundingType: string;
-    collateral: boolean;
+    stage?: string;
+    collateral?: boolean;
+    hasCollateral?: boolean;
     annualTurnover: number;
-    loanReadinessScore: number;
-    estimatedEmi: number;
+    loanReadinessScore?: number;
+    estimatedEmi?: number;
   };
   marketProfile?: {
     storeName: string;
     category: string;
     productTitle: string;
-    price: number;
-    cost: number;
-    stock: number;
-    marginPercent: number;
-    projectedMonthlyRevenue: number;
+    price?: number;
+    cost?: number;
+    stock?: number;
+    sellingPrice?: number;
+    unitCost?: number;
+    stockQuantity?: number;
+    monthlyTargetUnits?: number;
+    marginPercent?: number;
+    projectedMonthlyRevenue?: number;
   };
   learnProfile?: {
     targetDomain: string;
     currentLevel: string;
     weeklyHours: number;
-    estimatedWeeks: number;
+    estimatedWeeks?: number;
+    primaryGoal?: string;
   };
   networkProfile?: {
     mentorshipDomain: string;

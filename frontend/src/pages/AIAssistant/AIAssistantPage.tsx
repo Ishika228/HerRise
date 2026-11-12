@@ -23,8 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   assistantTopics,
-  initialAssistantMessages,
-  smartAIResponses
+  initialAssistantMessages
 } from '../../data/mockData/aiPromptsData';
 import { ChatMessage } from '../../types';
 
@@ -71,20 +70,25 @@ export const AIAssistantPage: React.FC = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate smart AI response generation
-    await new Promise((res) => setTimeout(res, 800));
+    // Call Live Backend Groq AI Endpoint
+    let reply = '';
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/finance/ai-consult`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      const data = await res.json();
+      if (data?.data?.response) {
+        reply = data.data.response;
+      }
+    } catch (err) {
+      console.warn('Groq AI Backend request failed, generating contextual fallback:', err);
+    }
 
-    let reply = smartAIResponses['default'];
-    const lower = query.toLowerCase();
-
-    if (lower.includes('budget') || lower.includes('50/30/20') || lower.includes('money') || lower.includes('sip') || lower.includes('invest')) {
-      reply = smartAIResponses['budget'];
-    } else if (lower.includes('break') || lower.includes('gap') || lower.includes('resume') || lower.includes('interview') || lower.includes('job')) {
-      reply = smartAIResponses['break'];
-    } else if (lower.includes('price') || lower.includes('margin') || lower.includes('cost') || lower.includes('cogs') || lower.includes('business')) {
-      reply = smartAIResponses['margin'];
-    } else if (lower.includes('pitch') || lower.includes('fund') || lower.includes('grant') || lower.includes('loan') || lower.includes('angel')) {
-      reply = smartAIResponses['pitch'];
+    if (!reply) {
+      reply = `Thank you for asking: "${query}". As your HerRise AI copilot, I recommend breaking down this milestone: verify your active budget allocation in HerFinance, define clear unit economics or role milestones, and test your targets with our live calculators.`;
     }
 
     const assistantMessage: ChatMessage = {

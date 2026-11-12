@@ -119,15 +119,15 @@ export const initialJobs: Job[] = [
 
 export const initialResumeData: ResumeData = {
   personalInfo: {
-    fullName: 'Ananya Sharma',
-    email: 'ananya.sharma@example.com',
-    phone: '+91 98765 43210',
-    location: 'Bengaluru, Karnataka',
-    linkedin: 'linkedin.com/in/ananya-sharma-demo',
-    portfolio: 'ananyasharma.dev',
-    careerBreakReason: '2-year planned sabbatical for family caregiving and completing advanced certifications in Financial Analytics & Modern Web Development.'
+    fullName: '',
+    email: '',
+    phone: '',
+    location: '',
+    linkedin: '',
+    portfolio: '',
+    careerBreakReason: ''
   },
-  summary: 'Versatile professional with 5+ years of combined experience in digital marketing, project coordination, and data-driven business growth. Proven track record of scaling engagement by 140% and managing ₹25L+ quarterly budgets. Experienced in cross-functional team leadership with passion for inclusive fintech and digital commerce.',
+  summary: 'Dedicated professional seeking high-impact opportunities with continuous learning and collaborative execution.',
   experiences: [
     {
       id: 'exp-1',

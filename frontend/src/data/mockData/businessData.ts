@@ -72,14 +72,14 @@ export const curatedBusinessIdeas: BusinessIdea[] = [
 ];
 
 export const sampleBusinessPlan: BusinessPlan = {
-  businessName: 'VedaBotanica Wellness Labs',
-  tagline: 'Pure Himalayan Herbal Infusions for Daily Vitality & Mindful Living',
+  businessName: 'HerRise Venture Project',
+  tagline: 'Sustainable & Mindful Products for Daily Wellness and Conscious Living',
   category: 'Food & Wellness D2C',
   problemStatement: 'Modern urban working professionals face severe daily stress, disrupted sleep cycles, and digestive issues. Commercial tea bags use bleached paper, micro-plastics, artificial flavor oils, and low-grade dust with negligible therapeutic benefits.',
-  solution: 'VedaBotanica produces small-batch, loose-leaf wellness infusions combining whole botanicals (ashwagandha, chamomile, tulsi, rhododendron petals) packaged in airtight, UV-blocking biodegradable tins with direct farmer transparency.',
+  solution: 'Our venture produces small-batch, loose-leaf wellness infusions combining whole botanicals (ashwagandha, chamomile, tulsi, rhododendron petals) packaged in airtight, UV-blocking biodegradable tins with direct farmer transparency.',
   targetAudience: 'Health-conscious women aged 24-48, working professionals, yoga practitioners, and corporate gifting managers seeking premium clean-label daily self-care.',
   marketOpportunity: 'The South Asian herbal and functional wellness market is projected at $4.2B with a 16.4% CAGR, driven by natural preventative health priorities.',
-  competitorAnalysis: 'Mass-market green teas compete purely on discounted price with synthetic aromas. Premium boutique brands are often overpriced imported imports. VedaBotanica occupies the accessible-luxury niche with authentic indigenous Ayurvedic sourcing.',
+  competitorAnalysis: 'Mass-market green teas compete purely on discounted price with synthetic aromas. Premium boutique brands are often overpriced imported imports. Our venture occupies the accessible-luxury niche with authentic indigenous Ayurvedic sourcing.',
   revenueModel: 'Direct-to-Consumer e-commerce via HerMarket and website (70%), Monthly recurring wellness subscription club (18%), Corporate wellness and holiday gifting bundles (12%).',
   pricingStrategy: 'Tiered value pricing: Single 100g tin at ₹499 (cost to produce ₹165, gross margin 67%). 3-Tin Ritual Box at ₹1,299. Corporate customized tins at ₹380/unit on 100+ MOQ.',
   marketingStrategy: 'Micro-influencer sampling with certified nutritionists, Instagram reels on daily mindful morning routines, content marketing on sleep hygiene, and HerRise Marketplace featured showcase.',

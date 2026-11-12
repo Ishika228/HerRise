@@ -34,23 +34,22 @@ export const defaultCategories: ExpenseCategoryItem[] = [
 ];
 
 export const initialFinancialProfile: FinancialProfile = {
-  userId: 'usr-101',
-  fullName: 'Ananya Sharma',
-  email: 'ananya.sharma@herrise.org',
-  monthlyIncome: 65000,
-  incomeSources: [
-    { name: 'Growth Consulting Retainer', amount: 45000, type: 'salary' },
-    { name: 'HerMarket D2C Store Payouts', amount: 20000, type: 'business' }
-  ],
+  userId: 'usr-clean',
+  fullName: '',
+  email: '',
+  monthlyIncome: 0,
+  incomeSources: [],
   emergencyFundTargetMonths: 6,
-  monthlySavingsTarget: 15000,
+  monthlySavingsTarget: 0,
   riskTolerance: 'moderate',
-  financialScore: 88,
+  financialScore: 0,
   currency: 'INR',
   updatedAt: new Date().toISOString()
 };
 
-export const initialTransactionsList: TransactionRecord[] = [
+// Clean initial empty state - populated dynamically upon user input
+export const initialTransactionsList: TransactionRecord[] = [];
+const _legacyDummyTransactions: TransactionRecord[] = [
   {
     id: 'tx-101',
     userId: 'usr-101',
@@ -153,7 +152,8 @@ export const initialTransactionsList: TransactionRecord[] = [
   }
 ];
 
-export const initialSavingsGoalsList: SavingsGoalRecord[] = [
+export const initialSavingsGoalsList: SavingsGoalRecord[] = [];
+const _legacyDummyGoals: SavingsGoalRecord[] = [
   {
     id: 'goal-emergency',
     userId: 'usr-101',
@@ -236,7 +236,8 @@ export const initialBudget: BudgetRecord = {
   updatedAt: new Date().toISOString()
 };
 
-export const initialNotifications: NotificationItem[] = [
+export const initialNotifications: NotificationItem[] = [];
+const _legacyDummyNotifications: NotificationItem[] = [
   {
     id: 'notif-1',
     userId: 'usr-101',
@@ -300,9 +301,9 @@ export function getStoredProfile(): FinancialProfile {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
     if (raw) return JSON.parse(raw);
-    return isFinanceSetupCompleted() ? initialFinancialProfile : blankFinancialProfile;
+    return blankFinancialProfile;
   } catch {
-    return isFinanceSetupCompleted() ? initialFinancialProfile : blankFinancialProfile;
+    return blankFinancialProfile;
   }
 }
 
@@ -401,9 +402,9 @@ export function getStoredNotifications(): NotificationItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
     if (raw) return JSON.parse(raw);
-    return isFinanceSetupCompleted() ? initialNotifications : [];
+    return [];
   } catch {
-    return isFinanceSetupCompleted() ? initialNotifications : [];
+    return [];
   }
 }
 

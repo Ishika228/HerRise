@@ -54,7 +54,7 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: `### 🌸 Hello, ${(profile.fullName || 'Ananya Sharma').split(' ')[0]}!\nI am your **HerFinance AI Copilot**. I analyze your live ledger data to help you allocate income, build emergency reserves, optimize category budgets, and demystify financial concepts.\n\nWhat would you like to examine today?`,
+      text: `### 🌸 Hello, ${(profile.fullName || 'Member').split(' ')[0]}!\nI am your **HerFinance AI Copilot**. I analyze your live ledger data to help you allocate income, build emergency reserves, optimize category budgets, and demystify financial concepts.\n\nWhat would you like to examine today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       actionSuggestion: { label: 'Explore Category Budgets', tab: 'budget' }
     }

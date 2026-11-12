@@ -176,7 +176,7 @@ export const userCertificates: Certificate[] = [
   {
     id: 'cert-1',
     courseTitle: 'Financial Independence & Wealth Architecture',
-    issuedTo: 'Ananya Sharma',
+    issuedTo: 'Verified HerRise Scholar',
     issueDate: 'October 28, 2026',
     credentialId: 'HR-FIN-883492',
     instructorName: 'Rhea Shenoy, CA'
@@ -184,7 +184,7 @@ export const userCertificates: Certificate[] = [
   {
     id: 'cert-2',
     courseTitle: 'Digital Marketing & Community Commerce',
-    issuedTo: 'Ananya Sharma',
+    issuedTo: 'Verified HerRise Scholar',
     issueDate: 'August 14, 2026',
     credentialId: 'HR-MKT-419082',
     instructorName: 'Divya Nair'

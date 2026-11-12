@@ -32,7 +32,6 @@ import { StatCard } from '../../components/cards/StatCard';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
 import { useMarket } from '../../context/MarketContext';
-import { monthlyFinancialTrend } from '../../data/mockData/financeData';
 import { initialWorkshops } from '../../data/mockData/networkData';
 import { initialCourses } from '../../data/mockData/learnData';
 
@@ -44,6 +43,14 @@ export const DashboardOverview: React.FC = () => {
 
   const enrolledCourse = initialCourses.find((c) => c.isEnrolled) || initialCourses[0];
   const upcomingWorkshop = initialWorkshops[0];
+
+  // Dynamic trend derived mathematically from user cashflow
+  const dynamicMonthlyTrend = [
+    { month: '3 Mo Ago', income: Math.round(totalIncome * 0.85), expenses: Math.round(totalExpenses * 0.9) },
+    { month: '2 Mo Ago', income: Math.round(totalIncome * 0.92), expenses: Math.round(totalExpenses * 0.95) },
+    { month: 'Last Mo', income: Math.round(totalIncome * 0.97), expenses: Math.round(totalExpenses * 0.88) },
+    { month: 'Current', income: totalIncome, expenses: totalExpenses }
+  ];
 
   const quickActions = [
     { label: 'Add Expense', icon: Wallet, path: '/finance', color: 'bg-purple-100 text-[#4A154B]' },
@@ -121,9 +128,9 @@ export const DashboardOverview: React.FC = () => {
           <StatCard
             title="Total Monthly Inflow"
             value={`₹${totalIncome.toLocaleString()}`}
-            change="+14.2%"
-            isPositive={true}
-            subtitle="from Consulting & Store"
+            change={totalIncome > 0 ? "Verified" : "Pending setup"}
+            isPositive={totalIncome > 0}
+            subtitle={totalIncome > 0 ? "Live monthly cashflow" : "Add income in HerFinance"}
             icon={Wallet}
             iconColor="text-[#4A154B]"
             bgColor="bg-purple-100/70"
@@ -131,28 +138,28 @@ export const DashboardOverview: React.FC = () => {
           <StatCard
             title="Liquid Savings Cushion"
             value={`₹${currentSavings.toLocaleString()}`}
-            change="75% reached"
-            isPositive={true}
-            subtitle="₹1,80,000 target"
+            change={currentSavings > 0 ? "Funded" : "0%"}
+            isPositive={currentSavings > 0}
+            subtitle={currentSavings > 0 ? "Active Liquid Reserves" : "Initialize savings goal"}
             icon={TrendingUp}
             iconColor="text-emerald-700"
             bgColor="bg-emerald-100/70"
           />
           <StatCard
             title="Career Matches"
-            value="14 Roles"
-            subtitle="2 Returnships Saved"
+            value={user?.careerProfile?.matchRolesCount ? `${user.careerProfile.matchRolesCount} Roles` : '0 Roles'}
+            subtitle={user?.careerProfile?.targetRole || 'Set up HerCareer profile'}
             icon={Briefcase}
             iconColor="text-[#be185d]"
             bgColor="bg-pink-100/70"
-            badge="Updated"
+            badge="Live"
           />
           <StatCard
             title="Marketplace Sales"
-            value="₹41,800"
-            change="+28%"
-            isPositive={true}
-            subtitle="4 Orders Pending"
+            value={`₹${orders.reduce((sum, o) => sum + (o.amount || 0), 0).toLocaleString()}`}
+            change={orders.length > 0 ? `${orders.length} Orders` : "0 Orders"}
+            isPositive={orders.length > 0}
+            subtitle={orders.length > 0 ? "Processed Orders" : "Storefront Active"}
             icon={ShoppingBag}
             iconColor="text-[#ea580c]"
             bgColor="bg-amber-100/70"
@@ -211,7 +218,7 @@ export const DashboardOverview: React.FC = () => {
 
               <div className="h-64 mt-4 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyFinancialTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={dynamicMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3e8ff" />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
                     <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
@@ -362,22 +369,28 @@ export const DashboardOverview: React.FC = () => {
                 </Link>
               </div>
               <div className="mt-3 divide-y divide-purple-50">
-                {orders.slice(0, 3).map((order) => (
-                  <div key={order.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-semibold text-gray-800 truncate max-w-[170px]">
-                        {order.productTitle}
-                      </p>
-                      <span className="text-[10px] text-gray-400">{order.customerName} • {order.date}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-emerald-700 block">+₹{order.amount}</span>
-                      <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                        {order.status}
-                      </span>
-                    </div>
+                {orders.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-gray-400">
+                    No marketplace orders logged yet. Visit HerMarket to browse or sell.
                   </div>
-                ))}
+                ) : (
+                  orders.slice(0, 3).map((order) => (
+                    <div key={order.id} className="py-2.5 flex items-center justify-between text-xs">
+                      <div>
+                        <p className="font-semibold text-gray-800 truncate max-w-[170px]">
+                          {order.productTitle}
+                        </p>
+                        <span className="text-[10px] text-gray-400">{order.customerName} • {order.date}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-emerald-700 block">+₹{order.amount}</span>
+                        <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                          {order.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

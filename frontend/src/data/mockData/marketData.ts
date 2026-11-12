@@ -4,7 +4,7 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-1',
     title: 'Himalayan Organic Chamomile & Blue Pea Tea Blend',
-    sellerName: 'VedaBotanica (Pooja Verma)',
+    sellerName: 'Himalayan Botanicals (Pooja Verma)',
     sellerLocation: 'Dehradun, Uttarakhand',
     sellerRating: 4.9,
     price: 499,
@@ -123,51 +123,7 @@ export const initialProducts: Product[] = [
   }
 ];
 
-export const initialOrders: Order[] = [
-  {
-    id: 'ORD-9021',
-    customerName: 'Smriti Sen',
-    productTitle: 'Himalayan Organic Tea Blend (x2)',
-    amount: 998,
-    date: '2026-11-09',
-    status: 'Shipped',
-    paymentMethod: 'UPI'
-  },
-  {
-    id: 'ORD-9020',
-    customerName: 'Deepa Narang',
-    productTitle: 'Lavender Soy Wax Candle',
-    amount: 699,
-    date: '2026-11-08',
-    status: 'Delivered',
-    paymentMethod: 'Credit Card'
-  },
-  {
-    id: 'ORD-9019',
-    customerName: 'Ananya Sharma',
-    productTitle: 'Mulberry Silk Ajrakh Scarf',
-    amount: 1850,
-    date: '2026-11-07',
-    status: 'Processing',
-    paymentMethod: 'Net Banking'
-  },
-  {
-    id: 'ORD-9018',
-    customerName: 'Priya Chandran',
-    productTitle: 'Startup Financial Model Kit',
-    amount: 1499,
-    date: '2026-11-05',
-    status: 'Delivered',
-    paymentMethod: 'UPI'
-  }
-];
+export const initialOrders: Order[] = [];
 
-export const sellerSalesAnalytics = [
-  { month: 'Jun', sales: 12400, orders: 18 },
-  { month: 'Jul', sales: 16800, orders: 24 },
-  { month: 'Aug', sales: 21200, orders: 31 },
-  { month: 'Sep', sales: 25900, orders: 38 },
-  { month: 'Oct', sales: 34100, orders: 49 },
-  { month: 'Nov (Projected)', sales: 41800, orders: 62 },
-];
+export const sellerSalesAnalytics: { month: string; sales: number; orders: number }[] = [];
 

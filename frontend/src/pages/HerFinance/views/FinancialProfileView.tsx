@@ -22,9 +22,9 @@ export const FinancialProfileView: React.FC = () => {
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
-    fullName: profile.fullName || 'Ananya Sharma',
-    email: profile.email || 'ananya.sharma@herrise.org',
-    monthlyIncome: profile.monthlyIncome.toString(),
+    fullName: profile.fullName || '',
+    email: profile.email || '',
+    monthlyIncome: profile.monthlyIncome ? profile.monthlyIncome.toString() : '',
     emergencyFundTargetMonths: profile.emergencyFundTargetMonths,
     riskTolerance: profile.riskTolerance,
     currency: profile.currency || 'INR'

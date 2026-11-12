@@ -53,61 +53,61 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
 
   // Module 2: Career state
   const [careerData, setCareerData] = useState({
-    targetRole: 'Product Marketing Manager',
-    status: 'Career Break / Exploring Returnships',
-    experienceYears: 4,
-    education: "Bachelor's Degree",
-    skills: ['Product Strategy', 'Digital Marketing', 'Data Analytics', 'Content Creation'],
-    desiredSalary: '₹14,00,000 / yr',
-    workMode: 'Remote'
+    targetRole: user?.careerProfile?.targetRole || '',
+    status: user?.careerProfile?.status || 'Career Break / Exploring Returnships',
+    experienceYears: user?.careerProfile?.experienceYears || 0,
+    education: user?.education || "Bachelor's Degree",
+    skills: user?.careerProfile?.skills || user?.skills || [],
+    desiredSalary: user?.careerProfile?.desiredSalary || '',
+    workMode: user?.careerProfile?.workMode || 'Remote'
   });
 
   // Module 3: Business state
   const [businessData, setBusinessData] = useState({
-    ventureName: 'AuraBotanica Wellness',
-    pitch: 'Sustainable organic wellness & skincare formulated for urban women.',
-    industry: 'Food & Wellness D2C',
-    stage: 'Prototype / Early Validation',
-    monthlyTargetRevenue: 150000,
-    seedCapitalNeeded: 300000,
-    monthlyFixedCosts: 35000,
-    averageUnitCost: 250
+    ventureName: user?.businessProfile?.ventureName || user?.businessName || '',
+    pitch: user?.businessProfile?.pitch || '',
+    industry: user?.businessProfile?.industry || user?.businessCategory || 'Food & Wellness D2C',
+    stage: user?.businessProfile?.stage || 'Prototype / Early Validation',
+    monthlyTargetRevenue: user?.businessProfile?.monthlyTargetRevenue || 0,
+    seedCapitalNeeded: user?.businessProfile?.seedCapitalNeeded || 0,
+    monthlyFixedCosts: user?.businessProfile?.monthlyFixedCosts || 0,
+    averageUnitCost: user?.businessProfile?.averageUnitCost || 0
   });
 
   // Module 4: Fund state
   const [fundData, setFundData] = useState({
-    enterpriseName: 'AuraBotanica Wellness',
-    capitalNeeded: 500000,
-    fundingType: 'Government Low-Interest Scheme (Stand-Up India / PMEGP)',
-    stage: 'Early Stage (1-3 Years)',
-    annualTurnover: 800000,
-    hasCollateral: false
+    enterpriseName: user?.fundProfile?.enterpriseName || user?.businessName || '',
+    capitalNeeded: user?.fundProfile?.capitalNeeded || 0,
+    fundingType: user?.fundProfile?.fundingType || 'Government Low-Interest Scheme (Stand-Up India / PMEGP)',
+    stage: user?.fundProfile?.stage || 'Early Stage (1-3 Years)',
+    annualTurnover: user?.fundProfile?.annualTurnover || 0,
+    hasCollateral: user?.fundProfile?.hasCollateral || false
   });
 
   // Module 5: Market state
   const [marketData, setMarketData] = useState({
-    storeName: 'AuraBotanica Storefront',
-    category: 'Food & Wellness',
-    productTitle: 'Handcrafted Lavender Sleep Elixir (50ml)',
-    sellingPrice: 799,
-    unitCost: 320,
-    stockQuantity: 100,
-    monthlyTargetUnits: 80
+    storeName: user?.marketProfile?.storeName || (user?.businessName ? `${user.businessName} Storefront` : ''),
+    category: user?.marketProfile?.category || 'Food & Wellness',
+    productTitle: user?.marketProfile?.productTitle || '',
+    sellingPrice: user?.marketProfile?.sellingPrice || 0,
+    unitCost: user?.marketProfile?.unitCost || 0,
+    stockQuantity: user?.marketProfile?.stockQuantity || 0,
+    monthlyTargetUnits: user?.marketProfile?.monthlyTargetUnits || 0
   });
 
   // Module 6: Learn state
   const [learnData, setLearnData] = useState({
-    targetDomain: 'AI Productivity & FinTech Strategy',
-    currentLevel: 'Intermediate',
-    weeklyHours: 8,
-    primaryGoal: 'Return to tech leadership with verified AI skills'
+    targetDomain: user?.learnProfile?.targetDomain || 'AI Productivity & FinTech Strategy',
+    currentLevel: user?.learnProfile?.currentLevel || 'Intermediate',
+    weeklyHours: user?.learnProfile?.weeklyHours || 6,
+    primaryGoal: user?.learnProfile?.primaryGoal || ''
   });
 
   // Module 7: Network state
   const [networkData, setNetworkData] = useState({
-    mentorshipDomain: 'Venture Fundraising & Pitching',
-    primaryGoal: 'Prepare investor pitch and secure ₹10L seed grant',
-    meetingFrequency: 'Bi-weekly'
+    mentorshipDomain: user?.networkProfile?.mentorshipDomain || 'Venture Fundraising & Pitching',
+    primaryGoal: user?.networkProfile?.primaryGoal || '',
+    meetingFrequency: user?.networkProfile?.meetingFrequency || 'Bi-weekly'
   });
 
   if (!isOpen) return null;
@@ -169,19 +169,19 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
         return { readinessScore, matchRolesCount };
       }
       case 'business': {
-        const sellingPrice = Math.round(businessData.averageUnitCost * 1.8);
+        const sellingPrice = businessData.averageUnitCost > 0 ? Math.round(businessData.averageUnitCost * 1.8) : 0;
         const unitMargin = sellingPrice - businessData.averageUnitCost;
         const breakEvenUnits = unitMargin > 0 ? Math.ceil(businessData.monthlyFixedCosts / unitMargin) : 0;
         const breakEvenRevenue = breakEvenUnits * sellingPrice;
-        const projectedUnits = Math.round(businessData.monthlyTargetRevenue / (sellingPrice || 1));
+        const projectedUnits = sellingPrice > 0 ? Math.round(businessData.monthlyTargetRevenue / sellingPrice) : 0;
         const projectedProfit = Math.round(businessData.monthlyTargetRevenue - (businessData.monthlyFixedCosts + projectedUnits * businessData.averageUnitCost));
-        const runwayMonths = businessData.monthlyFixedCosts > 0 ? Number((businessData.seedCapitalNeeded / businessData.monthlyFixedCosts).toFixed(1)) : 12;
+        const runwayMonths = businessData.monthlyFixedCosts > 0 ? Number((businessData.seedCapitalNeeded / businessData.monthlyFixedCosts).toFixed(1)) : 0;
         return { sellingPrice, breakEvenUnits, breakEvenRevenue, projectedProfit, runwayMonths };
       }
       case 'fund': {
         let readinessScore = 20;
         if (fundData.hasCollateral) readinessScore += 30;
-        if (fundData.annualTurnover >= fundData.capitalNeeded) readinessScore += 35;
+        if (fundData.annualTurnover >= fundData.capitalNeeded && fundData.capitalNeeded > 0) readinessScore += 35;
         else if (fundData.annualTurnover > 0) readinessScore += 20;
         if (fundData.stage.includes('3+')) readinessScore += 15;
         readinessScore = Math.min(95, readinessScore);
@@ -190,7 +190,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
         const r = 0.09 / 12;
         const n = 36;
         const P = fundData.capitalNeeded;
-        const emi = Math.round((P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
+        const emi = P > 0 ? Math.round((P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)) : 0;
         return { readinessScore, emi };
       }
       case 'market': {
@@ -346,7 +346,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     required
                     value={personalInfo.name}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, name: e.target.value })}
-                    placeholder="e.g. Ananya Sharma"
+                    placeholder="e.g. Your Full Legal Name"
                     className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#4A154B] rounded-xl text-xs outline-none transition-all"
                   />
                 </div>
@@ -510,6 +510,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                   <input
                     type="text"
                     value={businessData.ventureName}
+                    placeholder="e.g. EcoBloom Naturals"
                     onChange={(e) => setBusinessData({ ...businessData, ventureName: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                   />
@@ -522,6 +523,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                   <textarea
                     rows={2}
                     value={businessData.pitch}
+                    placeholder="e.g. Sustainable organic wellness & skincare formulated for urban women."
                     onChange={(e) => setBusinessData({ ...businessData, pitch: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                   />
@@ -534,7 +536,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={businessData.monthlyTargetRevenue}
+                      placeholder="e.g. 150000"
+                      value={businessData.monthlyTargetRevenue || ''}
                       onChange={(e) => setBusinessData({ ...businessData, monthlyTargetRevenue: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -546,7 +549,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={businessData.seedCapitalNeeded}
+                      placeholder="e.g. 300000"
+                      value={businessData.seedCapitalNeeded || ''}
                       onChange={(e) => setBusinessData({ ...businessData, seedCapitalNeeded: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -560,7 +564,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={businessData.monthlyFixedCosts}
+                      placeholder="e.g. 35000"
+                      value={businessData.monthlyFixedCosts || ''}
                       onChange={(e) => setBusinessData({ ...businessData, monthlyFixedCosts: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -572,7 +577,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={businessData.averageUnitCost}
+                      placeholder="e.g. 250"
+                      value={businessData.averageUnitCost || ''}
                       onChange={(e) => setBusinessData({ ...businessData, averageUnitCost: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -590,6 +596,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="e.g. EcoBloom Naturals"
                     value={fundData.enterpriseName}
                     onChange={(e) => setFundData({ ...fundData, enterpriseName: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
@@ -603,7 +610,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={fundData.capitalNeeded}
+                      placeholder="e.g. 500000"
+                      value={fundData.capitalNeeded || ''}
                       onChange={(e) => setFundData({ ...fundData, capitalNeeded: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -615,7 +623,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={fundData.annualTurnover}
+                      placeholder="e.g. 800000"
+                      value={fundData.annualTurnover || ''}
                       onChange={(e) => setFundData({ ...fundData, annualTurnover: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -661,6 +670,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="e.g. EcoBloom Storefront"
                     value={marketData.storeName}
                     onChange={(e) => setMarketData({ ...marketData, storeName: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
@@ -673,6 +683,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="e.g. Handcrafted Lavender Sleep Mist (50ml)"
                     value={marketData.productTitle}
                     onChange={(e) => setMarketData({ ...marketData, productTitle: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
@@ -686,7 +697,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={marketData.sellingPrice}
+                      placeholder="e.g. 799"
+                      value={marketData.sellingPrice || ''}
                       onChange={(e) => setMarketData({ ...marketData, sellingPrice: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -698,7 +710,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={marketData.unitCost}
+                      placeholder="e.g. 320"
+                      value={marketData.unitCost || ''}
                       onChange={(e) => setMarketData({ ...marketData, unitCost: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -712,7 +725,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={marketData.stockQuantity}
+                      placeholder="e.g. 100"
+                      value={marketData.stockQuantity || ''}
                       onChange={(e) => setMarketData({ ...marketData, stockQuantity: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />
@@ -724,7 +738,8 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     </label>
                     <input
                       type="number"
-                      value={marketData.monthlyTargetUnits}
+                      placeholder="e.g. 80"
+                      value={marketData.monthlyTargetUnits || ''}
                       onChange={(e) => setMarketData({ ...marketData, monthlyTargetUnits: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none"
                     />

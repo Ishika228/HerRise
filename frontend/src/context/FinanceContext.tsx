@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Transaction, SavingsGoal, BudgetCategory } from '../types';
-import { initialTransactions, initialSavingsGoals, initialBudgetCategories } from '../data/mockData/financeData';
 
 interface FinanceContextType {
   transactions: Transaction[];

@@ -6,8 +6,8 @@ import { useToast } from '../../context/ToastContext';
 import { Modal } from '../../components/common/Modal';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('ananya.sharma@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
@@ -26,20 +26,24 @@ export const LoginPage: React.FC = () => {
       return;
     }
     setLoading(true);
-    await new Promise((res) => setTimeout(res, 600));
-    await login(email, password);
+    const success = await login(email, password);
     setLoading(false);
-    showToast('Welcome back!', 'Logged into your HerRise account successfully', 'success');
-    navigate('/dashboard');
+    if (success) {
+      showToast('Welcome back!', 'Logged into your HerRise account successfully', 'success');
+      navigate('/dashboard');
+    }
   };
 
   const handleGoogleLogin = async () => {
+    const enteredEmail = window.prompt('Enter your Google Account email to proceed:');
+    if (!enteredEmail) return;
     setLoading(true);
-    await new Promise((res) => setTimeout(res, 500));
-    await login('ananya.google@example.com', 'google-auth');
+    const success = await login(enteredEmail, 'google-auth');
     setLoading(false);
-    showToast('Google Sign-In Successful', 'Logged in via Google demo authorization', 'success');
-    navigate('/dashboard');
+    if (success) {
+      showToast('Google Sign-In Successful', 'Logged in via Google authorization', 'success');
+      navigate('/dashboard');
+    }
   };
 
   const handleResetSubmit = (e: React.FormEvent) => {
@@ -73,24 +77,13 @@ export const LoginPage: React.FC = () => {
           Welcome back to HerRise
         </h2>
         <p className="mt-1 text-xs text-gray-600">
-          Enter your credentials or test the interactive demo account
+          Enter your credentials to access your unified financial & career dashboard
         </p>
       </div>
 
       {/* Main Login Card */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
         <div className="bg-white py-8 px-6 shadow-xl rounded-3xl border border-purple-100 sm:px-10">
-          {/* Quick Demo Credentials Helper */}
-          <div className="mb-6 p-3 rounded-2xl bg-purple-50/70 border border-purple-100 flex items-center justify-between text-xs text-purple-900">
-            <div>
-              <span className="font-bold">Demo Account Pre-filled</span>
-              <p className="text-[11px] text-gray-500">Click Log In below to explore immediately</p>
-            </div>
-            <span className="text-[10px] font-bold bg-[#4A154B] text-white px-2 py-0.5 rounded-full">
-              Ready
-            </span>
-          </div>
-
           <form className="space-y-4" onSubmit={handleLogin}>
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">

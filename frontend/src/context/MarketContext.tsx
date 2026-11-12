@@ -44,18 +44,18 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const stored = localStorage.getItem('herrise_market_orders');
-      return stored ? JSON.parse(stored) : initialOrders;
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return initialOrders;
+      return [];
     }
   });
 
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('herrise_market_wishlist');
-      return stored ? JSON.parse(stored) : ['prod-1', 'prod-2'];
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return ['prod-1', 'prod-2'];
+      return [];
     }
   });
 

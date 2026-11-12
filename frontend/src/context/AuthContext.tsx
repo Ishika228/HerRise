@@ -13,44 +13,15 @@ interface AuthContextType {
   completeOnboarding: (goals: string[], background: { education: string; currentStatus: string; experienceLevel: string; skills: string[]; language: Language }) => void;
 }
 
-const defaultUserProfile: UserProfile = {
-  id: 'usr-101',
-  name: 'Ananya Sharma',
-  email: 'ananya.sharma@example.com',
-  phone: '+91 98765 43210',
-  location: 'Bengaluru, India',
-  language: 'en',
-  avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80',
-  role: 'Aspiring Entrepreneur & Career Returnee',
-  goals: [
-    'I want to manage my finances',
-    'I want to start a business',
-    'I want to restart my career',
-    'I want to connect with mentors'
-  ],
-  education: 'Bachelor of Business Administration',
-  currentStatus: 'Exploring new ventures & Career Relaunch',
-  experienceLevel: '5+ years prior experience',
-  skills: ['Digital Marketing', 'Financial Planning', 'D2C Strategy', 'Project Management'],
-  interests: ['Sustainable E-commerce', 'Wealth Independence', 'AI Productivity'],
-  bio: 'Passionate about sustainable lifestyle products and building personal financial security. Currently preparing to launch a wellness brand while exploring returnship opportunities in growth marketing.',
-  businessName: 'VedaBotanica Wellness Labs',
-  businessCategory: 'Food & Wellness D2C',
-  completionPercentage: 85
-};
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
       const stored = localStorage.getItem('herrise_user_session');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-      return defaultUserProfile;
+      return stored ? JSON.parse(stored) : null;
     } catch {
-      return defaultUserProfile;
+      return null;
     }
   });
 
@@ -79,14 +50,66 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const login = async (email: string): Promise<boolean> => {
-    // Frontend demo login simulation
-    const updatedUser: UserProfile = {
-      ...defaultUserProfile,
-      email: email || defaultUserProfile.email,
-      name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || defaultUserProfile.name
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const json = await res.json();
+      if (json.success && json.user) {
+        const u = json.user;
+        const loggedUser: UserProfile = {
+          id: u._id || u.id || 'usr-' + Date.now().toString(36),
+          name: u.name || email.split('@')[0],
+          email: u.email || email,
+          phone: u.phone || '',
+          location: u.location || '',
+          language: (u.preferredLanguage as Language) || language,
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+          role: u.professionalStatus || 'Member',
+          goals: u.goals || [],
+          education: u.education || '',
+          currentStatus: u.professionalStatus || '',
+          experienceLevel: u.experienceYears ? `${u.experienceYears} Years` : '',
+          skills: u.skills || [],
+          interests: [],
+          bio: '',
+          completionPercentage: u.profileCompleted || 50,
+          careerProfile: u.careerProfile,
+          businessProfile: u.businessProfile,
+          fundProfile: u.fundProfile,
+          marketProfile: u.marketProfile,
+          learnProfile: u.learnProfile,
+          networkProfile: u.networkProfile
+        };
+        setUser(loggedUser);
+        return true;
+      }
+    } catch (e) {
+      console.warn('[Auth] Remote login notice:', e);
+    }
+
+    const simpleUser: UserProfile = {
+      id: 'usr-' + Date.now().toString(36),
+      name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      email,
+      phone: '',
+      location: '',
+      language,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+      role: 'Member',
+      goals: [],
+      education: '',
+      currentStatus: '',
+      experienceLevel: '',
+      skills: [],
+      interests: [],
+      bio: '',
+      completionPercentage: 50
     };
-    setUser(updatedUser);
+    setUser(simpleUser);
     return true;
   };
 
@@ -113,15 +136,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     const newUser: UserProfile = {
-      ...defaultUserProfile,
       id: 'usr-' + Date.now().toString(36),
       name: data.name || 'HerRise Member',
       email: data.email || 'user@example.com',
-      phone: data.phone || '+91 90000 00000',
-      location: data.location || 'India',
+      phone: data.phone || '',
+      location: data.location || '',
       language: data.language || language,
-      completionPercentage: 40,
-      goals: []
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+      role: 'Member',
+      goals: [],
+      education: '',
+      currentStatus: '',
+      experienceLevel: '',
+      skills: [],
+      interests: [],
+      bio: '',
+      completionPercentage: 40
     };
     setUser(newUser);
     return true;
@@ -129,11 +159,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('herrise_user_session');
   };
 
   const updateProfile = (data: Partial<UserProfile>) => {
     setUser((prev) => {
-      if (!prev) return null;
+      if (!prev) {
+        return {
+          id: 'usr-' + Date.now().toString(36),
+          name: data.name || 'Member',
+          email: data.email || '',
+          phone: data.phone || '',
+          location: data.location || '',
+          language: data.language || language,
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+          role: 'Member',
+          goals: [],
+          education: '',
+          currentStatus: '',
+          experienceLevel: '',
+          skills: [],
+          interests: [],
+          bio: '',
+          completionPercentage: 50,
+          ...data
+        };
+      }
       return { ...prev, ...data };
     });
   };
@@ -149,7 +200,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   ) => {
     setUser((prev) => {
-      const base = prev || defaultUserProfile;
+      const base: UserProfile = prev || {
+        id: 'usr-' + Date.now().toString(36),
+        name: 'Member',
+        email: '',
+        phone: '',
+        location: '',
+        language: background.language,
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+        role: 'Member',
+        goals: [],
+        education: '',
+        currentStatus: '',
+        experienceLevel: '',
+        skills: [],
+        interests: [],
+        bio: '',
+        completionPercentage: 50
+      };
       const updated: UserProfile = {
         ...base,
         goals,
@@ -190,4 +258,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

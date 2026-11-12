@@ -41,33 +41,31 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
   // Form State
   const [fullName, setFullName] = useState(initialData?.fullName || '');
   const [email, setEmail] = useState(initialData?.email || '');
-  const [location, setLocation] = useState(initialData?.location || 'Bengaluru, India');
+  const [location, setLocation] = useState(initialData?.location || '');
   const [currency, setCurrency] = useState(initialData?.currency || 'INR');
 
   // Income Sources
-  const [primaryIncomeName, setPrimaryIncomeName] = useState('Monthly Professional Salary');
-  const [primaryIncomeAmount, setPrimaryIncomeAmount] = useState('50000');
-  const [secondaryIncomes, setSecondaryIncomes] = useState<{ name: string; amount: string; type: string }[]>([
-    { name: 'Freelance & Consulting', amount: '15000', type: 'freelance' }
-  ]);
+  const [primaryIncomeName, setPrimaryIncomeName] = useState('');
+  const [primaryIncomeAmount, setPrimaryIncomeAmount] = useState('');
+  const [secondaryIncomes, setSecondaryIncomes] = useState<{ name: string; amount: string; type: string }[]>([]);
 
   // Monthly Expenses
   const [expenses, setExpenses] = useState<{ category: string; amount: string }[]>([
-    { category: 'Rent & Housing', amount: '18000' },
-    { category: 'Groceries & Essentials', amount: '7500' },
-    { category: 'Utilities & Bills', amount: '3500' },
-    { category: 'Transport & Fuel', amount: '3000' },
-    { category: 'Healthcare & Wellness', amount: '2000' },
-    { category: 'Dining & Lifestyle', amount: '4000' },
-    { category: 'Education & Courses', amount: '2500' }
+    { category: 'Rent & Housing', amount: '' },
+    { category: 'Groceries & Essentials', amount: '' },
+    { category: 'Utilities & Bills', amount: '' },
+    { category: 'Transport & Fuel', amount: '' },
+    { category: 'Healthcare & Wellness', amount: '' },
+    { category: 'Dining & Lifestyle', amount: '' },
+    { category: 'Education & Courses', amount: '' }
   ]);
 
   // Existing Capital & Primary Goal
-  const [currentSavings, setCurrentSavings] = useState('45000');
-  const [goalTitle, setGoalTitle] = useState('6-Month Emergency Cushion');
-  const [goalTargetAmount, setGoalTargetAmount] = useState('120000');
-  const [goalInitialAmount, setGoalInitialAmount] = useState('30000');
-  const [goalTargetDate, setGoalTargetDate] = useState('2027-03-31');
+  const [currentSavings, setCurrentSavings] = useState('');
+  const [goalTitle, setGoalTitle] = useState('');
+  const [goalTargetAmount, setGoalTargetAmount] = useState('');
+  const [goalInitialAmount, setGoalInitialAmount] = useState('');
+  const [goalTargetDate, setGoalTargetDate] = useState('2027-06-30');
   const [goalCategory, setGoalCategory] = useState<
     'Emergency Fund' | 'Education' | 'New Laptop' | 'Travel' | 'Starting a Business' | 'Home Purchase' | 'General'
   >('Emergency Fund');
@@ -418,6 +416,7 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
                   <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
                   <input
                     type="number"
+                    placeholder="e.g. 25000"
                     value={currentSavings}
                     onChange={(e) => setCurrentSavings(e.target.value)}
                     className="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
@@ -445,6 +444,7 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Goal Target (₹)</label>
                 <input
                   type="number"
+                  placeholder="e.g. 100000"
                   value={goalTargetAmount}
                   onChange={(e) => setGoalTargetAmount(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
@@ -455,6 +455,7 @@ export const FinancialSetupWizard: React.FC<FinancialSetupWizardProps> = ({
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Initial Saved (₹)</label>
                 <input
                   type="number"
+                  placeholder="e.g. 15000"
                   value={goalInitialAmount}
                   onChange={(e) => setGoalInitialAmount(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"

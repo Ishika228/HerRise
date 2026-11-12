@@ -183,12 +183,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick })
           className="flex items-center gap-2 pl-2 border-l border-purple-100 hover:opacity-90 transition-opacity"
         >
           <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80'}
-            alt={user?.name || 'Ananya'}
+            src={user?.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80'}
+            alt={user?.name || 'Member'}
             className="w-8 h-8 rounded-full object-cover border border-purple-200"
           />
           <span className="hidden md:block text-xs font-semibold text-gray-800 max-w-[110px] truncate">
-            {user?.name?.split(' ')[0] || 'Ananya'}
+            {user?.name?.split(' ')[0] || 'Member'}
           </span>
         </Link>
       </div>

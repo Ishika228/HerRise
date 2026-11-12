@@ -40,8 +40,8 @@ export const SavingsGoalsView: React.FC = () => {
   // Modals
   const [createGoalModalOpen, setCreateGoalModalOpen] = useState(false);
   const [depositModalGoal, setDepositModalGoal] = useState<SavingsGoalRecord | null>(null);
-  const [depositAmount, setDepositAmount] = useState('2000');
-  const [depositNote, setDepositNote] = useState('Surplus transfer');
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositNote, setDepositNote] = useState('');
   const [viewHistoryGoal, setViewHistoryGoal] = useState<SavingsGoalRecord | null>(null);
 
   // New Goal Form

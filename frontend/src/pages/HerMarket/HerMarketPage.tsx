@@ -87,8 +87,8 @@ export const HerMarketPage: React.FC = () => {
 
   // Checkout Form State
   const [shippingDetails, setShippingDetails] = useState({
-    name: 'Ananya Sharma',
-    address: '42 Orchid Residency, Indiranagar, Bengaluru - 560038',
+    name: user?.name || '',
+    address: user?.location || '',
     paymentMethod: 'UPI'
   });
 

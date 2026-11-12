@@ -21,7 +21,7 @@ export const initialMentors: Mentor[] = [
     id: 'mentor-2',
     name: 'Pooja Verma',
     designation: 'Founder & CEO (₹12Cr Brand)',
-    company: 'VedaBotanica Wellness',
+    company: 'AuraBotanics Direct',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
     industry: 'D2C & Retail E-commerce',
     experienceYears: 9,
@@ -126,7 +126,7 @@ export const initialCommunityPosts: CommunityPost[] = [
     comments: [
       {
         id: 'c-1',
-        authorName: 'Ananya Sharma',
+        authorName: 'Kavita Menon',
         authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
         content: 'So inspiring Tanvi! Your packaging was gorgeous when I ordered the ceramic mug.',
         timeAgo: '1 hour ago'

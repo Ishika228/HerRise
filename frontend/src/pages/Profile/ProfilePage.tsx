@@ -22,27 +22,42 @@ export const ProfilePage: React.FC = () => {
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
-    name: user?.name || 'Ananya Sharma',
-    email: user?.email || 'ananya.sharma@example.com',
-    phone: user?.phone || '+91 98765 43210',
-    location: user?.location || 'Bengaluru, Karnataka',
-    role: user?.role || 'Growth Strategist & Aspiring Founder',
-    education: user?.education || 'Bachelor of Business Administration',
-    currentStatus: user?.currentStatus || 'On Career Sabbatical / Exploring Ventures',
-    bio: user?.bio || 'Building financial security while launching a sustainable wellness brand.',
-    businessName: user?.businessName || 'VedaBotanica Wellness Labs',
-    businessCategory: user?.businessCategory || 'Food & Wellness D2C',
-    skills: user?.skills || ['Digital Marketing', 'Financial Planning', 'D2C Strategy', 'Project Management'],
-    avatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80'
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    location: user?.location || '',
+    role: user?.role || '',
+    education: user?.education || '',
+    currentStatus: user?.currentStatus || '',
+    bio: user?.bio || '',
+    businessName: user?.businessName || '',
+    businessCategory: user?.businessCategory || '',
+    skills: user?.skills || [],
+    avatar: user?.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80'
   });
 
   const [newSkillInput, setNewSkillInput] = useState('');
+
+  // Calculate dynamic profile completion percentage
+  const filledFieldsCount = [
+    formData.name,
+    formData.email,
+    formData.phone,
+    formData.location,
+    formData.role,
+    formData.education,
+    formData.currentStatus,
+    formData.bio,
+    formData.businessName,
+    formData.skills.length > 0 ? 'skills' : ''
+  ].filter(Boolean).length;
+  const profileStrength = Math.round((filledFieldsCount / 10) * 100);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile({
       ...formData,
-      completionPercentage: 95
+      completionPercentage: profileStrength
     });
     showToast('Profile Updated', 'Your details and skills have been saved successfully', 'success');
   };
@@ -88,19 +103,19 @@ export const ProfilePage: React.FC = () => {
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-extrabold text-gray-900">{formData.name}</h1>
+                <h1 className="text-xl font-extrabold text-gray-900">{formData.name || 'Member Profile'}</h1>
                 <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
                   Verified Member
                 </span>
               </div>
-              <p className="text-xs text-[#4A154B] font-semibold">{formData.role}</p>
-              <p className="text-[11px] text-gray-500">{formData.location}</p>
+              <p className="text-xs text-[#4A154B] font-semibold">{formData.role || 'HerRise Member'}</p>
+              <p className="text-[11px] text-gray-500">{formData.location || 'Location Not Specified'}</p>
             </div>
           </div>
 
           <div className="text-right">
             <span className="text-xs font-bold text-gray-500 block">Profile Strength</span>
-            <span className="text-2xl font-black text-[#4A154B]">{user?.completionPercentage || 95}%</span>
+            <span className="text-2xl font-black text-[#4A154B]">{profileStrength}%</span>
           </div>
         </div>
 

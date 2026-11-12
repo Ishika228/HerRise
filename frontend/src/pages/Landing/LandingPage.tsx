@@ -238,8 +238,8 @@ export const LandingPage: React.FC = () => {
                         className="w-12 h-12 rounded-2xl object-cover border-2 border-purple-200"
                       />
                       <div>
-                        <h4 className="font-bold text-sm text-gray-900">Dr. Radhika & Ananya</h4>
-                        <p className="text-[11px] text-gray-500">Mentor & Founder Pair</p>
+                        <h4 className="font-bold text-sm text-gray-900">Verified Member Network</h4>
+                        <p className="text-[11px] text-gray-500">Live Collaborative Ecosystem</p>
                       </div>
                     </div>
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
@@ -251,18 +251,18 @@ export const LandingPage: React.FC = () => {
                   {/* Visual Stats Row */}
                   <div className="grid grid-cols-2 gap-3 my-4">
                     <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Savings Growth</span>
-                      <div className="text-xl font-extrabold text-[#4A154B] mt-0.5">₹1,35,000</div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Dynamic Inflow</span>
+                      <div className="text-xl font-extrabold text-[#4A154B] mt-0.5">Real-Time Ledger</div>
                       <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-                        <TrendingUp className="w-3 h-3" /> 75% of Emergency Goal
+                        <TrendingUp className="w-3 h-3" /> 50/30/20 Smart Allocation
                       </span>
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-pink-50/70 border border-pink-100">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">HerMarket Sales</span>
-                      <div className="text-xl font-extrabold text-[#be185d] mt-0.5">₹41,800/mo</div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Storefront Settlement</span>
+                      <div className="text-xl font-extrabold text-[#be185d] mt-0.5">Direct Payouts</div>
                       <span className="text-[11px] font-semibold text-[#be185d] flex items-center gap-0.5 mt-1">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.9 Star Rating
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 100% Commission-Free
                       </span>
                     </div>
                   </div>

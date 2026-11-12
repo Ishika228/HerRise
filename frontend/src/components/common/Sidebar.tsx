@@ -180,8 +180,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h5 className="text-xs font-bold text-gray-900 truncate">{user?.name || 'Ananya Sharma'}</h5>
-              <p className="text-[11px] text-gray-500 truncate">{user?.email || 'ananya@example.com'}</p>
+              <h5 className="text-xs font-bold text-gray-900 truncate">{user?.name || 'HerRise Member'}</h5>
+              <p className="text-[11px] text-gray-500 truncate">{user?.email || 'member@herrise.org'}</p>
             </div>
           )}
           {!collapsed && (

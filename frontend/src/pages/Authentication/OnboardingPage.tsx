@@ -38,16 +38,12 @@ export const OnboardingPage: React.FC = () => {
     { id: 'g8', label: 'I want to connect with mentors', icon: Users2, color: 'text-violet-700 bg-violet-50' }
   ];
 
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([
-    'I want to manage my finances',
-    'I want to restart my career',
-    'I want to start a business'
-  ]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
   // Step 2: Background
-  const [education, setEducation] = useState('Bachelor Degree');
-  const [currentStatus, setCurrentStatus] = useState('Career Break / Exploring New Ventures');
-  const [experienceLevel, setExperienceLevel] = useState('3-5 Years Experience');
+  const [education, setEducation] = useState('');
+  const [currentStatus, setCurrentStatus] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('');
 
   // Step 3: Skills & Language
   const availableSkillPills = [
@@ -56,9 +52,7 @@ export const OnboardingPage: React.FC = () => {
     'Customer Relations', 'Handmade Crafts', 'Culinary & Food Prep', 'Leadership'
   ];
 
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([
-    'Digital Marketing', 'Financial Planning', 'D2C Commerce'
-  ]);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const [chosenLanguage, setChosenLanguage] = useState<Language>(user?.language || 'en');
 
