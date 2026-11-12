@@ -21,3 +21,4 @@ export const enrollCourse = (req: Request, res: Response) => {
     data: course
   });
 };
+

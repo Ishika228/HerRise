@@ -6,3 +6,4 @@ const router = Router();
 router.post('/generate-plan', generateBusinessPlan);
 
 export default router;
+

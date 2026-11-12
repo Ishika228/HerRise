@@ -7,3 +7,4 @@ router.get('/courses', getCourses);
 router.post('/enroll', enrollCourse);
 
 export default router;
+

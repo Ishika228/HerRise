@@ -24,3 +24,4 @@ export const bookSession = (req: Request, res: Response) => {
     }
   });
 };
+

@@ -75,3 +75,4 @@ export const submitOnboarding = (req: Request, res: Response) => {
     user
   });
 };
+

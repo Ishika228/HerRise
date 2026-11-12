@@ -30,3 +30,4 @@ export const analyzeResume = (req: Request, res: Response) => {
     }
   });
 };
+

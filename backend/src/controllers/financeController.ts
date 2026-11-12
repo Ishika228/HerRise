@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { store, Transaction, BudgetCategory, SavingsGoal } from '../data/mockStore.js';
+import { callGroqChat } from '../services/groqService.js';
+import { config } from '../config/env.js';
 
 export const getFinanceOverview = (req: Request, res: Response) => {
   const transactions = store.transactions;
@@ -193,17 +195,57 @@ export const processOcrReceipt = (req: Request, res: Response) => {
   });
 };
 
-export const aiConsult = (req: Request, res: Response) => {
+export const aiConsult = async (req: Request, res: Response) => {
   const { query } = req.body;
   const totalIncome = store.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const totalExpenses = store.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const net = totalIncome - totalExpenses;
 
+  // If Groq API key is present, generate real LLM response using Groq
+  if (config.groqApiKey) {
+    try {
+      const groqResponse = await callGroqChat([
+        {
+          role: 'system',
+          content: `You are HerRise AI's Financial Copilot, an empathetic, expert personal finance advisor for women entrepreneurs and professionals. 
+Context:
+- User's Monthly Income: ₹${totalIncome}
+- User's Monthly Expenses: ₹${totalExpenses}
+- Net Monthly Surplus: ₹${net}
+- Active Goals: ${store.goals.map(g => `${g.title} (Saved: ₹${g.currentAmount}/₹${g.targetAmount})`).join(', ')}
+
+Guidelines:
+- Provide structured, practical, empowering advice.
+- Always include an educational perspective.
+- Always end with a disclaimer: "Financial Education Only – Not Regulated Financial Advice."`
+        },
+        {
+          role: 'user',
+          content: query || 'How should I optimize my budget and savings this month?'
+        }
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        source: 'groq-llm',
+        data: {
+          response: groqResponse,
+          disclaimer: 'Financial Education Only – Not Regulated Financial Advice.'
+        }
+      });
+    } catch (err: any) {
+      console.error('[Groq AI fallback to rule engine]:', err.message);
+    }
+  }
+
+  // Fallback grounded context response
   return res.status(200).json({
     success: true,
+    source: 'context-engine',
     data: {
-      response: `Based on your live verified inflow of ₹${totalIncome.toLocaleString()} and outgoings of ₹${totalExpenses.toLocaleString()}, you currently retain a net monthly surplus of ₹${net.toLocaleString()} (${Math.round((net / (totalIncome || 1)) * 100)}% savings rate). We recommend prioritizing an automated SIP of ₹${Math.round(net * 0.5).toLocaleString()} towards index equity and maintaining 6-month liquid cushion.`,
+      response: `Based on your live verified inflow of ₹${totalIncome.toLocaleString()} and outgoings of ₹${totalExpenses.toLocaleString()}, you currently retain a net monthly surplus of ₹${net.toLocaleString()} (${Math.round((net / (totalIncome || 1)) * 100)}% savings rate). We recommend prioritizing an automated SIP of ₹${Math.round(net * 0.5).toLocaleString()} towards index equity and maintaining a 6-month liquid cushion.`,
       disclaimer: 'Financial Education Only – Not Regulated Financial Advice.'
     }
   });
 };
+

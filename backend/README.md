@@ -79,3 +79,4 @@ Health Check: **http://localhost:5000/api/health**
 ### HerNetwork (`/api/network`)
 - `GET /api/network/mentors` - Browse vetted female mentors and industry leaders.
 - `POST /api/network/book` - Book a 1-on-1 advisory session.
+

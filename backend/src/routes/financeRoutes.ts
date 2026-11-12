@@ -31,3 +31,4 @@ router.post('/ocr-receipt', processOcrReceipt);
 router.post('/ai-consult', aiConsult);
 
 export default router;
+

@@ -8,3 +8,4 @@ router.post('/apply', applyJob);
 router.post('/resume-score', analyzeResume);
 
 export default router;
+
