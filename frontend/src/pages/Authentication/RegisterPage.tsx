@@ -133,7 +133,7 @@ export const RegisterPage: React.FC = () => {
               Upload or Build Your ATS-Friendly Resume
             </h2>
             <p className="mt-1 text-xs sm:text-sm text-gray-600">
-              Our AI extracts your details, scans for missing items, and formats an ATS-compliant resume downloadable in Word and PDF.
+              Upload your existing resume for instant Groq AI extraction, or build an ATS-compliant resume from scratch with downloadable Word and PDF formats.
             </p>
           </>
         )}

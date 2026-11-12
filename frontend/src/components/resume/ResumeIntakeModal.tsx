@@ -19,8 +19,7 @@ import {
   Wand2,
   FileDown,
   Layers,
-  Check,
-  ChevronRight
+  ChevronDown
 } from 'lucide-react';
 import { AtsResumeData, downloadAtsPdf, downloadAtsWord } from '../../services/resumeExportService';
 import { useToast } from '../../context/ToastContext';
@@ -49,6 +48,8 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [parseProgress, setParseProgress] = useState('');
+  const [showPasteText, setShowPasteText] = useState(false);
+  const [pastedText, setPastedText] = useState('');
 
   // Structured Resume State
   const [resumeData, setResumeData] = useState<AtsResumeData>({
@@ -77,9 +78,9 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
 
   // Recommended skill presets
   const popularSkills = [
-    'Project Management', 'Financial Modeling', 'Data Analysis', 'React.js',
-    'TypeScript', 'Python', 'Digital Marketing', 'Content Strategy',
-    'Customer Success', 'Budget Forecasting', 'UI/UX Design', 'Team Leadership'
+    'React.js', 'Node.js', 'Python', 'Java', 'SQL', 'MongoDB',
+    'HTML', 'CSS', 'Tailwind CSS', 'TypeScript', 'Git', 'Project Management',
+    'Financial Modeling', 'Data Analysis', 'Digital Marketing', 'Content Strategy'
   ];
 
   // -------------------------------------------------------------
@@ -93,8 +94,8 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
   };
 
   const handleParseResume = async () => {
-    if (!selectedFile) {
-      showToast('Select a file', 'Please choose a PDF, Word, or text resume file.', 'warning');
+    if (!selectedFile && !pastedText.trim()) {
+      showToast('Input Required', 'Please select a resume file or paste your resume text.', 'warning');
       return;
     }
 
@@ -102,15 +103,29 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     setParseProgress('Uploading document...');
 
     try {
-      const formData = new FormData();
-      formData.append('resume', selectedFile);
+      let response: Response;
 
-      setParseProgress('Groq AI scanning text & analyzing ATS structure...');
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('resume', selectedFile);
+        setParseProgress('Groq AI scanning resume & extracting ATS structure...');
+        response = await fetch('http://localhost:5000/api/career/parse-resume', {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        setParseProgress('Groq AI parsing resume text...');
+        response = await fetch('http://localhost:5000/api/career/parse-resume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: pastedText })
+        });
+      }
 
-      const response = await fetch('http://localhost:5000/api/career/parse-resume', {
-        method: 'POST',
-        body: formData
-      });
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server responded with HTTP ${response.status}`);
+      }
 
       const json = await response.json();
 
@@ -127,9 +142,9 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
           experience: Array.isArray(p.experience)
             ? p.experience.map((exp: any) => ({
                 role: exp.role || 'Role',
-                company: exp.company || 'Company',
+                company: exp.company || 'Company / Project',
                 location: exp.location || '',
-                duration: exp.duration || '2022 - Present',
+                duration: exp.duration || 'Recent',
                 bullets: Array.isArray(exp.bullets) ? exp.bullets : []
               }))
             : [],
@@ -142,39 +157,39 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
               }))
             : [],
           certifications: Array.isArray(p.certifications) ? p.certifications : [],
-          languages: Array.isArray(p.languages) ? p.languages : ['English']
+          languages: Array.isArray(p.languages) && p.languages.length > 0 ? p.languages : ['English']
         };
 
         setResumeData(updated);
 
-        // Detect missing key fields
+        // Detect genuinely missing key fields
         const detectedMissing: Array<{ field: string; label: string; reason: string }> = [];
-        if (!updated.phone) {
+        if (!updated.phone || updated.phone.trim().length < 6) {
           detectedMissing.push({
             field: 'phone',
             label: 'Phone Number',
             reason: 'Recruiters and automated screeners require a mobile contact number.'
           });
         }
-        if (!updated.location) {
+        if (!updated.location || updated.location.trim().length < 2) {
           detectedMissing.push({
             field: 'location',
             label: 'City & State',
             reason: 'Helps match location-based and remote job filters.'
           });
         }
-        if (!updated.headline) {
+        if (!updated.headline || updated.headline.trim().length < 2) {
           detectedMissing.push({
             field: 'headline',
             label: 'Target Job Title / Headline',
             reason: 'ATS algorithms score relevancy against job titles.'
           });
         }
-        if (!updated.summary) {
+        if (!updated.summary || updated.summary.trim().length < 20) {
           detectedMissing.push({
             field: 'summary',
             label: 'Professional Summary',
-            reason: 'A 3-line summary highlights your top achievements.'
+            reason: 'A 2-3 line summary highlights your top strengths.'
           });
         }
         if (updated.skills.length < 3) {
@@ -186,48 +201,13 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
         }
 
         setMissingFields(detectedMissing);
-        showToast('Resume Extracted!', 'Groq AI successfully parsed your resume.', 'success');
+        showToast('Resume Extracted!', 'Groq AI successfully extracted all details.', 'success');
       } else {
         throw new Error(json.error || 'Parsing failed.');
       }
     } catch (err: any) {
-      console.warn('[ResumeIntake] Parse error:', err);
-      showToast('Notice', 'Using fast local parser. Please verify details.', 'info');
-
-      // Local Fallback Parsing using filename & defaults
-      setResumeData((prev) => ({
-        ...prev,
-        fullName: prev.fullName || initialName || 'Candidate',
-        headline: prev.headline || 'Growth Professional',
-        summary: prev.summary || 'Results-driven professional with proven ability to deliver measurable outcomes in high-growth environments.',
-        skills: prev.skills.length > 0 ? prev.skills : ['Team Leadership', 'Strategic Planning', 'Communication'],
-        experience: [
-          {
-            role: 'Lead Specialist',
-            company: 'Growth Venture',
-            duration: '2022 - Present',
-            bullets: [
-              'Led strategic initiatives that elevated operational output by 28%.',
-              'Collaborated with key stakeholders to execute high-impact client deliverables.'
-            ]
-          }
-        ],
-        education: [
-          {
-            degree: 'Bachelor Degree',
-            institution: 'University Graduate',
-            year: '2021'
-          }
-        ]
-      }));
-
-      setMissingFields([
-        {
-          field: 'phone',
-          label: 'Phone Number',
-          reason: 'Please provide your mobile number so recruiters can reach you.'
-        }
-      ]);
+      console.error('[ResumeIntake] Parse error:', err);
+      showToast('Extraction Failed', err?.message || 'Could not parse document. Please check the file or paste your resume text.', 'error');
     } finally {
       setIsParsing(false);
       setParseProgress('');
@@ -293,8 +273,8 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
         {
           role: '',
           company: '',
-          duration: '2023 - Present',
-          bullets: ['Spearheaded strategic project resulting in 20% efficiency increase.']
+          duration: 'Recent',
+          bullets: ['Delivered key strategic project deliverables and optimized workflows.']
         }
       ]
     }));
@@ -322,7 +302,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     }));
   };
 
-  // Download Handlers
+  // Download Handlers (FOR TAB 2 ONLY)
   const handleDownloadWord = async () => {
     try {
       await downloadAtsWord(resumeData);
@@ -354,19 +334,19 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
 
   return (
     <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 overflow-hidden max-w-4xl w-full mx-auto my-6">
-      {/* Header Banner */}
+      {/* Header Banner (NO DOWNLOAD BUTTONS HERE) */}
       <div className="bg-gradient-to-r from-[#3b0764] via-[#4A154B] to-[#be185d] p-6 sm:p-8 text-white relative">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-pink-200 text-xs font-bold mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>AI-Powered ATS Resume System</span>
+              <span>AI-Powered Resume Extraction & ATS Hub</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Power Your Profile with an ATS-Friendly Resume
+              Power Your Profile with AI Resume Intelligence
             </h2>
             <p className="text-xs sm:text-sm text-purple-100 mt-1 max-w-xl">
-              Upload your existing resume for automated AI extraction, or build a brand-new ATS-optimized resume in under 2 minutes.
+              Upload your resume for automated Groq AI detail extraction, or build a brand-new ATS-optimized resume in under 2 minutes.
             </p>
           </div>
         </div>
@@ -425,7 +405,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     {selectedFile ? selectedFile.name : 'Upload Your Resume File'}
                   </h4>
                   <p className="text-xs text-gray-500 mt-1">
-                    Supports <span className="font-semibold text-gray-700">PDF, Word (.docx), and Plain Text (.txt)</span> (Max 10MB)
+                    Supports <span className="font-semibold text-gray-700">Word (.docx), PDF (.pdf), and Plain Text (.txt)</span> (Max 10MB)
                   </p>
                 </div>
                 {selectedFile && (
@@ -436,14 +416,34 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                 )}
               </label>
 
-              {/* Action Parse Button */}
-              {selectedFile && (
-                <div className="mt-4 pt-3 border-t border-purple-100 flex justify-center">
+              {/* Paste Text Toggle */}
+              <div className="mt-4 pt-3 border-t border-purple-100 flex flex-col items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPasteText(!showPasteText)}
+                  className="text-xs text-[#4A154B] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{showPasteText ? 'Hide text box' : 'Or paste your resume text directly'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPasteText ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showPasteText && (
+                  <textarea
+                    rows={6}
+                    value={pastedText}
+                    onChange={(e) => setPastedText(e.target.value)}
+                    placeholder="Paste the full text of your resume here (Name, Email, Skills, Experience, Education)..."
+                    className="w-full text-xs p-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4A154B] leading-relaxed"
+                  />
+                )}
+
+                {/* Action Parse Button */}
+                {(selectedFile || pastedText.trim()) && (
                   <button
                     type="button"
                     disabled={isParsing}
                     onClick={handleParseResume}
-                    className="flex items-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-7 py-3 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isParsing ? (
                       <>
@@ -457,12 +457,12 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                       </>
                     )}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Extracted Details & Missing Fields Review */}
-            {(resumeData.headline || resumeData.skills.length > 0 || resumeData.experience.length > 0) && (
+            {(resumeData.headline || resumeData.skills.length > 0 || resumeData.experience.length > 0 || resumeData.email) && (
               <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-4">
                 {/* MISSING FIELDS ALERT CARD (If any) */}
                 {missingFields.length > 0 && (
@@ -475,7 +475,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                             Missing Information Detected for ATS Compliance
                           </h4>
                           <p className="text-xs text-amber-700 mt-0.5">
-                            Our AI noticed the following details are missing from your resume. Please provide them to make your resume 100% recruiter-ready:
+                            Our AI noticed the following details are missing from your resume. Please provide them to make your profile 100% complete:
                           </p>
                         </div>
 
@@ -513,7 +513,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                       setMissingFields(missingFields.filter((m) => m.field !== 'location'));
                                     }
                                   }}
-                                  placeholder="e.g. Mumbai, India"
+                                  placeholder="e.g. Amritsar, Punjab"
                                   className="w-full text-xs px-3 py-1.5 border border-gray-300 rounded-lg outline-none focus:border-[#4A154B]"
                                 />
                               )}
@@ -528,7 +528,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                       setMissingFields(missingFields.filter((m) => m.field !== 'headline'));
                                     }
                                   }}
-                                  placeholder="e.g. Senior Financial Analyst"
+                                  placeholder="e.g. Full Stack Developer | Web Developer"
                                   className="w-full text-xs px-3 py-1.5 border border-gray-300 rounded-lg outline-none focus:border-[#4A154B]"
                                 />
                               )}
@@ -686,19 +686,19 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                   </div>
                 </div>
 
-                {/* Card 4: Work Experience Summary */}
+                {/* Card 4: Work Experience & Technical Projects */}
                 <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-200 space-y-3">
                   <div className="flex items-center justify-between">
                     <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Briefcase className="w-3.5 h-3.5 text-[#4A154B]" />
-                      <span>Work History ({resumeData.experience.length} Roles)</span>
+                      <span>Work History & Key Projects ({resumeData.experience.length})</span>
                     </h5>
                     <button
                       type="button"
                       onClick={addExperienceEntry}
                       className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1"
                     >
-                      <Plus className="w-3 h-3" /> Add Experience
+                      <Plus className="w-3 h-3" /> Add Entry
                     </button>
                   </div>
 
@@ -715,7 +715,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                 expCopy[idx].role = e.target.value;
                                 setResumeData({ ...resumeData, experience: expCopy });
                               }}
-                              placeholder="Job Title"
+                              placeholder="Role / Project Title"
                               className="font-bold text-xs text-gray-900 border-b border-gray-200 pb-0.5 outline-none"
                             />
                             <input
@@ -726,7 +726,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                 expCopy[idx].company = e.target.value;
                                 setResumeData({ ...resumeData, experience: expCopy });
                               }}
-                              placeholder="Company Name"
+                              placeholder="Company or Organization"
                               className="text-xs text-gray-700 border-b border-gray-200 pb-0.5 outline-none"
                             />
                             <input
@@ -737,7 +737,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                 expCopy[idx].duration = e.target.value;
                                 setResumeData({ ...resumeData, experience: expCopy });
                               }}
-                              placeholder="Duration (e.g. 2022 - 2024)"
+                              placeholder="Duration (e.g. 2022 - Present)"
                               className="text-xs text-gray-500 border-b border-gray-200 pb-0.5 outline-none"
                             />
                           </div>
@@ -764,7 +764,30 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                   </div>
                 </div>
 
-                {/* Extracted Details Verified & Save Bar */}
+                {/* Card 5: Education */}
+                {resumeData.education.length > 0 && (
+                  <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-200 space-y-3">
+                    <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-[#4A154B]" />
+                      <span>Education ({resumeData.education.length})</span>
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {resumeData.education.map((edu, idx) => (
+                        <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 text-xs">
+                          <div className="font-bold text-gray-900">{edu.degree}</div>
+                          <div className="text-gray-600">{edu.institution}</div>
+                          {(edu.year || edu.grade) && (
+                            <div className="text-gray-500 text-[11px] mt-0.5">
+                              {edu.year} {edu.grade ? `• ${edu.grade}` : ''}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Extracted Details Verified & Save Bar (NO DOWNLOAD OPTION HERE) */}
                 <div className="bg-purple-50/60 p-5 rounded-2xl border border-purple-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
                     <h5 className="text-sm font-extrabold text-[#4A154B] flex items-center gap-1.5">
@@ -779,7 +802,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                   <button
                     type="button"
                     onClick={handleFinalSubmit}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-md transition-all cursor-pointer"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-7 py-3 rounded-2xl font-bold text-xs shadow-md transition-all cursor-pointer"
                   >
                     <span>Save & Continue to Profile</span>
                     <ArrowRight className="w-4 h-4 text-pink-300" />
@@ -1033,13 +1056,13 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     className="flex items-center gap-1 text-xs font-bold text-[#4A154B] bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl border border-purple-200"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Add Role</span>
+                    <span>Add Entry</span>
                   </button>
                 </div>
 
                 {resumeData.experience.length === 0 ? (
                   <div className="border border-dashed border-gray-300 p-8 rounded-2xl text-center space-y-2 bg-gray-50/50">
-                    <p className="text-xs text-gray-600">No work experience entries added yet.</p>
+                    <p className="text-xs text-gray-600">No work experience or project entries added yet.</p>
                     <button
                       type="button"
                       onClick={addExperienceEntry}
@@ -1064,12 +1087,12 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                   copy[idx].role = e.target.value;
                                   setResumeData({ ...resumeData, experience: copy });
                                 }}
-                                placeholder="e.g. Project Associate"
+                                placeholder="e.g. Full Stack Developer"
                                 className="w-full text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none"
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Company / Client</label>
+                              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Company / Project Context</label>
                               <input
                                 type="text"
                                 value={exp.company}
@@ -1078,12 +1101,12 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                   copy[idx].company = e.target.value;
                                   setResumeData({ ...resumeData, experience: copy });
                                 }}
-                                placeholder="e.g. TechCorp India"
+                                placeholder="e.g. AlphaTech / AI Career Portal"
                                 className="w-full text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none"
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Dates of Employment</label>
+                              <label className="block text-[10px] font-bold text-gray-600 uppercase mb-0.5">Dates / Duration</label>
                               <input
                                 type="text"
                                 value={exp.duration}
@@ -1092,7 +1115,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                                   copy[idx].duration = e.target.value;
                                   setResumeData({ ...resumeData, experience: copy });
                                 }}
-                                placeholder="e.g. Jan 2022 - Present"
+                                placeholder="e.g. Jan 2024 - Present"
                                 className="w-full text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none"
                               />
                             </div>
@@ -1120,7 +1143,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                               copy[idx].bullets = e.target.value.split('\n').filter(Boolean);
                               setResumeData({ ...resumeData, experience: copy });
                             }}
-                            placeholder="Enter 1 achievement per line, e.g.:&#10;Spearheaded cross-functional workflow reducing delivery turnaround by 24%&#10;Managed key accounts generating ₹15,00,000 annual revenue"
+                            placeholder="Enter 1 achievement per line, e.g.:&#10;Engineered responsive frontend with React and Tailwind CSS&#10;Integrated REST APIs with Node.js and MongoDB"
                             className="w-full text-xs p-2.5 bg-white border border-gray-200 rounded-xl outline-none leading-relaxed"
                           />
                         </div>
@@ -1192,7 +1215,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                               copy[idx].degree = e.target.value;
                               setResumeData({ ...resumeData, education: copy });
                             }}
-                            placeholder="e.g. B.Com (Honours) / B.Tech Computer Science"
+                            placeholder="e.g. B.Tech in Computer Science"
                             className="w-full text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none"
                           />
                         </div>
@@ -1206,7 +1229,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                               copy[idx].institution = e.target.value;
                               setResumeData({ ...resumeData, education: copy });
                             }}
-                            placeholder="e.g. Mumbai University"
+                            placeholder="e.g. GNDU Amritsar"
                             className="w-full text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none"
                           />
                         </div>
@@ -1220,7 +1243,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                               copy[idx].year = e.target.value;
                               setResumeData({ ...resumeData, education: copy });
                             }}
-                            placeholder="e.g. 2021"
+                            placeholder="e.g. 2024"
                             className="w-full text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none"
                           />
                         </div>
@@ -1249,7 +1272,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
               </div>
             )}
 
-            {/* STEP 5: Skills & Final Download Bar */}
+            {/* STEP 5: Skills & Final Download Bar (DOWNLOAD ONLY AVAILABLE HERE FOR BUILDER) */}
             {createStep === 5 && (
               <div className="space-y-6 animate-in fade-in">
                 <div>
@@ -1337,7 +1360,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                   </div>
                 </div>
 
-                {/* ATS Resume Generation & Download Final Card */}
+                {/* ATS Resume Generation & Download Final Card (DOWNLOAD OPTION IS HERE ONLY) */}
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-3xl border border-purple-200 shadow-sm space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#4A154B] text-white flex items-center justify-center font-black">
@@ -1345,10 +1368,10 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     </div>
                     <div>
                       <h4 className="text-base font-extrabold text-gray-900">
-                        Your ATS-Friendly Resume is Ready!
+                        Your ATS-Friendly Resume is Ready to Download!
                       </h4>
                       <p className="text-xs text-gray-600">
-                        Download in clean Word format or PDF, perfectly structured for job application portals.
+                        Download your newly created resume in clean Word format (.docx) or PDF (.pdf) for job portals.
                       </p>
                     </div>
                   </div>
@@ -1401,4 +1424,3 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     </div>
   );
 };
-

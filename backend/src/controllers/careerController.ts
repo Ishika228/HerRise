@@ -35,6 +35,59 @@ export const analyzeResume = (req: Request, res: Response) => {
 };
 
 /**
+ * Universal PDF Text Extractor supporting pdf-parse v2 class API and v1 fallback
+ */
+async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  try {
+    const pAny = pdfParse as any;
+    const PDFClass = pAny.PDFParse || (pAny.default && pAny.default.PDFParse);
+    if (PDFClass) {
+      const parser = new PDFClass({ data: buffer });
+      await parser.load();
+      const textResult = await parser.getText();
+      await parser.destroy();
+      if (textResult) {
+        if (typeof textResult.text === 'string' && textResult.text.trim()) {
+          return textResult.text;
+        }
+        if (typeof textResult === 'string' && textResult.trim()) {
+          return textResult;
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn('[CareerController] PDFParse v2 notice:', err?.message);
+  }
+
+  try {
+    const fn = (pdfParse as any).default || pdfParse;
+    if (typeof fn === 'function') {
+      const res = await fn(buffer);
+      if (res && res.text) return res.text;
+    }
+  } catch (err2: any) {
+    console.warn('[CareerController] PDFParse v1 notice:', err2?.message);
+  }
+
+  return buffer.toString('utf-8');
+}
+
+/**
+ * Universal DOCX Text Extractor via Mammoth
+ */
+async function extractTextFromDocx(buffer: Buffer): Promise<string> {
+  try {
+    const res = await mammoth.extractRawText({ buffer });
+    if (res && res.value && res.value.trim().length > 0) {
+      return res.value;
+    }
+  } catch (err: any) {
+    console.warn('[CareerController] Mammoth docx error:', err?.message);
+  }
+  return buffer.toString('utf-8');
+}
+
+/**
  * Intelligent heuristic fallback parser that extracts real text sections without dummy placeholders
  */
 function heuristicResumeParser(text: string) {
@@ -89,7 +142,7 @@ function heuristicResumeParser(text: string) {
   // Synthesize a clean, professional summary based on actual headline & skills
   let summary = '';
   if (headline || detectedSkills.length > 0) {
-    summary = `${headline || 'Professional'}${location ? ` based in ${location}` : ''} proficient in ${detectedSkills.slice(0, 5).join(', ') || 'modern industry methodologies'}. Committed to building high-quality, impactful deliverables and collaborating in growth-driven teams.`;
+    summary = `${headline || 'Professional'}${location ? ` based in ${location}` : ''} with hands-on proficiency in ${detectedSkills.slice(0, 5).join(', ') || 'modern industry methodologies'}. Committed to building high-quality, impactful deliverables and collaborating in growth-driven teams.`;
   }
 
   // Check for projects / experience sections
@@ -192,25 +245,24 @@ export const parseResume = async (req: Request, res: Response) => {
       const mimetype = req.file.mimetype;
       const originalname = req.file.originalname.toLowerCase();
 
+      console.log(`[CareerController] Processing resume upload: ${originalname} (${mimetype}, ${buffer.length} bytes)`);
+
       if (mimetype === 'application/pdf' || originalname.endsWith('.pdf')) {
-        const parseFunc = (pdfParse as any).default || pdfParse;
-        const pdfData = await parseFunc(buffer);
-        rawText = pdfData.text || '';
+        rawText = await extractTextFromPdf(buffer);
       } else if (
         mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        originalname.endsWith('.docx')
+        originalname.endsWith('.docx') ||
+        originalname.endsWith('.doc')
       ) {
-        const docxData = await mammoth.extractRawText({ buffer });
-        rawText = docxData.value || '';
-      } else if (mimetype === 'text/plain' || originalname.endsWith('.txt')) {
-        rawText = buffer.toString('utf-8');
+        rawText = await extractTextFromDocx(buffer);
       } else {
-        // Attempt utf-8 decoding as fallback
         rawText = buffer.toString('utf-8');
       }
     } else if (req.body.text) {
       rawText = String(req.body.text);
     }
+
+    console.log(`[CareerController] Extracted text length: ${rawText.length}`);
 
     if (!rawText || rawText.trim().length < 15) {
       return res.status(400).json({
@@ -224,22 +276,22 @@ export const parseResume = async (req: Request, res: Response) => {
       {
         role: 'system' as const,
         content: `You are an elite, highly precise resume parser and information extractor.
-Extract all candidate details from the provided raw resume text into a single JSON object.
+Analyze the candidate's raw resume text and extract all details into a clean, valid JSON object.
 Never invent dummy names or company names. Use exact information present in the resume.
 
 JSON Schema:
 {
-  "fullName": "Exact Candidate Name",
-  "email": "candidate email address",
-  "phone": "candidate phone / mobile number",
-  "location": "City and State e.g. Amritsar, Punjab",
-  "headline": "Job title or professional role e.g. Full Stack Developer | Web Developer",
-  "summary": "Professional summary statement. If candidate has no explicit summary section, synthesize a professional 2-sentence summary based on their role and skills. DO NOT dump phone/email/education text into summary.",
+  "fullName": "Exact Candidate Name (e.g. ISHIKA BHATIA)",
+  "email": "Candidate email (e.g. ishikabhatia5777@gmail.com)",
+  "phone": "Candidate mobile number (e.g. 7508163418)",
+  "location": "Candidate city and state or region (e.g. Amritsar, Punjab)",
+  "headline": "Job title or technical role (e.g. FULL STACK DEVELOPER | WEB DEVELOPER)",
+  "summary": "Concise 2-sentence professional ATS summary reflecting their role and core stack. DO NOT dump phone/email/education headings into summary.",
   "skills": ["Skill 1", "Skill 2", ...],
   "experience": [
     {
-      "role": "Job Title or Project Name",
-      "company": "Company or Project Context",
+      "role": "Job Title or Technical Project Title",
+      "company": "Company Name or Project Name",
       "location": "Location or empty string",
       "duration": "Duration e.g. 2023 - 2024",
       "bullets": ["Action verb + task + outcome bullet"]
@@ -293,6 +345,7 @@ Important Instructions:
       }
 
       parsedResult = JSON.parse(cleaned);
+      console.log(`[CareerController] Successfully parsed resume via Groq AI for ${parsedResult.fullName || 'Candidate'}`);
     } catch (aiErr: any) {
       console.warn('[CareerController] Groq AI parsing notice, invoking rule-based parser:', aiErr?.message);
       parsedResult = heuristicResumeParser(rawText);
