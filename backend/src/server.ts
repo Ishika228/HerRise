@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import path from 'path';
+import fs from 'fs';
 import { config } from './config/env.js';
 import { connectDatabase } from './config/database.js';
 import { seedMongoIfEmpty } from './services/seedDatabase.js';
@@ -82,7 +84,22 @@ app.use('/api/market', marketRoutes);
 app.use('/api/learn', learnRoutes);
 app.use('/api/network', networkRoutes);
 
-// 404 Route Handler
+// Serve compiled React frontend in production if dist exists
+const frontendDist = path.resolve(process.cwd(), 'frontend/dist');
+const altFrontendDist = path.resolve(__dirname, '../../frontend/dist');
+const activeDist = fs.existsSync(frontendDist) ? frontendDist : (fs.existsSync(altFrontendDist) ? altFrontendDist : null);
+
+if (activeDist) {
+  app.use(express.static(activeDist));
+  app.get('*', (req: Request, res: Response, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(activeDist, 'index.html'));
+  });
+}
+
+// 404 Route Handler for unmatched API routes
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
