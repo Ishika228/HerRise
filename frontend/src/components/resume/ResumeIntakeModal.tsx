@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { AtsResumeData, downloadAtsPdf, downloadAtsWord } from '../../services/resumeExportService';
 import { useToast } from '../../context/ToastContext';
+import { isProjectEntry } from '../../context/HerCareerContext';
 
 interface ResumeIntakeModalProps {
   initialName?: string;
@@ -132,6 +133,12 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
 
       if (json.success && json.parsed) {
         const p = json.parsed;
+        const rawParsedExp = Array.isArray(p.experience) ? p.experience : [];
+        const rawParsedProj = Array.isArray(p.projects) ? p.projects : [];
+
+        const cleanExp = rawParsedExp.filter((e: any) => !isProjectEntry(e));
+        const extraProjects = rawParsedExp.filter((e: any) => isProjectEntry(e));
+
         const updated: AtsResumeData = {
           fullName: p.fullName || initialName || resumeData.fullName,
           email: p.email || initialEmail || resumeData.email,
@@ -140,17 +147,15 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
           headline: p.headline || 'Professional Specialist',
           summary: p.summary || '',
           skills: Array.isArray(p.skills) ? p.skills : [],
-          experience: Array.isArray(p.experience)
-            ? p.experience.map((exp: any) => ({
-              role: exp.role || exp.title || 'Role',
-              company: exp.company || 'Organization',
-              location: exp.location || '',
-              duration: exp.duration || 'Recent',
-              bullets: Array.isArray(exp.bullets || exp.highlights) ? exp.bullets || exp.highlights : []
-            }))
-            : [],
-          projects: Array.isArray(p.projects)
-            ? p.projects.map((proj: any) => ({
+          experience: cleanExp.map((exp: any) => ({
+            role: exp.role || exp.title || 'Role',
+            company: exp.company || 'Organization',
+            location: exp.location || '',
+            duration: exp.duration || 'Recent',
+            bullets: Array.isArray(exp.bullets || exp.highlights) ? exp.bullets || exp.highlights : []
+          })),
+          projects: [
+            ...rawParsedProj.map((proj: any) => ({
               title: proj.title || 'Technical Project',
               role: proj.role || 'Full Stack Developer',
               technologies: Array.isArray(proj.technologies)
@@ -161,8 +166,19 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
               highlights: Array.isArray(proj.highlights || proj.bullets)
                 ? proj.highlights || proj.bullets
                 : []
+            })),
+            ...extraProjects.map((e: any) => ({
+              title: (e.role || e.title || 'Technical Project')
+                .replace(/^Project:\s*/i, '')
+                .replace(/Interactive Rot/i, 'Interactive Robot')
+                .trim(),
+              role: 'Full Stack Developer',
+              technologies: (e.company || '').replace(/\s*Project\s*/i, '').trim() || 'MERN Stack',
+              link: '',
+              description: e.description || (e.bullets && e.bullets[0]) || '',
+              highlights: Array.isArray(e.bullets || e.highlights) ? e.bullets || e.highlights : []
             }))
-            : [],
+          ],
           education: Array.isArray(p.education)
             ? p.education.map((edu: any) => ({
               degree: edu.degree || 'Degree',

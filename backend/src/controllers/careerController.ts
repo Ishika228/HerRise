@@ -1088,6 +1088,49 @@ Output valid JSON matching this schema:
         responseFormat: { type: 'json_object' }
       });
       const parsed = JSON.parse(response);
+
+      // Post-processing guard: strictly separate any projects accidentally placed in experience
+      if (Array.isArray(parsed.experience)) {
+        const cleanExp: any[] = [];
+        const extraProjects: any[] = [];
+
+        for (const exp of parsed.experience) {
+          const t = (exp.title || exp.role || '').toLowerCase();
+          const c = (exp.company || '').toLowerCase();
+          const isProj =
+            t.includes('project') ||
+            c.includes('project') ||
+            t.includes('auraestate') ||
+            t.includes('voice assistant') ||
+            t.includes('interactive rot') ||
+            t.includes('interactive robot') ||
+            t.includes('fitness fusion') ||
+            t.includes('ultrasonic') ||
+            t.includes('ielts') ||
+            c.includes('mern stack') ||
+            c.includes('ai & iot');
+
+          if (isProj) {
+            extraProjects.push({
+              title: (exp.title || exp.role || 'Technical Project').replace(/^Project:\s*/i, '').trim(),
+              role: 'Full Stack Developer',
+              technologies: (exp.company || '').replace(/\s*Project\s*/i, '').trim() || ['React.js', 'Node.js'],
+              link: '',
+              description: (exp.highlights && exp.highlights[0]) || '',
+              highlights: exp.highlights || []
+            });
+          } else {
+            cleanExp.push(exp);
+          }
+        }
+
+        parsed.experience = cleanExp;
+        if (!Array.isArray(parsed.projects)) {
+          parsed.projects = [];
+        }
+        parsed.projects = [...parsed.projects, ...extraProjects];
+      }
+
       return res.status(200).json({ success: true, parsed, textLength: rawText.length });
     } catch (e) {
       console.warn('[Parse Resume Groq error]:', e);

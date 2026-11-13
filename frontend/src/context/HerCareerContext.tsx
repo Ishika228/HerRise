@@ -90,6 +90,87 @@ interface HerCareerContextType {
   askCareerAssistant: (prompt: string) => Promise<void>;
 }
 
+// Helper to detect if an item in experience is actually a project
+export function isProjectEntry(item: { title?: string; role?: string; company?: string; description?: string }): boolean {
+  if (!item) return false;
+  const title = (item.title || item.role || '').toLowerCase();
+  const company = (item.company || '').toLowerCase();
+
+  return (
+    title.includes('project') ||
+    company.includes('project') ||
+    title.startsWith('project:') ||
+    title.includes('auraestate') ||
+    title.includes('voice assistant') ||
+    title.includes('interactive rot') ||
+    title.includes('interactive robot') ||
+    title.includes('fitness fusion') ||
+    title.includes('ultrasonic') ||
+    title.includes('ielts') ||
+    company.includes('mern stack') ||
+    company.includes('ai & iot') ||
+    company.includes('iot project') ||
+    company.includes('django project') ||
+    company.includes('arduino')
+  );
+}
+
+// Strictly separate projects that were placed inside experience and move them to projects
+export function separateExperienceAndProjects(resume: ResumeData): ResumeData {
+  if (!resume) return resume;
+  const actualExperience: ResumeData['experience'] = [];
+  const existingProjects: ResumeData['projects'] = [...(resume.projects || [])];
+
+  for (const exp of (resume.experience || [])) {
+    if (isProjectEntry(exp)) {
+      // It's a project mistakenly placed in experience! Clean it up and move to projects
+      const cleanedTitle = exp.title
+        .replace(/^Project:\s*/i, '')
+        .replace(/Interactive Rot/i, 'Interactive Robot')
+        .trim();
+
+      const techStack: string[] = [];
+      if (exp.company) {
+        const cleanedComp = exp.company.replace(/\s*Project\s*/i, '').trim();
+        if (cleanedComp && !cleanedComp.toLowerCase().includes('company') && !cleanedComp.toLowerCase().includes('organization')) {
+          const parts = cleanedComp.split(/[,|/&]/).map((s) => s.trim()).filter(Boolean);
+          techStack.push(...parts);
+        }
+      }
+
+      if (cleanedTitle.toLowerCase().includes('auraestate') && techStack.length === 0) {
+        techStack.push('MongoDB', 'Express.js', 'React.js', 'Node.js', 'MERN Stack');
+      } else if (cleanedTitle.toLowerCase().includes('voice assistant') && techStack.length === 0) {
+        techStack.push('Python', 'Gemini AI', 'Speech Recognition', 'ESP8266', 'Arduino');
+      }
+
+      const alreadyExists = existingProjects.some(
+        (p) => p.title.toLowerCase().includes(cleanedTitle.toLowerCase().slice(0, 10))
+      );
+
+      if (!alreadyExists) {
+        existingProjects.push({
+          id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          title: cleanedTitle,
+          role: 'Full Stack Developer',
+          technologies: techStack.length > 0 ? techStack : ['React.js', 'Node.js', 'Python'],
+          link: '',
+          description: exp.description || (exp.highlights && exp.highlights[0]) || '',
+          highlights: exp.highlights || []
+        });
+      }
+    } else {
+      actualExperience.push(exp);
+    }
+  }
+
+  return {
+    ...resume,
+    experience: actualExperience,
+    projects: existingProjects
+  };
+}
+
 export function buildPersonalizedResume(user: any): ResumeData {
   let storedResume: any = null;
   try {
@@ -141,8 +222,17 @@ export function buildPersonalizedResume(user: any): ResumeData {
   const rawExp = storedResume?.experience || user?.resumeData?.experience;
   let experience: ResumeData['experience'] = [];
 
-  if (rawExp && Array.isArray(rawExp) && rawExp.length > 0) {
-    experience = rawExp.map((e: any, idx: number) => ({
+  // Filter out any projects that were mistakenly inside raw experience
+  const cleanExpList = (rawExp && Array.isArray(rawExp))
+    ? rawExp.filter((e: any) => !isProjectEntry(e))
+    : [];
+
+  const rawProjectEntriesFromExp = (rawExp && Array.isArray(rawExp))
+    ? rawExp.filter((e: any) => isProjectEntry(e))
+    : [];
+
+  if (cleanExpList.length > 0) {
+    experience = cleanExpList.map((e: any, idx: number) => ({
       id: `exp-${idx + 1}`,
       title: e.role || e.title || targetRole,
       company: e.company || 'Organization',
@@ -228,6 +318,18 @@ export function buildPersonalizedResume(user: any): ResumeData {
       },
       {
         id: 'proj-2',
+        title: 'AI Voice Assistant & Interactive Robot',
+        role: 'AI & IoT Developer',
+        technologies: ['Python', 'Gemini AI', 'Speech Recognition', 'ESP8266', 'Arduino'],
+        link: '',
+        description: 'AI-powered voice assistant integrated with physical robot hardware for real-time speech interaction.',
+        highlights: [
+          'Developed an AI-powered, Alexa-like voice assistant integrated with a physical robot for real-time voice conversations.',
+          'Built a Listen → Process → Respond pipeline using Speech Recognition, Gemini AI, and Text-to-Speech with Python-ESP8266 integration for LED eyes and mouth animations.'
+        ]
+      },
+      {
+        id: 'proj-3',
         title: 'Fitness Fusion (Gym Management)',
         role: 'Web Developer',
         technologies: ['HTML', 'CSS', 'Python', 'Django', 'Bootstrap'],
@@ -239,17 +341,6 @@ export function buildPersonalizedResume(user: any): ResumeData {
         ]
       },
       {
-        id: 'proj-3',
-        title: 'IELTS Practice Website',
-        role: 'AI & Web Developer',
-        technologies: ['React.js', 'Python', 'AI Agents'],
-        link: '',
-        description: 'Interactive test preparation platform utilizing specialized AI agents for English language evaluation.',
-        highlights: [
-          'Developed intelligent AI agents for real-time writing analysis and speaking test practice.'
-        ]
-      },
-      {
         id: 'proj-4',
         title: 'Ultrasonic Distance Project',
         role: 'Embedded Systems Developer',
@@ -258,6 +349,17 @@ export function buildPersonalizedResume(user: any): ResumeData {
         description: 'Hardware-software embedded system measuring precision distances in real-time.',
         highlights: [
           'Programmed Arduino micro-controller in C++ to interface with ultrasonic sensors for accurate distance calculations.'
+        ]
+      },
+      {
+        id: 'proj-5',
+        title: 'IELTS Practice Website',
+        role: 'AI & Web Developer',
+        technologies: ['React.js', 'Python', 'AI Agents'],
+        link: '',
+        description: 'Interactive test preparation platform utilizing specialized AI agents for English language evaluation.',
+        highlights: [
+          'Developed intelligent AI agents for real-time writing analysis and speaking test practice.'
         ]
       }
     ];
@@ -277,6 +379,22 @@ export function buildPersonalizedResume(user: any): ResumeData {
         ]
       }
     ];
+  }
+
+  // Also append any projects that were extracted from rawExp if not already present
+  for (const expProj of rawProjectEntriesFromExp) {
+    const cleanedTitle = (expProj.title || '').replace(/^Project:\s*/i, '').trim();
+    if (!projects.some((p) => p.title.toLowerCase().includes(cleanedTitle.toLowerCase().slice(0, 8)))) {
+      projects.push({
+        id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        title: cleanedTitle,
+        role: 'Full Stack Developer',
+        technologies: ['MERN Stack', 'React.js', 'Node.js'],
+        link: '',
+        description: expProj.description || (expProj.highlights && expProj.highlights[0]) || '',
+        highlights: expProj.highlights || []
+      });
+    }
   }
 
   // 3. EDUCATION
@@ -485,41 +603,61 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // 3. Resumes State initialized dynamically from authenticated user
   const [resumes, setResumes] = useState<ResumeData[]>(() => {
-    const personalized = buildPersonalizedResume(user);
+    const personalized = separateExperienceAndProjects(buildPersonalizedResume(user));
     try {
       const saved = localStorage.getItem('hercareer_resumes');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Remove any stale hardcoded Ananya Sharma resumes
-          const valid = parsed.filter(
-            (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
-          );
-          if (valid.length > 0) return valid;
+          // Remove any stale hardcoded Ananya Sharma resumes AND strictly separate projects from experience
+          const sanitized = parsed
+            .filter(
+              (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
+            )
+            .map((r) => separateExperienceAndProjects(r));
+
+          if (sanitized.length > 0) {
+            localStorage.setItem('hercareer_resumes', JSON.stringify(sanitized));
+            return sanitized;
+          }
         }
       }
     } catch { }
     return [personalized];
   });
 
-  const [activeResume, setActiveResume] = useState<ResumeData>(() => resumes[0] || buildPersonalizedResume(user));
+  const [activeResume, setActiveResume] = useState<ResumeData>(() => {
+    const initial = resumes[0] || buildPersonalizedResume(user);
+    return separateExperienceAndProjects(initial);
+  });
 
   // Dynamic user sync: when authenticated user changes or logs in, calibrate profile & resume
   useEffect(() => {
     if (user && user.email) {
-      const personalized = buildPersonalizedResume(user);
+      const personalized = separateExperienceAndProjects(buildPersonalizedResume(user));
       const userProf = buildProfileFromUser(user);
       setProfile(userProf);
 
       setResumes((prev) => {
-        const filtered = prev.filter(
-          (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
-        );
-        const hasUserResume = filtered.some((r) => r.personalInfo.email === user.email || r.personalInfo.fullName === user.name);
-        if (!hasUserResume || filtered.length === 0) {
-          return [personalized, ...filtered];
+        const sanitized = prev
+          .filter(
+            (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
+          )
+          .map((r) => separateExperienceAndProjects(r));
+
+        const hasUserResume = sanitized.some((r) => r.personalInfo.email === user.email || r.personalInfo.fullName === user.name);
+        let finalResumes: ResumeData[];
+        if (!hasUserResume || sanitized.length === 0) {
+          finalResumes = [personalized, ...sanitized];
+        } else {
+          finalResumes = sanitized.map((r) =>
+            (r.personalInfo.email === user.email || r.personalInfo.fullName === user.name)
+              ? separateExperienceAndProjects(r)
+              : r
+          );
         }
-        return filtered;
+        localStorage.setItem('hercareer_resumes', JSON.stringify(finalResumes));
+        return finalResumes;
       });
 
       setActiveResume((prev) => {
@@ -531,7 +669,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         ) {
           return personalized;
         }
-        return prev;
+        return separateExperienceAndProjects(prev);
       });
     }
   }, [user?.id, user?.email, user?.name, user?.skills]);
@@ -546,7 +684,8 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [resumes]);
 
   const saveResumeData = async (data: ResumeData): Promise<boolean> => {
-    const updated = { ...data, updatedAt: new Date().toISOString() };
+    const cleaned = separateExperienceAndProjects(data);
+    const updated = { ...cleaned, updatedAt: new Date().toISOString() };
     setResumes((prev) => {
       const idx = prev.findIndex((r) => r.id === updated.id);
       if (idx >= 0) {

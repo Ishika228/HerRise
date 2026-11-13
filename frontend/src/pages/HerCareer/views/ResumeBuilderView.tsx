@@ -18,7 +18,7 @@ import {
   MapPin,
   FileDown
 } from 'lucide-react';
-import { useHerCareer } from '../../../context/HerCareerContext';
+import { useHerCareer, isProjectEntry, separateExperienceAndProjects } from '../../../context/HerCareerContext';
 import { useToast } from '../../../context/ToastContext';
 import { ResumeData } from '../../../types/career';
 import { downloadAtsPdf, downloadAtsWord, AtsResumeData } from '../../../services/resumeExportService';
@@ -40,6 +40,16 @@ export const ResumeBuilderView: React.FC = () => {
   const [isPolishing, setIsPolishing] = useState<string | null>(null);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
+  // Auto-separate any projects that are mistakenly in the experience column and move them to projects
+  React.useEffect(() => {
+    if (activeResume?.experience && activeResume.experience.some(isProjectEntry)) {
+      const cleaned = separateExperienceAndProjects(activeResume);
+      setActiveResume(cleaned);
+      saveResumeData(cleaned);
+      showToast('Projects Moved', 'Removed projects from Experience column and added them to Projects column', 'success');
+    }
+  }, [activeResume?.experience]);
 
   // New item inputs
   const [newSkill, setNewSkill] = useState('');
@@ -428,36 +438,53 @@ export const ResumeBuilderView: React.FC = () => {
 
           {/* Section 3: Work Experience with AI Bullet Enhancer */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-2 gap-2">
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900">3. Work Experience</h3>
                 <p className="text-xs text-slate-500">Corporate roles, faculty/trainer jobs, or formal internships (optional for freshers)</p>
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveResume({
-                    ...activeResume,
-                    experience: [
-                      ...activeResume.experience,
-                      {
-                        id: `exp-${Date.now()}`,
-                        title: 'Software Developer',
-                        company: 'Company Name',
-                        startDate: '2024-01',
-                        endDate: 'Present',
-                        current: true,
-                        description: 'Key deliverables and team collaboration.',
-                        highlights: ['Delivered core features on time with high code quality.']
-                      }
-                    ]
-                  })
-                }
-                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Position</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {activeResume.experience.some(isProjectEntry) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cleaned = separateExperienceAndProjects(activeResume);
+                      setActiveResume(cleaned);
+                      saveResumeData(cleaned);
+                      showToast('Projects Organized', 'Removed projects from Experience column and added them to Projects column', 'success');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-teal-100 hover:bg-teal-200 text-teal-900 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-teal-700" />
+                    <span>Move Projects to Projects Column</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveResume({
+                      ...activeResume,
+                      experience: [
+                        ...activeResume.experience,
+                        {
+                          id: `exp-${Date.now()}`,
+                          title: 'Software Developer',
+                          company: 'Company Name',
+                          startDate: '2024-01',
+                          endDate: 'Present',
+                          current: true,
+                          description: 'Key deliverables and team collaboration.',
+                          highlights: ['Delivered core features on time with high code quality.']
+                        }
+                      ]
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Position</span>
+                </button>
+              </div>
             </div>
 
             {activeResume.experience.length === 0 ? (
@@ -472,19 +499,50 @@ export const ResumeBuilderView: React.FC = () => {
                   <div key={exp.id} className="p-4.5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-slate-600">Position #{expIdx + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveResume({
-                            ...activeResume,
-                            experience: activeResume.experience.filter((e) => e.id !== exp.id)
-                          })
-                        }
-                        className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
-                        title="Delete position"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {isProjectEntry(exp) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedProjects = [
+                                ...(activeResume.projects || []),
+                                {
+                                  id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                                  title: exp.title.replace(/^Project:\s*/i, '').replace(/Interactive Rot/i, 'Interactive Robot').trim(),
+                                  role: 'Full Stack Developer',
+                                  technologies: exp.company
+                                    ? exp.company.replace(/\s*Project\s*/i, '').split(/[,|/&]/).map((s) => s.trim()).filter(Boolean)
+                                    : ['React.js', 'Node.js'],
+                                  link: '',
+                                  description: exp.description || (exp.highlights && exp.highlights[0]) || '',
+                                  highlights: exp.highlights || []
+                                }
+                              ];
+                              const updatedExperience = activeResume.experience.filter((e) => e.id !== exp.id);
+                              const cleaned = { ...activeResume, experience: updatedExperience, projects: updatedProjects };
+                              setActiveResume(cleaned);
+                              saveResumeData(cleaned);
+                              showToast('Moved to Projects Column', `Moved "${exp.title}" to Key Projects section`, 'success');
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold text-[11px] cursor-pointer"
+                          >
+                            Move to Projects Column →
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveResume({
+                              ...activeResume,
+                              experience: activeResume.experience.filter((e) => e.id !== exp.id)
+                            })
+                          }
+                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                          title="Delete position"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
