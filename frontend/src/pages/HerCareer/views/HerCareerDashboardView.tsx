@@ -30,8 +30,8 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
 
   return (
     <div className="space-y-6">
-      {/* 1. Five Summary Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      {/* 1. Four Summary Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Total Resumes */}
         <div
           onClick={() => onNavigateTab('builder')}
@@ -99,23 +99,6 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             <p className="text-[11px] text-indigo-600 font-semibold mt-0.5">Simulations Ready</p>
           </div>
         </div>
-
-        {/* Skills Completed */}
-        <div
-          onClick={() => onNavigateTab('roadmap')}
-          className="col-span-2 lg:col-span-1 bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-            <span>Skills Completed</span>
-            <div className="p-2 rounded-xl bg-cyan-50 text-cyan-700 group-hover:bg-cyan-600 group-hover:text-white transition-all">
-              <Award className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stats.skillsCompleted}</h3>
-            <p className="text-[11px] text-cyan-600 font-semibold mt-0.5">On Career Roadmap</p>
-          </div>
-        </div>
       </div>
 
       {/* 2. Quick Actions Section */}
@@ -128,7 +111,7 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
           <span className="text-[11px] text-slate-500">Select an action to launch</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
           <button
             type="button"
             onClick={() => onNavigateTab('builder')}
@@ -175,18 +158,6 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             </div>
             <h4 className="text-xs font-bold text-slate-900">Interview Prep</h4>
             <p className="text-[10px] text-slate-500 mt-0.5">Simulate answers</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigateTab('roadmap')}
-            className="p-3.5 rounded-2xl bg-slate-50 hover:bg-teal-50/70 border border-slate-200/80 hover:border-teal-300 text-left transition-all group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-            <h4 className="text-xs font-bold text-slate-900">Career Roadmap</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Skill gap plan</p>
           </button>
 
           <button

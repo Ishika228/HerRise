@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { HerCareerProvider } from '../../context/HerCareerContext';
 import { HerCareerLayout, HerCareerTab } from './HerCareerLayout';
 
-// All 8 Core Views
+// Core Views
 import { HerCareerDashboardView } from './views/HerCareerDashboardView';
 import { ResumeBuilderView } from './views/ResumeBuilderView';
 import { ResumeAnalyzerView } from './views/ResumeAnalyzerView';
 import { JobSearchView } from './views/JobSearchView';
 import { ApplicationTrackerView } from './views/ApplicationTrackerView';
 import { InterviewPrepView } from './views/InterviewPrepView';
-import { CareerRoadmapView } from './views/CareerRoadmapView';
 import { CareerRestartView } from './views/CareerRestartView';
 import { HerCareerAssistantView } from './views/HerCareerAssistantView';
 
@@ -28,8 +26,6 @@ const HerCareerContent: React.FC = () => {
         return <ApplicationTrackerView />;
       case 'interview':
         return <InterviewPrepView />;
-      case 'roadmap':
-        return <CareerRoadmapView />;
       case 'restart':
         return <CareerRestartView />;
       case 'assistant':
@@ -47,12 +43,10 @@ const HerCareerContent: React.FC = () => {
   );
 };
 
+// HerCareerProvider is already mounted at the App level (App.tsx).
+// No need to re-wrap here — just render content directly.
 export const HerCareerPage: React.FC = () => {
-  return (
-    <HerCareerProvider>
-      <HerCareerContent />
-    </HerCareerProvider>
-  );
+  return <HerCareerContent />;
 };
 
 export default HerCareerPage;

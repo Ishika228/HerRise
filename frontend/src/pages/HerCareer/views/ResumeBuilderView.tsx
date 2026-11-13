@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   FileText,
   Sparkles,
   Download,
+  Upload,
   Plus,
   Trash2,
   CheckCircle2,
@@ -32,24 +33,58 @@ export const ResumeBuilderView: React.FC = () => {
     aiEnhanceBullet,
     aiSuggestSkillsForRole,
     aiGenerateSummaries,
+    parseResumeFile,
+    importParsedResume,
     profile
   } = useHerCareer();
   const { showToast } = useToast();
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const [isPolishing, setIsPolishing] = useState<string | null>(null);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
-  // Auto-separate any projects that are mistakenly in the experience column and move them to projects
-  React.useEffect(() => {
-    if (activeResume?.experience && activeResume.experience.some(isProjectEntry)) {
-      const cleaned = separateExperienceAndProjects(activeResume);
-      setActiveResume(cleaned);
-      saveResumeData(cleaned);
-      showToast('Projects Moved', 'Removed projects from Experience column and added them to Projects column', 'success');
+  // Upload and parse any resume (PDF/Word/Docx/Text) dynamically without hardcoded data
+  const handleResumeFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingResume(true);
+    showToast('Analyzing Document', `Groq AI scanning ${file.name}...`, 'info');
+    try {
+      const data = await parseResumeFile(file);
+      if (data && data.parsed) {
+        await importParsedResume(data.parsed);
+        showToast('Resume Populated! ✨', `All fields extracted and updated from ${file.name}`, 'success');
+      } else {
+        showToast('Parsing Notice', 'Could not extract structured data. Please verify the document format.', 'warning');
+      }
+    } catch (err: any) {
+      console.error('Resume upload error:', err);
+      showToast('Upload Failed', err?.message || 'Could not parse document. Please check the file.', 'error');
+    } finally {
+      setIsUploadingResume(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [activeResume?.experience]);
+  };
+
+  // Auto-separate any projects mistakenly in the experience column — runs ONCE on mount only
+  React.useEffect(() => {
+    if (activeResume) {
+      const hasProjectsInExp = (activeResume.experience || []).some(isProjectEntry);
+      const hasStaleDates = (activeResume.experience || []).some((e) => e.startDate?.includes('2026'));
+
+      if (hasProjectsInExp || hasStaleDates) {
+        const cleaned = separateExperienceAndProjects(activeResume);
+        setActiveResume(cleaned);
+        saveResumeData(cleaned);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps = run once on mount only (avoids infinite loop)
 
   // New item inputs
   const [newSkill, setNewSkill] = useState('');
@@ -238,6 +273,29 @@ export const ResumeBuilderView: React.FC = () => {
               <span>Live Preview</span>
             </button>
           </div>
+
+          {/* Upload & Import Any Resume Button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt"
+            className="hidden"
+            onChange={handleResumeFileUpload}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingResume}
+            className="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+            title="Upload any resume (PDF or Word) to dynamically extract and populate all sections"
+          >
+            {isUploadingResume ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <Upload className="w-4 h-4 text-violet-200" />
+            )}
+            <span>{isUploadingResume ? 'Parsing...' : 'Upload Resume'}</span>
+          </button>
 
           <button
             type="button"
@@ -487,7 +545,7 @@ export const ResumeBuilderView: React.FC = () => {
               </div>
             </div>
 
-            {activeResume.experience.length === 0 ? (
+            {activeResume.experience.filter((exp) => !isProjectEntry(exp)).length === 0 ? (
               <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
                 <p className="text-xs text-slate-500">
                   No corporate work history listed — your technical projects below will be showcased as your primary proof of work.
@@ -495,141 +553,131 @@ export const ResumeBuilderView: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-5">
-                {activeResume.experience.map((exp, expIdx) => (
-                  <div key={exp.id} className="p-4.5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-slate-600">Position #{expIdx + 1}</span>
-                      <div className="flex items-center gap-2">
-                        {isProjectEntry(exp) && (
+                {activeResume.experience
+                  .filter((exp) => !isProjectEntry(exp))
+                  .map((exp, expIdx) => (
+                    <div key={exp.id} className="p-4.5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-slate-600">Position #{expIdx + 1}</span>
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => {
-                              const updatedProjects = [
-                                ...(activeResume.projects || []),
-                                {
-                                  id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-                                  title: exp.title.replace(/^Project:\s*/i, '').replace(/Interactive Rot/i, 'Interactive Robot').trim(),
-                                  role: 'Full Stack Developer',
-                                  technologies: exp.company
-                                    ? exp.company.replace(/\s*Project\s*/i, '').split(/[,|/&]/).map((s) => s.trim()).filter(Boolean)
-                                    : ['React.js', 'Node.js'],
-                                  link: '',
-                                  description: exp.description || (exp.highlights && exp.highlights[0]) || '',
-                                  highlights: exp.highlights || []
-                                }
-                              ];
-                              const updatedExperience = activeResume.experience.filter((e) => e.id !== exp.id);
-                              const cleaned = { ...activeResume, experience: updatedExperience, projects: updatedProjects };
-                              setActiveResume(cleaned);
-                              saveResumeData(cleaned);
-                              showToast('Moved to Projects Column', `Moved "${exp.title}" to Key Projects section`, 'success');
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold text-[11px] cursor-pointer"
+                            onClick={() =>
+                              setActiveResume({
+                                ...activeResume,
+                                experience: activeResume.experience.filter((e) => e.id !== exp.id)
+                              })
+                            }
+                            className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                            title="Delete position"
                           >
-                            Move to Projects Column →
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveResume({
-                              ...activeResume,
-                              experience: activeResume.experience.filter((e) => e.id !== exp.id)
-                            })
-                          }
-                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
-                          title="Delete position"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      <input
-                        type="text"
-                        placeholder="Job Title"
-                        value={exp.title}
-                        onChange={(e) => {
-                          const updated = [...activeResume.experience];
-                          updated[expIdx].title = e.target.value;
-                          setActiveResume({ ...activeResume, experience: updated });
-                        }}
-                        className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Company Name"
-                        value={exp.company}
-                        onChange={(e) => {
-                          const updated = [...activeResume.experience];
-                          updated[expIdx].company = e.target.value;
-                          setActiveResume({ ...activeResume, experience: updated });
-                        }}
-                        className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Start (e.g. 2026-07)"
-                        value={exp.startDate}
-                        onChange={(e) => {
-                          const updated = [...activeResume.experience];
-                          updated[expIdx].startDate = e.target.value;
-                          setActiveResume({ ...activeResume, experience: updated });
-                        }}
-                        className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
-                      />
-                      <input
-                        type="text"
-                        placeholder="End (or Present)"
-                        value={exp.endDate}
-                        onChange={(e) => {
-                          const updated = [...activeResume.experience];
-                          updated[expIdx].endDate = e.target.value;
-                          setActiveResume({ ...activeResume, experience: updated });
-                        }}
-                        className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
-                      />
-                    </div>
-
-                    {/* Bullet points */}
-                    <div className="space-y-2 pt-1">
-                      <label className="block text-[11px] font-bold text-slate-600">
-                        Achievement-Oriented Highlights:
-                      </label>
-                      {exp.highlights.map((bullet, bIdx) => (
-                        <div key={bIdx} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={bullet}
-                            onChange={(e) => {
-                              const updated = [...activeResume.experience];
-                              updated[expIdx].highlights[bIdx] = e.target.value;
-                              setActiveResume({ ...activeResume, experience: updated });
-                            }}
-                            className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handlePolishBullet(exp.id, bIdx, bullet)}
-                            disabled={isPolishing === `${exp.id}-${bIdx}`}
-                            className="px-2.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1 disabled:opacity-60"
-                          >
-                            {isPolishing === `${exp.id}-${bIdx}` ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3 h-3 text-teal-600" />
-                            )}
-                            <span>AI Polish</span>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = [...activeResume.experience];
-                          updated[expIdx].highlights.push('Contributed to core deliverables and team initiatives.');
-                          setActiveResume({ ...activeResume, experience: updated });
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Job Title"
+                          value={exp.title}
+                          onChange={(e) => {
+                            const updated = activeResume.experience.map((item) =>
+                              item.id === exp.id ? { ...item, title: e.target.value } : item
+                            );
+                            setActiveResume({ ...activeResume, experience: updated });
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Company Name"
+                          value={exp.company}
+                          onChange={(e) => {
+                            const updated = activeResume.experience.map((item) =>
+                              item.id === exp.id ? { ...item, company: e.target.value } : item
+                            );
+                            setActiveResume({ ...activeResume, experience: updated });
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Start (e.g. 2024-01)"
+                          value={exp.startDate}
+                          onChange={(e) => {
+                            const updated = activeResume.experience.map((item) =>
+                              item.id === exp.id ? { ...item, startDate: e.target.value } : item
+                            );
+                            setActiveResume({ ...activeResume, experience: updated });
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                        <input
+                          type="text"
+                          placeholder="End (or Present)"
+                          value={exp.endDate}
+                          onChange={(e) => {
+                            const updated = activeResume.experience.map((item) =>
+                              item.id === exp.id ? { ...item, endDate: e.target.value } : item
+                            );
+                            setActiveResume({ ...activeResume, experience: updated });
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                      </div>
+
+                      {/* Bullet points */}
+                      <div className="space-y-2 pt-1">
+                        <label className="block text-[11px] font-bold text-slate-600">
+                          Achievement-Oriented Highlights:
+                        </label>
+                        {exp.highlights.map((bullet, bIdx) => (
+                          <div key={bIdx} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={bullet}
+                              onChange={(e) => {
+                                const updated = activeResume.experience.map((item) => {
+                                  if (item.id === exp.id) {
+                                    const nextHighlights = [...item.highlights];
+                                    nextHighlights[bIdx] = e.target.value;
+                                    return { ...item, highlights: nextHighlights };
+                                  }
+                                  return item;
+                                });
+                                setActiveResume({ ...activeResume, experience: updated });
+                              }}
+                              className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handlePolishBullet(exp.id, bIdx, bullet)}
+                              disabled={isPolishing === `${exp.id}-${bIdx}`}
+                              className="px-2.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1 disabled:opacity-60"
+                            >
+                              {isPolishing === `${exp.id}-${bIdx}` ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-3 h-3 text-teal-600" />
+                              )}
+                              <span>AI Polish</span>
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = activeResume.experience.map((item) => {
+                              if (item.id === exp.id) {
+                                return {
+                                  ...item,
+                                  highlights: [...item.highlights, 'Contributed to core deliverables and team initiatives.']
+                                };
+                              }
+                              return item;
+                            });
+                            setActiveResume({ ...activeResume, experience: updated });
                         }}
                         className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer"
                       >

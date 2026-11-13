@@ -1012,54 +1012,54 @@ export const parseResume = async (req: Request, res: Response) => {
     const messages = [
       {
         role: 'system' as const,
-        content: `You are an expert AI Resume Parsing Engine. Extract comprehensive, structured ATS resume information from the raw text.
+        content: `You are an expert ATS Resume Parsing Engine. Extract comprehensive, structured resume information accurately from the raw text provided. Extract the actual candidate details without fabricating data.
 
 CRITICAL INSTRUCTIONS:
 1. STRICT DIVISION BETWEEN WORK EXPERIENCE AND PROJECTS:
-   - "experience" MUST ONLY contain formal employment, corporate roles, faculty/trainer jobs, or verified internships at companies or institutions (e.g., "AOSC Technologies Pvt Ltd", "Marshall Institute").
-   - "projects" MUST contain technical applications, web platforms, software apps, personal/academic capstones, or open-source software (e.g., "AuraEstate (Real Estate Platform)", "Fitness Fusion", "IELTS Practice Website", "Ultrasonic Distance Project").
+   - "experience" MUST ONLY contain formal employment, corporate roles, faculty/trainer jobs, or verified internships at companies or institutions.
+   - "projects" MUST contain technical applications, web platforms, software apps, personal/academic capstones, or open-source software.
    - NEVER place software/web projects inside "experience". Always place them in "projects".
    - If the candidate has NO formal corporate employment, leave "experience" as an empty array [] - NEVER fabricate companies or inject placeholders.
 2. EXTRACT ALL PROJECTS CAREFULLY:
    - For every project, extract its name in "title", tech stack in "technologies" (array of strings), summary in "description", and key features/accomplishments in "highlights".
 3. INTERNSHIPS, CERTIFICATIONS & ACHIEVEMENTS:
    - Put training, micro-internships, and certifications in "certifications".
-   - Put research papers, conference presentations, and department coordinator/leadership roles in "achievements".
+   - Put research papers, conference presentations, and leadership roles in "achievements".
 
 Output valid JSON matching this schema:
 {
-  "fullName": "Candidate Full Name",
+  "fullName": "Candidate Full Name or empty string",
   "email": "Email address or empty string",
   "phone": "Phone number or empty string",
   "location": "City, State / Country or empty string",
-  "headline": "Target role or professional title (e.g. Full Stack Developer | Web Developer)",
-  "summary": "Compelling 3-4 sentence professional summary",
+  "headline": "Target role or professional title extracted from resume",
+  "summary": "Professional summary extracted from resume or concise synthesis of background",
   "skills": ["Skill 1", "Skill 2", ...],
   "experience": [
     {
       "title": "Job Title",
       "company": "Company / Organization Name",
       "location": "Location if present or empty string",
-      "duration": "Dates (e.g. July 2026 – Present)",
-      "highlights": ["Responsibility or quantifiable achievement 1", "Responsibility or quantifiable achievement 2"]
+      "duration": "Dates (e.g. Month Year – Month Year or Present)",
+      "highlights": ["Responsibility or quantifiable achievement 1"]
     }
   ],
   "projects": [
     {
-      "title": "Project Name (e.g. AuraEstate Real Estate Platform)",
-      "technologies": ["MongoDB", "Express.js", "React.js", "Node.js"],
-      "role": "Role (e.g. Full Stack Developer)",
-      "link": "URL or GitHub if present, else empty string",
+      "title": "Project Name",
+      "technologies": ["Technology 1", "Technology 2"],
+      "role": "Role (e.g. Developer / Lead)",
+      "link": "URL or repository if present, else empty string",
       "description": "Short project overview",
-      "highlights": ["Feature or achievement 1", "Feature or achievement 2"]
+      "highlights": ["Feature or achievement 1"]
     }
   ],
   "education": [
     {
-      "degree": "Degree (e.g. Master of Computer Applications)",
-      "institution": "University / College Name",
-      "year": "Dates (e.g. 2024 – 2026)",
-      "grade": "SGPA, Percentage or Grade if present"
+      "degree": "Degree or Qualification Name",
+      "institution": "University / College / School Name",
+      "year": "Graduation Year or Date Range",
+      "grade": "GPA, Percentage or Grade if present, else empty string"
     }
   ],
   "certifications": [
@@ -1072,7 +1072,7 @@ Output valid JSON matching this schema:
   "achievements": [
     "Achievement, paper, or award 1"
   ],
-  "qualityScore": number (0-100)
+  "qualityScore": 85
 }`
       },
       {
@@ -1098,25 +1098,20 @@ Output valid JSON matching this schema:
           const t = (exp.title || exp.role || '').toLowerCase();
           const c = (exp.company || '').toLowerCase();
           const isProj =
-            t.includes('project') ||
-            c.includes('project') ||
-            t.includes('auraestate') ||
-            t.includes('voice assistant') ||
-            t.includes('interactive rot') ||
-            t.includes('interactive robot') ||
-            t.includes('fitness fusion') ||
-            t.includes('ultrasonic') ||
-            t.includes('ielts') ||
-            c.includes('mern stack') ||
-            c.includes('ai & iot');
+            t.startsWith('project:') ||
+            t.includes('personal project') ||
+            t.includes('capstone project') ||
+            c.startsWith('project:') ||
+            c.includes('personal project') ||
+            c.includes('academic project');
 
           if (isProj) {
             extraProjects.push({
-              title: (exp.title || exp.role || 'Technical Project').replace(/^Project:\s*/i, '').trim(),
-              role: 'Full Stack Developer',
-              technologies: (exp.company || '').replace(/\s*Project\s*/i, '').trim() || ['React.js', 'Node.js'],
-              link: '',
-              description: (exp.highlights && exp.highlights[0]) || '',
+              title: (exp.title || exp.role || 'Project').replace(/^Project:\s*/i, '').trim(),
+              role: exp.role || exp.title || 'Contributor',
+              technologies: Array.isArray(exp.technologies) ? exp.technologies : [],
+              link: exp.link || '',
+              description: exp.description || (exp.highlights && exp.highlights[0]) || '',
               highlights: exp.highlights || []
             });
           } else {

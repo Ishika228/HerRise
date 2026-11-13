@@ -22,7 +22,6 @@ export type HerCareerTab =
   | 'jobs'
   | 'tracker'
   | 'interview'
-  | 'roadmap'
   | 'restart'
   | 'assistant';
 
@@ -46,7 +45,6 @@ export const HerCareerLayout: React.FC<HerCareerLayoutProps> = ({
     { id: 'jobs', label: 'Job Matching', icon: Search },
     { id: 'tracker', label: 'Applications', icon: CheckCircle2 },
     { id: 'interview', label: 'Interview Prep', icon: Mic },
-    { id: 'roadmap', label: 'Career Roadmap', icon: TrendingUp },
     { id: 'restart', label: 'Career Restart', icon: RotateCcw },
     { id: 'assistant', label: 'AI Copilot', icon: Bot }
   ];

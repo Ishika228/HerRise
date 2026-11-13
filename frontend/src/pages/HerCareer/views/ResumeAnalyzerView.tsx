@@ -17,7 +17,7 @@ import { useHerCareer } from '../../../context/HerCareerContext';
 import { useToast } from '../../../context/ToastContext';
 
 export const ResumeAnalyzerView: React.FC = () => {
-  const { resumeAnalysis, isAnalyzing, analyzeResumeContent, parseResumeFile, profile } = useHerCareer();
+  const { resumeAnalysis, isAnalyzing, analyzeResumeContent, parseResumeFile, importParsedResume, profile } = useHerCareer();
   const { showToast } = useToast();
 
   const [inputMode, setInputMode] = useState<'upload' | 'paste'>('upload');
@@ -35,9 +35,11 @@ export const ResumeAnalyzerView: React.FC = () => {
     try {
       const data = await parseResumeFile(file);
       if (data && data.parsed) {
-        showToast('File Extracted Successfully', `Extracted text from ${file.name}`, 'success');
+        showToast('File Extracted Successfully', `Extracted details from ${file.name}`, 'success');
+        // Synchronize and apply extracted resume to Resume Builder & profile
+        await importParsedResume(data.parsed);
         // Auto trigger analysis
-        const rawText = data.parsed.summary + ' ' + (data.parsed.skills?.join(', ') || '');
+        const rawText = (data.parsed.summary || '') + ' ' + (data.parsed.skills?.join(', ') || '');
         await analyzeResumeContent(rawText, targetJobDesc);
       }
     } catch (err) {

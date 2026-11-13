@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { MarketProvider } from './context/MarketContext';
+import { HerCareerProvider } from './context/HerCareerContext';
 
 import { LandingPage } from './pages/Landing/LandingPage';
 import { LoginPage } from './pages/Authentication/LoginPage';
@@ -29,31 +30,33 @@ export function App() {
         <ToastProvider>
           <FinanceProvider>
             <MarketProvider>
-              <Routes>
-                {/* Public & Landing Pages */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/onboarding" element={<OnboardingPage />} />
+              <HerCareerProvider>
+                <Routes>
+                  {/* Public & Landing Pages */}
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
 
-                {/* Main Dashboard & 7 Core Modules */}
-                <Route path="/dashboard" element={<DashboardOverview />} />
-                <Route path="/finance" element={<HerFinancePage />} />
-                <Route path="/career" element={<HerCareerPage />} />
-                <Route path="/business" element={<HerBusinessPage />} />
-                <Route path="/fund" element={<HerFundPage />} />
-                <Route path="/market" element={<HerMarketPage />} />
-                <Route path="/learn" element={<HerLearnPage />} />
-                <Route path="/network" element={<HerNetworkPage />} />
+                  {/* Main Dashboard & 7 Core Modules */}
+                  <Route path="/dashboard" element={<DashboardOverview />} />
+                  <Route path="/finance" element={<HerFinancePage />} />
+                  <Route path="/career" element={<HerCareerPage />} />
+                  <Route path="/business" element={<HerBusinessPage />} />
+                  <Route path="/fund" element={<HerFundPage />} />
+                  <Route path="/market" element={<HerMarketPage />} />
+                  <Route path="/learn" element={<HerLearnPage />} />
+                  <Route path="/network" element={<HerNetworkPage />} />
 
-                {/* Assistant & Preferences */}
-                <Route path="/ai-assistant" element={<AIAssistantPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                  {/* Assistant & Preferences */}
+                  <Route path="/ai-assistant" element={<AIAssistantPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
 
-                {/* Catch-all redirect */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* Catch-all redirect */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </HerCareerProvider>
             </MarketProvider>
           </FinanceProvider>
         </ToastProvider>

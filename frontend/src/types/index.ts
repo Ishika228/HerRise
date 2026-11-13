@@ -339,6 +339,11 @@ export interface Course {
   enrolledStudents: number;
   isEnrolled?: boolean;
   progressPercent?: number;
+  isCompleted?: boolean;
+  completedAt?: string;
+  certificateId?: string;
+  stoppedAtSeconds?: number;
+  stoppedModuleIndex?: number;
   modules: {
     id: string;
     title: string;
@@ -362,6 +367,15 @@ export interface Certificate {
   issueDate: string;
   credentialId: string;
   instructorName: string;
+  instructorTitle?: string;
+  skillsCovered?: string[];
+  grade?: string;
+  hoursCompleted?: number;
+  verificationUrl?: string;
+  credentialType?: string;
+  issuer?: string;
+  directorName?: string;
+  directorTitle?: string;
 }
 
 // Module 7: HerNetwork Types

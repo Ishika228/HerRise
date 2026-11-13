@@ -179,7 +179,15 @@ export const userCertificates: Certificate[] = [
     issuedTo: 'Verified HerRise Scholar',
     issueDate: 'October 28, 2026',
     credentialId: 'HR-FIN-883492',
-    instructorName: 'Rhea Shenoy, CA'
+    instructorName: 'Rhea Shenoy, CA',
+    instructorTitle: 'Chartered Accountant & Lead Wealth Strategist',
+    directorName: 'Dr. Arundhati Roy',
+    directorTitle: 'Academic Dean, HerRise Institute',
+    skillsCovered: ['Personal Wealth Blueprinting', 'Asset Allocation & Risk', 'Tax-Efficient Investing', 'Portfolio Hedging'],
+    grade: 'Distinction with Honours (98%)',
+    hoursCompleted: 24,
+    credentialType: 'Executive Masterclass Credential',
+    issuer: 'HerRise Institute of Leadership & Financial Excellence'
   },
   {
     id: 'cert-2',
@@ -187,7 +195,15 @@ export const userCertificates: Certificate[] = [
     issuedTo: 'Verified HerRise Scholar',
     issueDate: 'August 14, 2026',
     credentialId: 'HR-MKT-419082',
-    instructorName: 'Divya Nair'
+    instructorName: 'Divya Nair',
+    instructorTitle: 'VP of Growth & E-Commerce Strategist',
+    directorName: 'Dr. Arundhati Roy',
+    directorTitle: 'Academic Dean, HerRise Institute',
+    skillsCovered: ['Conversion Funnel Architecture', 'Omnichannel Brand Growth', 'Social Commerce Strategy', 'Retention Analytics'],
+    grade: 'High Distinction (95%)',
+    hoursCompleted: 18,
+    credentialType: 'Professional Accreditation',
+    issuer: 'HerRise Institute of Leadership & Digital Commerce'
   }
 ];
 

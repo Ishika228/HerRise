@@ -30,6 +30,11 @@ import {
   personalized30DayPlan
 } from '../../data/mockData/learnData';
 import { Course, Certificate } from '../../types';
+import { AustralianCoursesSection } from './AustralianCoursesSection';
+import { VerifiedCertificateModal } from '../../components/certificate/VerifiedCertificateModal';
+import { generateCertificatePdf } from '../../services/certificateService';
+import { InteractiveCoursePlayer } from '../../components/learn/InteractiveCoursePlayer';
+import { API_BASE } from '../../config/api';
 
 export const HerLearnPage: React.FC = () => {
   const { user } = useAuth();
@@ -44,9 +49,36 @@ export const HerLearnPage: React.FC = () => {
   });
 
   const [courses, setCourses] = useState<Course[]>(initialCourses);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'australian' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('catalog');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Extract user education qualification from resume or profile
+  const userEducation = (() => {
+    try {
+      const rawResume = localStorage.getItem('hercareer_resume');
+      if (rawResume) {
+        const parsed = JSON.parse(rawResume);
+        if (parsed.education && Array.isArray(parsed.education) && parsed.education[0]?.degree) {
+          return parsed.education[0].degree;
+        }
+      }
+    } catch {}
+    return user?.education || user?.resumeData?.education?.[0]?.degree || '';
+  })();
+
+  // Dynamic user name resolution for verified credentials
+  const userCandidateName = React.useMemo(() => {
+    if (user?.name) return user.name;
+    try {
+      const rawResume = localStorage.getItem('hercareer_resume');
+      if (rawResume) {
+        const parsed = JSON.parse(rawResume);
+        if (parsed?.personalInfo?.fullName) return parsed.personalInfo.fullName;
+      }
+    } catch {}
+    return 'Verified HerRise Scholar';
+  }, [user]);
 
   const handleGateComplete = (data: any) => {
     setIsSetupCompleted(true);
@@ -61,6 +93,41 @@ export const HerLearnPage: React.FC = () => {
   // Video Lesson Player State
   const [selectedCourseForLearning, setSelectedCourseForLearning] = useState<Course>(initialCourses[0]);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+
+  // Sync user course progress & completed certificates from MongoDB Atlas
+  React.useEffect(() => {
+    if (!user?.email) return;
+
+    const fetchAllProgress = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/courses/user-progress?userEmail=${encodeURIComponent(user.email)}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.progressList)) {
+          setCourses((prevCourses) =>
+            prevCourses.map((c) => {
+              const matched = json.progressList.find((p: any) => p.courseId === c.id);
+              if (matched) {
+                return {
+                  ...c,
+                  isEnrolled: true,
+                  progressPercent: matched.progressPercent ?? c.progressPercent,
+                  isCompleted: matched.isCompleted,
+                  certificateId: matched.certificateId,
+                  stoppedAtSeconds: matched.currentTimeSeconds,
+                  stoppedModuleIndex: matched.currentModuleIndex
+                };
+              }
+              return c;
+            })
+          );
+        }
+      } catch (err) {
+        console.warn('[HerLearn] Error fetching user progress:', err);
+      }
+    };
+
+    fetchAllProgress();
+  }, [user?.email]);
 
   // Interactive Quiz State
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
@@ -115,7 +182,7 @@ export const HerLearnPage: React.FC = () => {
     if (progressPercent === 100) {
       try {
         confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-      } catch {}
+      } catch { }
       showToast('Course Completed! 🎓', 'Congratulations! Your certificate is now ready in the Certificates tab.', 'success');
     } else {
       showToast('Lesson Completed', `Progress updated to ${progressPercent}%`, 'info');
@@ -138,7 +205,7 @@ export const HerLearnPage: React.FC = () => {
     if (score >= 3) {
       try {
         confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
-      } catch {}
+      } catch { }
       showToast('Knowledge Quiz Passed! 🎉', `You scored ${score} of ${sampleQuizQuestions.length}`, 'success');
     } else {
       showToast('Quiz Evaluated', `You scored ${score} of ${sampleQuizQuestions.length}. Review answers below.`, 'warning');
@@ -200,42 +267,47 @@ export const HerLearnPage: React.FC = () => {
           <div className="flex flex-wrap gap-1.5 bg-purple-50/70 p-1.5 rounded-2xl text-xs font-semibold">
             <button
               onClick={() => setActiveTab('catalog')}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'catalog' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
-              }`}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'catalog' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+                }`}
             >
               Course Catalog
             </button>
             <button
+              onClick={() => setActiveTab('australian')}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'australian'
+                  ? 'bg-teal-800 text-white shadow-xs'
+                  : 'text-teal-900 bg-teal-50/70 hover:bg-teal-100/70 border border-teal-200/50'
+                }`}
+            >
+              <span className="text-sm">🇦🇺</span>
+              <span>Australian Qualifications</span>
+            </button>
+            <button
               onClick={() => setActiveTab('player')}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
-                activeTab === 'player' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
-              }`}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${activeTab === 'player' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+                }`}
             >
               <Play className="w-3.5 h-3.5" />
               <span>Lesson Player</span>
             </button>
             <button
               onClick={() => setActiveTab('quiz')}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'quiz' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
-              }`}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'quiz' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+                }`}
             >
               Knowledge Quiz
             </button>
             <button
               onClick={() => setActiveTab('certificates')}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'certificates' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
-              }`}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'certificates' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+                }`}
             >
               Certificates ({userCertificates.length})
             </button>
             <button
               onClick={() => setActiveTab('roadmap')}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'roadmap' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
-              }`}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'roadmap' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+                }`}
             >
               30-Day Plan
             </button>
@@ -298,17 +370,46 @@ export const HerLearnPage: React.FC = () => {
                 </span>
               </div>
 
+              {/* Australian Qualifications Gateway Callout */}
+              <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-slate-50 p-4 rounded-2xl border border-teal-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-teal-800 text-white font-bold text-xs">
+                    🇦🇺 AQF
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-xs font-bold text-slate-900">
+                        Australian Qualifications Recommended for Your Education
+                      </h4>
+                      {userEducation && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-900 border border-teal-200">
+                          {userEducation}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Explore official diplomas, Cert III/IV, and RTO pathways matched to your qualification level from training.gov.au.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('australian')}
+                  className="px-4 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs transition-all cursor-pointer shrink-0 shadow-2xs"
+                >
+                  View Matched Qualifications →
+                </button>
+              </div>
+
               {/* Categories */}
               <div className="flex flex-wrap gap-2 pt-1 border-t border-purple-50">
                 {courseCategories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                      selectedCategory === cat
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedCategory === cat
                         ? 'bg-[#4A154B] text-white shadow-xs'
                         : 'bg-gray-100 text-gray-700 hover:bg-purple-50'
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>
@@ -331,9 +432,16 @@ export const HerLearnPage: React.FC = () => {
                         alt={c.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <span className="absolute top-3 left-3 bg-[#4A154B] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
-                        {c.category}
-                      </span>
+                      {c.isCompleted || (c.progressPercent && c.progressPercent >= 100) ? (
+                        <span className="absolute top-3 left-3 bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-300" />
+                          Completed
+                        </span>
+                      ) : (
+                        <span className="absolute top-3 left-3 bg-[#4A154B] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
+                          {c.category}
+                        </span>
+                      )}
                       <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-medium px-2 py-0.5 rounded-md">
                         {c.duration} • {c.totalLessons} Lessons
                       </span>
@@ -383,7 +491,43 @@ export const HerLearnPage: React.FC = () => {
                   </div>
 
                   <div className="p-5 pt-0">
-                    {c.isEnrolled ? (
+                    {c.isCompleted || (c.progressPercent && c.progressPercent >= 100) ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedCourseForLearning(c);
+                            setActiveTab('player');
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition-colors"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          <span>Review</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            const cert: Certificate = {
+                              id: `cert-${c.id}`,
+                              courseTitle: c.title,
+                              issuedTo: userCandidateName,
+                              issueDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                              credentialId: c.certificateId || `HR-CRS-${Math.floor(100000 + Math.random() * 900000)}`,
+                              instructorName: c.instructor,
+                              instructorTitle: c.instructorRole || 'Course Author',
+                              skillsCovered: [c.category, 'Applied Competency', 'Practical Mastery'],
+                              grade: 'Distinction with Honours (98%)',
+                              hoursCompleted: 24
+                            };
+                            generateCertificatePdf(cert, { recipientName: userCandidateName });
+                            showToast('Certificate Downloaded! 🎓', `Official A4 PDF downloaded for ${c.title}`, 'success');
+                          }}
+                          className="flex items-center justify-center gap-1 bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition-colors"
+                          title="Download Certificate PDF"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>PDF</span>
+                        </button>
+                      </div>
+                    ) : c.isEnrolled ? (
                       <button
                         onClick={() => {
                           setSelectedCourseForLearning(c);
@@ -392,7 +536,7 @@ export const HerLearnPage: React.FC = () => {
                         className="w-full flex items-center justify-center gap-1.5 bg-[#4A154B] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-[#350c36] cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5" />
-                        <span>Continue Learning</span>
+                        <span>Continue Learning ({c.progressPercent || 0}%)</span>
                       </button>
                     ) : (
                       <button
@@ -409,110 +553,23 @@ export const HerLearnPage: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: INTERACTIVE VIDEO LESSON PLAYER */}
+        {/* TAB 2: AUSTRALIAN QUALIFICATIONS (training.gov.au Integration) */}
+        {activeTab === 'australian' && (
+          <AustralianCoursesSection />
+        )}
+
+        {/* TAB 3: INTERACTIVE VIDEO LESSON PLAYER WITH DATABASE RESUME & IN-PLACE CERTIFICATE */}
         {activeTab === 'player' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Player Canvas (8 cols) */}
-            <div className="lg:col-span-8 space-y-4">
-              <div className="bg-black rounded-3xl overflow-hidden shadow-2xl relative aspect-video flex items-center justify-center">
-                <img
-                  src={selectedCourseForLearning.thumbnail}
-                  alt={selectedCourseForLearning.title}
-                  className="w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex flex-col justify-between p-6">
-                  <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full w-max backdrop-blur-md">
-                    Now Playing: Module 0{activeModuleIndex + 1}
-                  </span>
-
-                  <div className="text-center">
-                    <button
-                      onClick={() => showToast('Playing Simulation', 'Simulating HD video playback', 'info')}
-                      className="w-16 h-16 rounded-full bg-[#fb7185] hover:scale-110 text-white flex items-center justify-center mx-auto shadow-2xl transition-transform cursor-pointer"
-                    >
-                      <Play className="w-8 h-8 fill-white ml-1" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between text-white text-xs">
-                    <span className="font-semibold">
-                      {selectedCourseForLearning.modules[activeModuleIndex]?.title || 'Lesson Introduction'}
-                    </span>
-                    <span>1080p HD • Speed 1.0x</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lesson Overview & Mark Complete */}
-              <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-purple-50">
-                  <div>
-                    <h3 className="font-black text-lg text-gray-900">
-                      {selectedCourseForLearning.modules[activeModuleIndex]?.title}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      Instructor: {selectedCourseForLearning.instructor} ({selectedCourseForLearning.instructorRole})
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      const curModule = selectedCourseForLearning.modules[activeModuleIndex];
-                      if (curModule) handleCompleteModule(curModule.id);
-                    }}
-                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs cursor-pointer transition-all"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Mark Lesson Complete</span>
-                  </button>
-                </div>
-
-                <div className="text-xs text-gray-700 leading-relaxed space-y-2">
-                  <p>
-                    In this lesson, we break down actionable steps to build your financial resilience. Review the practical formulas in the spreadsheet and take notes for the end-of-module assessment.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Course Playlist Sidebar (4 cols) */}
-            <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-purple-100 shadow-xs space-y-3">
-              <div className="flex justify-between items-center pb-2 border-b border-purple-50">
-                <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">
-                  Course Modules ({selectedCourseForLearning.modules.length})
-                </h3>
-                <span className="text-xs font-bold text-[#4A154B]">
-                  {selectedCourseForLearning.progressPercent || 0}%
-                </span>
-              </div>
-
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {selectedCourseForLearning.modules.map((m, idx) => (
-                  <div
-                    key={m.id}
-                    onClick={() => setActiveModuleIndex(idx)}
-                    className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-2 ${
-                      activeModuleIndex === idx
-                        ? 'border-[#4A154B] bg-purple-50/70 shadow-xs'
-                        : 'border-gray-100 hover:border-purple-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
-                          m.completed ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {m.completed ? '✓' : idx + 1}
-                      </div>
-                      <span className="text-xs font-semibold text-gray-800 truncate">{m.title}</span>
-                    </div>
-                    <span className="text-[10px] text-gray-400 shrink-0">{m.duration}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <InteractiveCoursePlayer
+            course={selectedCourseForLearning}
+            userEmail={user?.email || 'member@herrise.org'}
+            userName={userCandidateName}
+            activeModuleIndex={activeModuleIndex}
+            onSelectModule={(idx) => setActiveModuleIndex(idx)}
+            onModuleComplete={(moduleId) => handleCompleteModule(moduleId)}
+            onOpenCertificate={(cert) => setSelectedCert(cert)}
+            onToast={showToast}
+          />
         )}
 
         {/* TAB 3: KNOWLEDGE QUIZ */}
@@ -543,11 +600,10 @@ export const HerLearnPage: React.FC = () => {
                         <div
                           key={optIdx}
                           onClick={() => handleQuizAnswer(q.id, optIdx)}
-                          className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${
-                            selectedOpt === optIdx
+                          className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${selectedOpt === optIdx
                               ? 'border-[#4A154B] bg-purple-50 font-bold text-purple-900'
                               : 'border-gray-200 bg-white hover:border-purple-200 text-gray-700'
-                          }`}
+                            }`}
                         >
                           <span>{opt}</span>
                           {selectedOpt === optIdx && <Check className="w-4 h-4 text-[#4A154B]" />}
@@ -594,45 +650,64 @@ export const HerLearnPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {userCertificates.map((cert) => (
-                <div
-                  key={cert.id}
-                  className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        Verified Credential
-                      </span>
-                      <span className="text-xs font-mono text-gray-400">{cert.credentialId}</span>
+              {userCertificates.map((cert) => {
+                const displayName = userCandidateName || cert.issuedTo;
+                return (
+                  <div
+                    key={cert.id}
+                    className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Verified Credential
+                        </span>
+                        <span className="text-xs font-mono text-gray-400 font-semibold">{cert.credentialId}</span>
+                      </div>
+
+                      <h4 className="font-extrabold text-base text-gray-900 group-hover:text-[#4A154B] transition-colors leading-snug">
+                        {cert.courseTitle}
+                      </h4>
+                      <p className="text-xs text-gray-600">
+                        Issued to: <strong className="text-gray-900">{displayName}</strong>
+                      </p>
+                      <p className="text-xs text-gray-500">Instructor: {cert.instructorName}</p>
+                      <p className="text-[11px] text-gray-400">Date of Award: {cert.issueDate}</p>
+
+                      {cert.skillsCovered && cert.skillsCovered.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {cert.skillsCovered.slice(0, 3).map((sk, i) => (
+                            <span key={i} className="text-[10px] bg-purple-50 text-purple-900 px-2 py-0.5 rounded-md border border-purple-100 font-medium">
+                              {sk}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <h4 className="font-extrabold text-base text-gray-900">{cert.courseTitle}</h4>
-                    <p className="text-xs text-gray-500">Issued to: <strong>{cert.issuedTo}</strong></p>
-                    <p className="text-xs text-gray-500">Instructor: {cert.instructorName}</p>
-                    <p className="text-[11px] text-gray-400">Date of Award: {cert.issueDate}</p>
+                    <div className="pt-4 border-t border-purple-50 flex items-center justify-between mt-4">
+                      <button
+                        onClick={() => setSelectedCert(cert)}
+                        className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View Credential</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          generateCertificatePdf(cert, { recipientName: displayName });
+                          showToast('Certificate Downloaded! 🎓', `Official A4 PDF exported for ${cert.courseTitle}`, 'success');
+                        }}
+                        className="flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download PDF</span>
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="pt-4 border-t border-purple-50 flex items-center justify-between mt-4">
-                    <button
-                      onClick={() => setSelectedCert(cert)}
-                      className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>View Credential</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        showToast('Certificate Downloaded', 'Demo certificate exported in PDF format', 'success');
-                      }}
-                      className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 text-[#4A154B] px-3 py-1 rounded-lg text-xs font-bold cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download PDF</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -660,41 +735,14 @@ export const HerLearnPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modal: Certificate Preview */}
-      {selectedCert && (
-        <Modal
-          isOpen={!!selectedCert}
-          onClose={() => setSelectedCert(null)}
-          title="Certificate of Accomplishment"
-          subtitle={`Credential ID: ${selectedCert.credentialId}`}
-          maxWidth="2xl"
-        >
-          <div className="p-8 border-4 border-double border-purple-200 rounded-3xl bg-gradient-to-tr from-purple-50/50 to-pink-50/50 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-[#4A154B] text-white flex items-center justify-center mx-auto shadow-md">
-              <Award className="w-6 h-6 text-pink-300" />
-            </div>
-
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#4A154B]">
-                HerRise AI Educational Institute
-              </span>
-              <h3 className="text-2xl font-black text-gray-900 mt-1">Certificate of Completion</h3>
-            </div>
-
-            <p className="text-xs text-gray-600">This certifies that</p>
-            <h4 className="text-xl font-extrabold text-[#4A154B] underline decoration-[#fb7185] decoration-2">
-              {selectedCert.issuedTo}
-            </h4>
-            <p className="text-xs text-gray-600">has successfully completed the comprehensive masterclass in</p>
-            <h5 className="text-base font-bold text-gray-900">{selectedCert.courseTitle}</h5>
-
-            <div className="pt-4 border-t border-purple-200 flex justify-between items-center text-xs text-gray-500">
-              <span>Instructor: {selectedCert.instructorName}</span>
-              <span>Date: {selectedCert.issueDate}</span>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {/* Modal: Verified Certificate Preview */}
+      <VerifiedCertificateModal
+        isOpen={!!selectedCert}
+        onClose={() => setSelectedCert(null)}
+        certificate={selectedCert}
+        recipientName={userCandidateName}
+        onToast={showToast}
+      />
 
       {/* Module Registration Gate at Starting */}
       <ModuleRegistrationGate

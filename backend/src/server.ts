@@ -18,6 +18,8 @@ import fundRoutes from './routes/fundRoutes.js';
 import marketRoutes from './routes/marketRoutes.js';
 import learnRoutes from './routes/learnRoutes.js';
 import networkRoutes from './routes/networkRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import { syncAustralianQualifications } from './services/courseSyncService.js';
 
 const app = express();
 
@@ -82,6 +84,7 @@ app.use('/api/business', businessRoutes);
 app.use('/api/fund', fundRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/learn', learnRoutes);
+app.use('/api/courses', courseRoutes);
 app.use('/api/network', networkRoutes);
 
 // Serve compiled React frontend in production if dist exists
@@ -123,6 +126,17 @@ if (process.env.NODE_ENV !== 'test') {
     const connected = await connectDatabase();
     if (connected) {
       await seedMongoIfEmpty();
+      try {
+        const { CourseModel } = await import('./models/CourseModel.js');
+        const count = await CourseModel.countDocuments();
+        if (count === 0) {
+          console.log('🔄 Initializing Australian Training Qualifications synchronization...');
+          await syncAustralianQualifications();
+          console.log('✅ Australian Training Qualifications synchronized into MongoDB Atlas.');
+        }
+      } catch (err: any) {
+        console.warn('⚠️ Course sync note:', err.message);
+      }
     }
   });
 }

@@ -44,6 +44,7 @@ interface HerCareerContextType {
   isAnalyzing: boolean;
   analyzeResumeContent: (resumeText: string, targetJobDesc?: string) => Promise<ResumeAnalysisResult | null>;
   parseResumeFile: (file: File) => Promise<any>;
+  importParsedResume: (parsed: any) => Promise<ResumeData>;
 
   // Jobs
   jobs: JobListing[];
@@ -92,31 +93,61 @@ interface HerCareerContextType {
 }
 
 // Helper to detect if an item in experience is actually a project
-export function isProjectEntry(item: { title?: string; role?: string; company?: string; description?: string }): boolean {
+export function isProjectEntry(item: { title?: string; role?: string; company?: string; description?: string; highlights?: string[] }): boolean {
   if (!item) return false;
-  const title = (item.title || item.role || '').toLowerCase();
+  const title = (item.title || (item as any).role || '').toLowerCase();
   const company = (item.company || '').toLowerCase();
+  const desc = (item.description || '').toLowerCase();
+  const highlights = Array.isArray(item.highlights)
+    ? item.highlights.join(' ').toLowerCase()
+    : Array.isArray((item as any).bullets)
+      ? (item as any).bullets.join(' ').toLowerCase()
+      : '';
 
-  return (
+  // Positive project signals
+  const hasProjectKeywords =
     title.includes('project') ||
-    company.includes('project') ||
     title.startsWith('project:') ||
+    company.includes('project') ||
+    company.includes('app') ||
+    company.includes('website') ||
     title.includes('auraestate') ||
+    title.includes('realestate') ||
+    title.includes('estate') ||
     title.includes('voice assistant') ||
+    title.includes('assistant') ||
     title.includes('interactive rot') ||
     title.includes('interactive robot') ||
+    title.includes('robot') ||
     title.includes('fitness fusion') ||
+    title.includes('fitness') ||
+    title.includes('gym management') ||
+    title.includes('gym') ||
     title.includes('ultrasonic') ||
+    title.includes('distance') ||
     title.includes('ielts') ||
-    company.includes('mern stack') ||
+    company.includes('mern') ||
+    company.includes('django') ||
     company.includes('ai & iot') ||
-    company.includes('iot project') ||
-    company.includes('django project') ||
-    company.includes('arduino')
-  );
+    company.includes('iot') ||
+    company.includes('arduino') ||
+    company.includes('python') ||
+    desc.includes('voice assistant') ||
+    desc.includes('robot') ||
+    desc.includes('gym') ||
+    desc.includes('ultrasonic') ||
+    highlights.includes('voice assistant') ||
+    highlights.includes('robot') ||
+    highlights.includes('gym management') ||
+    highlights.includes('personal trainer allotment') ||
+    highlights.includes('esp8266') ||
+    highlights.includes('alexa-like');
+
+  return hasProjectKeywords;
 }
 
 // Strictly separate projects that were placed inside experience and move them to projects
+// Strictly separate projects placed inside experience and move them to projects
 export function separateExperienceAndProjects(resume: ResumeData): ResumeData {
   if (!resume) return resume;
   const actualExperience: ResumeData['experience'] = [];
@@ -124,37 +155,29 @@ export function separateExperienceAndProjects(resume: ResumeData): ResumeData {
 
   for (const exp of (resume.experience || [])) {
     if (isProjectEntry(exp)) {
-      // It's a project mistakenly placed in experience! Clean it up and move to projects
-      const cleanedTitle = exp.title
+      // Move project-like entries out of experience into projects
+      const cleanedTitle = (exp.title || (exp as any).role || 'Technical Project')
         .replace(/^Project:\s*/i, '')
-        .replace(/Interactive Rot/i, 'Interactive Robot')
         .trim();
 
-      const techStack: string[] = [];
-      if (exp.company) {
+      const techStack: string[] = Array.isArray((exp as any).technologies) ? (exp as any).technologies : [];
+      if (techStack.length === 0 && exp.company) {
         const cleanedComp = exp.company.replace(/\s*Project\s*/i, '').trim();
-        if (cleanedComp && !cleanedComp.toLowerCase().includes('company') && !cleanedComp.toLowerCase().includes('organization')) {
-          const parts = cleanedComp.split(/[,|/&]/).map((s) => s.trim()).filter(Boolean);
-          techStack.push(...parts);
+        if (cleanedComp && !cleanedComp.toLowerCase().includes('company')) {
+          techStack.push(...cleanedComp.split(/[,|/&]/).map((s) => s.trim()).filter(Boolean));
         }
       }
 
-      if (cleanedTitle.toLowerCase().includes('auraestate') && techStack.length === 0) {
-        techStack.push('MongoDB', 'Express.js', 'React.js', 'Node.js', 'MERN Stack');
-      } else if (cleanedTitle.toLowerCase().includes('voice assistant') && techStack.length === 0) {
-        techStack.push('Python', 'Gemini AI', 'Speech Recognition', 'ESP8266', 'Arduino');
-      }
-
       const alreadyExists = existingProjects.some(
-        (p) => p.title.toLowerCase().includes(cleanedTitle.toLowerCase().slice(0, 10))
+        (p) => cleanedTitle && p.title.toLowerCase().includes(cleanedTitle.toLowerCase().slice(0, 8))
       );
 
-      if (!alreadyExists) {
+      if (!alreadyExists && cleanedTitle) {
         existingProjects.push({
           id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           title: cleanedTitle,
-          role: 'Full Stack Developer',
-          technologies: techStack.length > 0 ? techStack : ['React.js', 'Node.js', 'Python'],
+          role: 'Developer',
+          technologies: techStack,
           link: '',
           description: exp.description || (exp.highlights && exp.highlights[0]) || '',
           highlights: exp.highlights || []
@@ -172,353 +195,154 @@ export function separateExperienceAndProjects(resume: ResumeData): ResumeData {
   };
 }
 
+
 export function buildPersonalizedResume(user: any): ResumeData {
+  // Read from localStorage — populated when user uploads/parses a resume
   let storedResume: any = null;
   try {
     const raw = localStorage.getItem('hercareer_resume');
     if (raw) storedResume = JSON.parse(raw);
   } catch { }
 
-  const isIshika =
-    user?.email?.toLowerCase().includes('ishikabhatia') ||
-    user?.name?.toLowerCase().includes('ishika') ||
-    storedResume?.fullName?.toLowerCase().includes('ishika') ||
-    storedResume?.email?.toLowerCase().includes('ishikabhatia');
-
-  const name = user?.name || storedResume?.fullName || (isIshika ? 'Ishika Bhatia' : 'Professional Member');
-  const email = user?.email || storedResume?.email || (isIshika ? 'ishikabhatia5777@gmail.com' : 'member@herrise.org');
-  const phone = user?.phone || storedResume?.phone || (isIshika ? '7508163418' : '');
-  const location = user?.location || storedResume?.location || (isIshika ? 'Amritsar, Punjab' : 'India');
+  // ── Basic identity (from user auth or parsed resume) ────────────────────────
+  const name = user?.name || storedResume?.fullName || storedResume?.name || '';
+  const email = user?.email || storedResume?.email || '';
+  const phone = user?.phone || storedResume?.phone || '';
+  const location = user?.location || storedResume?.location || '';
   const targetRole =
     user?.careerProfile?.targetRole ||
     user?.role ||
     storedResume?.headline ||
-    (isIshika ? 'Full Stack Developer | Web Developer' : 'Full Stack Developer');
+    storedResume?.targetRole ||
+    '';
 
+  // ── Skills ──────────────────────────────────────────────────────────────────
   const userSkills: string[] =
-    storedResume?.skills && storedResume.skills.length > 0
+    (storedResume?.skills && storedResume.skills.length > 0)
       ? storedResume.skills
-      : user?.skills && user.skills.length > 0
+      : (user?.skills && user.skills.length > 0)
         ? user.skills
-        : isIshika
-          ? [
-            'MongoDB',
-            'Express.js',
-            'React.js',
-            'Node.js',
-            'Python',
-            'Django',
-            'Java',
-            'C++',
-            'HTML',
-            'CSS',
-            'Bootstrap',
-            'SQL',
-            'REST APIs',
-            'AI Integration'
-          ]
-          : ['React', 'Node.js', 'Python', 'Java', 'SQL', 'MongoDB', 'HTML', 'CSS'];
+        : [];
 
-  // 1. WORK EXPERIENCE (Strictly formal employment, jobs, trainer/faculty roles)
+  // ── 1. WORK EXPERIENCE ──────────────────────────────────────────────────────
+  // Read from uploaded resume. Strip any entries that look like projects.
   const rawExp = storedResume?.experience || user?.resumeData?.experience;
-  let experience: ResumeData['experience'] = [];
-
-  // Filter out any projects that were mistakenly inside raw experience
-  const cleanExpList = (rawExp && Array.isArray(rawExp))
-    ? rawExp.filter((e: any) => !isProjectEntry(e))
-    : [];
-
   const rawProjectEntriesFromExp = (rawExp && Array.isArray(rawExp))
     ? rawExp.filter((e: any) => isProjectEntry(e))
     : [];
 
-  if (cleanExpList.length > 0) {
-    experience = cleanExpList.map((e: any, idx: number) => ({
-      id: `exp-${idx + 1}`,
-      title: e.role || e.title || targetRole,
-      company: e.company || 'Organization',
-      location: e.location || location,
-      startDate: e.duration ? e.duration.split('–')[0]?.split('-')[0]?.trim() : '2023-01',
-      endDate: e.duration ? (e.duration.split('–')[1] || e.duration.split('-')[1])?.trim() || 'Present' : 'Present',
-      current: !e.duration || e.duration.toLowerCase().includes('present'),
-      description: e.description || `Key contributor delivering solutions for ${e.company || 'organization'}.`,
-      highlights:
-        Array.isArray(e.bullets || e.highlights) && (e.bullets || e.highlights).length > 0
-          ? e.bullets || e.highlights
-          : [`Delivered key responsibilities and achieved operational milestones.`]
-    }));
-  } else if (isIshika) {
-    // Ishika's actual verified employment (AOSC Technologies & Marshall Institute)
-    experience = [
-      {
-        id: 'exp-1',
-        title: 'Full Stack Developer',
-        company: 'AOSC Technologies Pvt Ltd',
-        location: 'Punjab, India',
-        startDate: '2026-07',
-        endDate: 'Present',
-        current: true,
-        description: 'Developed full-stack web application using MERN Stack with responsive UI, REST APIs, and database integration.',
-        highlights: [
-          'Developed a full-stack web application using MongoDB, Express.js, React.js, and Node.js, implementing responsive UI, REST APIs, and database integration.',
-          'Contributed to AI-driven development, integrating modern AI tools/workflows to improve functionality, automation, and user experience.'
-        ]
-      },
-      {
-        id: 'exp-2',
-        title: 'Faculty / Trainer',
-        company: 'Marshall Institute',
-        location: 'Amritsar, Punjab',
-        startDate: '2026-02',
-        endDate: 'Present',
-        current: true,
-        description: 'Delivered theoretical and practical training in computer fundamentals, programming, and digital applications.',
-        highlights: [
-          'Delivered theoretical and practical training in computer fundamentals, programming, and digital applications to students.',
-          'Designed lesson plans, conducted assessments, and provided academic guidance to strengthen students\' technical and problem-solving skills.'
-        ]
-      }
-    ];
-  } else {
-    // For freshers or students without employment history: keep empty! Do not inject fake company!
-    experience = [];
-  }
+  const cleanExpList = (rawExp && Array.isArray(rawExp))
+    ? rawExp.filter((e: any) => !isProjectEntry(e))
+    : [];
 
-  // 2. KEY TECHNICAL & PORTFOLIO PROJECTS (Dedicated section separate from work experience)
+  const experience: ResumeData['experience'] = cleanExpList.map((e: any, idx: number) => ({
+    id: e.id || `exp-${idx + 1}`,
+    title: e.title || e.role || targetRole,
+    company: e.company || '',
+    location: e.location || location,
+    startDate: e.startDate || (e.duration ? e.duration.split('–')[0]?.split('-')[0]?.trim() : ''),
+    endDate: e.endDate || (e.duration
+      ? (e.duration.split('–')[1] || e.duration.split('-')[1])?.trim() || 'Present'
+      : 'Present'),
+    current: e.current ?? (!e.endDate || e.endDate?.toLowerCase() === 'present'),
+    description: e.description || '',
+    highlights: Array.isArray(e.highlights || e.bullets) && (e.highlights || e.bullets).length > 0
+      ? (e.highlights || e.bullets)
+      : []
+  }));
+
+  // ── 2. PROJECTS ─────────────────────────────────────────────────────────────
+  // Read from uploaded resume projects + project-like experience entries
   const rawProjects = storedResume?.projects || user?.resumeData?.projects;
-  let projects: ResumeData['projects'] = [];
+  const projects: ResumeData['projects'] = [];
 
   if (rawProjects && Array.isArray(rawProjects) && rawProjects.length > 0) {
-    projects = rawProjects.map((p: any, idx: number) => ({
-      id: `proj-${idx + 1}`,
-      title: p.title || 'Technical Project',
-      role: p.role || 'Full Stack Developer',
-      description: p.description || '',
-      technologies: Array.isArray(p.technologies)
-        ? p.technologies
-        : typeof p.technologies === 'string'
-          ? p.technologies.split(',').map((s: string) => s.trim())
-          : userSkills.slice(0, 3),
-      link: p.link || '',
-      highlights: Array.isArray(p.highlights || p.bullets) ? p.highlights || p.bullets : []
-    }));
-  } else if (isIshika) {
-    // Ishika's authentic technical projects from her resume
-    projects = [
-      {
-        id: 'proj-1',
-        title: 'AuraEstate (Real Estate Platform)',
-        role: 'Full Stack Developer',
-        technologies: ['MongoDB', 'Express.js', 'React.js', 'Node.js', 'MERN Stack'],
-        link: 'https://github.com/ishikabhatia5777',
-        description: 'Comprehensive real estate marketplace featuring buyer wishlists, live agent chat, chatbot, and filtered search.',
-        highlights: [
-          'Implemented buyer wishlist, live agent chat, chatbot, filtered search, and client dashboard.',
-          'Engineered agent property/chat dashboard and admin oversight module with login logs and bulk property upload.'
-        ]
-      },
-      {
-        id: 'proj-2',
-        title: 'AI Voice Assistant & Interactive Robot',
-        role: 'AI & IoT Developer',
-        technologies: ['Python', 'Gemini AI', 'Speech Recognition', 'ESP8266', 'Arduino'],
-        link: '',
-        description: 'AI-powered voice assistant integrated with physical robot hardware for real-time speech interaction.',
-        highlights: [
-          'Developed an AI-powered, Alexa-like voice assistant integrated with a physical robot for real-time voice conversations.',
-          'Built a Listen → Process → Respond pipeline using Speech Recognition, Gemini AI, and Text-to-Speech with Python-ESP8266 integration for LED eyes and mouth animations.'
-        ]
-      },
-      {
-        id: 'proj-3',
-        title: 'Fitness Fusion (Gym Management)',
-        role: 'Web Developer',
-        technologies: ['HTML', 'CSS', 'Python', 'Django', 'Bootstrap'],
-        link: '',
-        description: 'Dynamic gym management system streamlining trainer allotment, fitness goals, and health tracking.',
-        highlights: [
-          'Engineered personal trainer allotment, goal setting, and interactive BMI/BMR/calorie calculators.',
-          'Integrated record keeper, chatbot assistant, video workout sessions, and trainer work scheduling.'
-        ]
-      },
-      {
-        id: 'proj-4',
-        title: 'Ultrasonic Distance Project',
-        role: 'Embedded Systems Developer',
-        technologies: ['C++', 'Arduino', 'Ultrasonic Sensor'],
-        link: '',
-        description: 'Hardware-software embedded system measuring precision distances in real-time.',
-        highlights: [
-          'Programmed Arduino micro-controller in C++ to interface with ultrasonic sensors for accurate distance calculations.'
-        ]
-      },
-      {
-        id: 'proj-5',
-        title: 'IELTS Practice Website',
-        role: 'AI & Web Developer',
-        technologies: ['React.js', 'Python', 'AI Agents'],
-        link: '',
-        description: 'Interactive test preparation platform utilizing specialized AI agents for English language evaluation.',
-        highlights: [
-          'Developed intelligent AI agents for real-time writing analysis and speaking test practice.'
-        ]
-      }
-    ];
-  } else {
-    // Default project for general candidate
-    projects = [
-      {
-        id: 'proj-1',
-        title: `${targetRole} Portfolio Application`,
-        role: 'Full Stack Developer',
-        description: `Full stack responsive application built with modern architecture and reusable components.`,
-        technologies: userSkills.slice(0, 4),
-        link: 'https://github.com',
-        highlights: [
-          `Architected scalable state management and responsive UI components using ${userSkills.slice(0, 2).join(' & ')}.`,
-          `Engineered REST API endpoints with robust error handling and database indexing.`
-        ]
-      }
-    ];
+    rawProjects.forEach((p: any, idx: number) => {
+      projects.push({
+        id: p.id || `proj-${idx + 1}`,
+        title: p.title || 'Technical Project',
+        role: p.role || 'Developer',
+        description: p.description || '',
+        technologies: Array.isArray(p.technologies)
+          ? p.technologies
+          : typeof p.technologies === 'string'
+            ? p.technologies.split(',').map((s: string) => s.trim())
+            : [],
+        link: p.link || p.url || '',
+        highlights: Array.isArray(p.highlights || p.bullets) ? (p.highlights || p.bullets) : []
+      });
+    });
   }
 
-  // Also append any projects that were extracted from rawExp if not already present
+  // Move project-like experience entries into projects section
   for (const expProj of rawProjectEntriesFromExp) {
-    const cleanedTitle = (expProj.title || '').replace(/^Project:\s*/i, '').trim();
-    if (!projects.some((p) => p.title.toLowerCase().includes(cleanedTitle.toLowerCase().slice(0, 8)))) {
+    const cleanedTitle = (expProj.title || expProj.role || '').replace(/^Project:\s*/i, '').trim();
+    if (cleanedTitle && !projects.some((p) => p.title.toLowerCase().includes(cleanedTitle.toLowerCase().slice(0, 8)))) {
       projects.push({
-        id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        id: `proj-exp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         title: cleanedTitle,
-        role: 'Full Stack Developer',
-        technologies: ['MERN Stack', 'React.js', 'Node.js'],
-        link: '',
+        role: expProj.role || 'Developer',
+        technologies: Array.isArray(expProj.technologies) ? expProj.technologies : [],
+        link: expProj.link || '',
         description: expProj.description || (expProj.highlights && expProj.highlights[0]) || '',
         highlights: expProj.highlights || []
       });
     }
   }
 
-  // 3. EDUCATION
+  // ── 3. EDUCATION ────────────────────────────────────────────────────────────
   const rawEdu = storedResume?.education || user?.resumeData?.education;
   let education: ResumeData['education'] = [];
 
   if (rawEdu && Array.isArray(rawEdu) && rawEdu.length > 0) {
     education = rawEdu.map((edu: any, idx: number) => ({
-      id: `edu-${idx + 1}`,
-      degree: edu.degree || 'Degree',
-      institution: edu.institution || 'University',
-      year: edu.year || '2024',
-      grade: edu.grade || ''
+      id: edu.id || `edu-${idx + 1}`,
+      degree: edu.degree || edu.qualification || '',
+      institution: edu.institution || edu.school || edu.college || '',
+      year: edu.year || edu.graduationYear || '',
+      grade: edu.grade || edu.gpa || edu.percentage || ''
     }));
-  } else if (isIshika) {
-    education = [
-      {
-        id: 'edu-1',
-        degree: 'Master of Computer Applications',
-        institution: 'Khalsa College of Engineering and Technology, Amritsar',
-        year: '2024 – 2026',
-        grade: '8.96 SGPA'
-      },
-      {
-        id: 'edu-2',
-        degree: 'Bachelor of Computer Applications',
-        institution: 'BBK DAV College for Women, Amritsar',
-        year: '2021 – 2024',
-        grade: '77.33%'
-      },
-      {
-        id: 'edu-3',
-        degree: 'Non-Medical (Class XII)',
-        institution: 'Shri Ram Ashram Public School, Amritsar',
-        year: '2020 – 2021',
-        grade: '88.2%'
-      }
-    ];
-  } else {
-    education = [
-      {
-        id: 'edu-1',
-        degree: user?.education || 'Bachelor of Technology / Computer Applications',
-        institution: 'University / Institute',
-        year: '2024',
-        grade: 'First Class'
-      }
-    ];
+  } else if (user?.education) {
+    education = [{ id: 'edu-1', degree: user.education, institution: '', year: '', grade: '' }];
   }
 
-  // 4. CERTIFICATIONS & TRAINING
+  // ── 4. CERTIFICATIONS ────────────────────────────────────────────────────────
   const rawCert = storedResume?.certifications || user?.resumeData?.certifications;
   let certifications: ResumeData['certifications'] = [];
 
   if (rawCert && Array.isArray(rawCert) && rawCert.length > 0) {
     certifications = rawCert.map((c: any, idx: number) => ({
       id: `cert-${idx + 1}`,
-      name: typeof c === 'string' ? c : c.name || 'Certification',
-      issuer: typeof c === 'string' ? 'Industry Organization' : c.issuer || 'Certified Institute',
-      date: typeof c === 'string' ? '2024' : c.year || c.date || '2024'
+      name: typeof c === 'string' ? c : c.name || '',
+      issuer: typeof c === 'string' ? '' : c.issuer || c.organization || '',
+      date: typeof c === 'string' ? '' : c.year || c.date || ''
     }));
-  } else if (isIshika) {
-    certifications = [
-      {
-        id: 'cert-1',
-        name: 'IBM SkillsBuild & CSRBOX Micro-Internships: Data Science, Agentic AI, Generative AI',
-        issuer: 'IBM & CSRBOX',
-        date: '2024'
-      },
-      {
-        id: 'cert-2',
-        name: '3-Month Web Development Training (Django)',
-        issuer: 'CACMS Institute',
-        date: '2023'
-      }
-    ];
-  } else {
-    certifications = [
-      {
-        id: 'cert-1',
-        name: `${targetRole} Certified Professional`,
-        issuer: 'Industry Recognized Credential',
-        date: '2024'
-      }
-    ];
   }
 
-  // 5. ACHIEVEMENTS & RESEARCH
-  const achievements =
-    storedResume?.achievements && Array.isArray(storedResume.achievements) && storedResume.achievements.length > 0
+  // ── 5. ACHIEVEMENTS ──────────────────────────────────────────────────────────
+  const achievements: string[] =
+    (storedResume?.achievements && Array.isArray(storedResume.achievements) && storedResume.achievements.length > 0)
       ? storedResume.achievements
-      : isIshika
-        ? [
-          'Published review paper: "Deep Learning-Driven Engineering Solutions: A Comprehensive Review".',
-          'Authored research paper on "AI and Driving Business Innovation", presented at National Women Conference.',
-          'Overall Departmental Coordinator for Tech Urja at Khalsa College of Engineering and Technology.'
-        ]
-        : [
-          `Recognized for high-impact deliverables in ${targetRole} initiatives.`,
-          `Consistently achieved zero-defect deployment across project sprints.`
-        ];
+      : (user?.resumeData?.achievements && Array.isArray(user.resumeData.achievements))
+        ? user.resumeData.achievements
+        : [];
 
-  const summary =
-    storedResume?.summary ||
-    user?.resumeData?.summary ||
-    user?.bio ||
-    (isIshika
-      ? 'MCA candidate with a strong foundation in the MERN stack (MongoDB, Express.js, React.js, Node.js) and Python/Django, working as a Full Stack Developer at AOSC Technologies. Experienced in building responsive web applications, developing REST APIs, and integrating AI-driven workflows for enhanced user experiences. Passionate about software architecture, data structures, and continuous upskilling.'
-      : `Driven and results-oriented ${targetRole} with proven capabilities in ${userSkills.slice(0, 4).join(', ')}. Passionate about building reliable, accessible, and high-performance digital solutions with measurable user impact.`);
+  // ── Summary ──────────────────────────────────────────────────────────────────
+  const summary = storedResume?.summary || user?.resumeData?.summary || user?.bio || '';
 
   return {
     id: `res-${user?.id || 'usr-101'}`,
     userId: user?.id || 'usr-101',
-    title: `${targetRole} Resume (ATS Optimized)`,
+    title: `${name || targetRole || 'My'} Resume`,
     template: 'modern',
     personalInfo: {
       fullName: name,
-      email: email,
-      phone: phone,
-      location: location,
-      portfolioUrl: storedResume?.portfolio || '',
-      linkedinUrl: storedResume?.linkedin || '',
-      githubUrl: isIshika ? 'https://github.com/ishikabhatia5777' : ''
+      email,
+      phone,
+      location,
+      portfolioUrl: storedResume?.portfolio || storedResume?.portfolioUrl || '',
+      linkedinUrl: storedResume?.linkedin || storedResume?.linkedinUrl || '',
+      githubUrl: storedResume?.github || storedResume?.githubUrl || ''
     },
     summary,
     experience,
@@ -526,52 +350,34 @@ export function buildPersonalizedResume(user: any): ResumeData {
     education,
     skills: {
       technical: userSkills,
-      soft: ['Cross-functional Collaboration', 'Analytical Problem Solving', 'Strategic Execution', 'Clear Communication'],
-      tools: ['Git & GitHub', 'VS Code', 'Postman', 'Docker', 'MongoDB Compass']
+      soft: storedResume?.softSkills || [],
+      tools: storedResume?.tools || []
     },
     certifications,
     achievements,
-    languages: ['English (Fluent)', 'Hindi (Native)', 'Punjabi'],
-    qualityScore: 92,
+    languages: storedResume?.languages || [],
+    qualityScore: 0,
     updatedAt: new Date().toISOString()
   };
 }
 
 const buildProfileFromUser = (u: any): CareerProfile => {
-  const isIshika =
-    u?.email?.toLowerCase().includes('ishikabhatia') ||
-    u?.name?.toLowerCase().includes('ishika');
-
   return {
     userId: u?.id || 'usr-101',
-    fullName: u?.name || (isIshika ? 'Ishika Bhatia' : 'Member'),
-    email: u?.email || (isIshika ? 'ishikabhatia5777@gmail.com' : 'member@herrise.org'),
-    phone: u?.phone || (isIshika ? '7508163418' : ''),
-    location: u?.location || (isIshika ? 'Amritsar, Punjab' : 'India'),
-    headline: u?.careerProfile?.targetRole || (isIshika ? 'Full Stack Developer | Web Developer' : u?.role || 'Full Stack Developer'),
-    targetRole: u?.careerProfile?.targetRole || (isIshika ? 'Full Stack Developer | Web Developer' : u?.role || 'Full Stack Developer'),
+    fullName: u?.name || '',
+    email: u?.email || '',
+    phone: u?.phone || '',
+    location: u?.location || '',
+    headline: u?.careerProfile?.targetRole || u?.role || '',
+    targetRole: u?.careerProfile?.targetRole || u?.role || '',
     experienceLevel: (u?.experienceLevel?.includes('Senior') ? 'senior' : 'mid') as any,
-    yearsOfExperience: u?.careerProfile?.experienceYears || (isIshika ? 2 : 2),
+    yearsOfExperience: u?.careerProfile?.experienceYears || 0,
     currentStatus: 'seeking',
     workModePreference: 'remote',
-    primarySkills:
-      u?.skills && u.skills.length > 0
-        ? u.skills.slice(0, 4)
-        : isIshika
-          ? ['MongoDB', 'Express.js', 'React.js', 'Node.js']
-          : ['React', 'Node.js', 'Python'],
-    secondarySkills:
-      u?.skills && u.skills.length > 4
-        ? u.skills.slice(4)
-        : isIshika
-          ? ['Python', 'Django', 'SQL', 'C++']
-          : ['SQL', 'MongoDB'],
-    readinessScore: u?.careerProfile?.readinessScore || 92,
-    bio:
-      u?.bio ||
-      (isIshika
-        ? 'Full Stack MERN & Python Developer with experience in web applications, REST APIs, and AI integrations.'
-        : '')
+    primarySkills: u?.skills && u.skills.length > 0 ? u.skills.slice(0, 4) : [],
+    secondarySkills: u?.skills && u.skills.length > 4 ? u.skills.slice(4) : [],
+    readinessScore: u?.careerProfile?.readinessScore || 0,
+    bio: u?.bio || ''
   };
 };
 
@@ -838,6 +644,134 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
+  // Dynamically import and apply an uploaded & parsed resume across the platform
+  const importParsedResume = async (parsed: any): Promise<ResumeData> => {
+    const rawExp = Array.isArray(parsed.experience) ? parsed.experience : [];
+    const cleanExpList = rawExp.filter((e: any) => !isProjectEntry(e));
+    const extraProjectsFromExp = rawExp.filter((e: any) => isProjectEntry(e));
+
+    const experience: ResumeData['experience'] = cleanExpList.map((e: any, idx: number) => ({
+      id: e.id || `exp-${idx + 1}`,
+      title: e.title || e.role || parsed.headline || 'Position',
+      company: e.company || 'Company',
+      location: e.location || parsed.location || '',
+      startDate: e.startDate || (e.duration ? e.duration.split('–')[0]?.split('-')[0]?.trim() : ''),
+      endDate: e.endDate || (e.duration ? (e.duration.split('–')[1] || e.duration.split('-')[1])?.trim() || 'Present' : 'Present'),
+      current: e.current ?? (!e.endDate || e.endDate?.toLowerCase().includes('present')),
+      description: e.description || '',
+      highlights: Array.isArray(e.highlights || e.bullets) ? (e.highlights || e.bullets) : []
+    }));
+
+    const rawProj = Array.isArray(parsed.projects) ? parsed.projects : [];
+    const projects: ResumeData['projects'] = [
+      ...rawProj.map((p: any, idx: number) => ({
+        id: p.id || `proj-${idx + 1}`,
+        title: p.title || 'Technical Project',
+        role: p.role || 'Contributor',
+        technologies: Array.isArray(p.technologies)
+          ? p.technologies
+          : typeof p.technologies === 'string'
+            ? p.technologies.split(',').map((s: string) => s.trim())
+            : [],
+        link: p.link || '',
+        description: p.description || '',
+        highlights: Array.isArray(p.highlights || p.bullets) ? (p.highlights || p.bullets) : []
+      })),
+      ...extraProjectsFromExp.map((e: any, idx: number) => ({
+        id: `proj-exp-${idx + 1}-${Date.now()}`,
+        title: (e.title || e.role || 'Project').replace(/^Project:\s*/i, '').trim(),
+        role: e.role || 'Contributor',
+        technologies: Array.isArray(e.technologies) ? e.technologies : [],
+        link: e.link || '',
+        description: e.description || (e.highlights && e.highlights[0]) || '',
+        highlights: Array.isArray(e.highlights || e.bullets) ? (e.highlights || e.bullets) : []
+      }))
+    ];
+
+    const rawEdu = Array.isArray(parsed.education) ? parsed.education : [];
+    const education: ResumeData['education'] = rawEdu.map((edu: any, idx: number) => ({
+      id: edu.id || `edu-${idx + 1}`,
+      degree: edu.degree || 'Degree',
+      institution: edu.institution || 'Institution',
+      year: edu.year || '',
+      grade: edu.grade || ''
+    }));
+
+    const rawCert = Array.isArray(parsed.certifications) ? parsed.certifications : [];
+    const certifications: ResumeData['certifications'] = rawCert.map((c: any, idx: number) => ({
+      id: `cert-${idx + 1}`,
+      name: typeof c === 'string' ? c : c.name || 'Certification',
+      issuer: typeof c === 'string' ? '' : c.issuer || '',
+      date: typeof c === 'string' ? '' : c.year || c.date || ''
+    }));
+
+    const achievements = Array.isArray(parsed.achievements) ? parsed.achievements : [];
+    const userSkills = Array.isArray(parsed.skills) ? parsed.skills : [];
+
+    const newResume: ResumeData = {
+      id: `res-${Date.now()}`,
+      userId: user?.id || 'usr-101',
+      title: `${parsed.fullName || parsed.headline || 'Uploaded'} Resume`,
+      template: 'modern',
+      personalInfo: {
+        fullName: parsed.fullName || user?.name || '',
+        email: parsed.email || user?.email || '',
+        phone: parsed.phone || user?.phone || '',
+        location: parsed.location || user?.location || '',
+        portfolioUrl: parsed.portfolio || '',
+        linkedinUrl: parsed.linkedin || '',
+        githubUrl: parsed.github || ''
+      },
+      summary: parsed.summary || '',
+      experience,
+      projects,
+      education,
+      skills: {
+        technical: userSkills,
+        soft: Array.isArray(parsed.softSkills) ? parsed.softSkills : ['Problem Solving', 'Communication', 'Teamwork'],
+        tools: Array.isArray(parsed.tools) ? parsed.tools : []
+      },
+      certifications,
+      achievements,
+      languages: Array.isArray(parsed.languages) && parsed.languages.length > 0 ? parsed.languages : ['English'],
+      qualityScore: parsed.qualityScore || 88,
+      updatedAt: new Date().toISOString()
+    };
+
+    const sanitized = separateExperienceAndProjects(newResume);
+    setActiveResume(sanitized);
+    setResumes((prev) => [sanitized, ...prev.filter((r) => r.id !== sanitized.id)]);
+    localStorage.setItem('hercareer_resume', JSON.stringify(sanitized));
+
+    if (parsed.fullName || parsed.headline || userSkills.length > 0) {
+      setProfile((prev) => ({
+        ...prev,
+        fullName: parsed.fullName || prev.fullName,
+        headline: parsed.headline || prev.headline,
+        targetRole: parsed.headline || prev.targetRole,
+        location: parsed.location || prev.location,
+        phone: parsed.phone || prev.phone,
+        email: parsed.email || prev.email,
+        primarySkills: userSkills.slice(0, 4).length > 0 ? userSkills.slice(0, 4) : prev.primarySkills,
+        secondarySkills: userSkills.slice(4).length > 0 ? userSkills.slice(4) : prev.secondarySkills,
+        bio: parsed.summary || prev.bio
+      }));
+    }
+
+    try {
+      await fetch(`${backendUrl}/api/career/resumes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sanitized)
+      });
+    } catch (e) {
+      console.warn('Backend sync note:', e);
+    }
+
+    showToast('Resume Loaded! 📄', `Applied all data from uploaded resume`, 'success');
+    return sanitized;
+  };
+
   // 5. Jobs State
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<string[]>(() => {
@@ -933,7 +867,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     setApplications((prev) => [newApp, ...prev]);
     setStats((prev) => ({ ...prev, applicationsSubmitted: prev.applicationsSubmitted + 1 }));
-    showToast('Application Submitted! 🎉', `Applied to ${job.company}`, 'success');
+    showToast('Application Submitted! ðŸŽ‰', `Applied to ${job.company}`, 'success');
     return true;
   };
 
@@ -951,7 +885,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         company: 'Fintech Spark India',
         title: 'Senior Frontend Engineer',
         location: 'Bengaluru / Remote',
-        salary: '₹22,00,000 / yr',
+        salary: 'â‚¹22,00,000 / yr',
         status: 'Interview Scheduled',
         appliedDate: '2026-11-04',
         interviewDate: '2026-11-15',
@@ -962,7 +896,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         company: 'Nexus Health Analytics',
         title: 'Data Analyst & BI Specialist',
         location: 'Hybrid',
-        salary: '₹14,50,000 / yr',
+        salary: 'â‚¹14,50,000 / yr',
         status: 'Applied',
         appliedDate: '2026-11-08',
         notes: 'Tailored resume submitted with SQL case studies.'
@@ -1211,7 +1145,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (data.success && data.restartData) {
         setRestartNarrative(data.restartData);
         localStorage.setItem('hercareer_restart_narrative', JSON.stringify(data.restartData));
-        showToast('Career Comeback Strategy Ready! 🌸', 'Empowering narrative generated', 'success');
+        showToast('Career Comeback Strategy Ready! ðŸŒ¸', 'Empowering narrative generated', 'success');
       }
     } catch (err) {
       console.warn('Restart narrative fallback:', err);
@@ -1283,6 +1217,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         isAnalyzing,
         analyzeResumeContent,
         parseResumeFile,
+        importParsedResume,
         jobs,
         savedJobIds,
         toggleSaveJob,

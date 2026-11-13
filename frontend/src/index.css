@@ -55,3 +55,30 @@
 .animate-pulse-subtle {
   animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Print Styles for Verified Certificates */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-certificate, #printable-certificate * {
+    visibility: visible;
+  }
+  #printable-certificate {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 98vh !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
