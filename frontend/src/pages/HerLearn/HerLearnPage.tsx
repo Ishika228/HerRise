@@ -103,23 +103,50 @@ export const HerLearnPage: React.FC = () => {
         const res = await fetch(`${API_BASE}/api/courses/user-progress?userEmail=${encodeURIComponent(user.email)}`);
         const json = await res.json();
         if (json.success && Array.isArray(json.progressList)) {
-          setCourses((prevCourses) =>
-            prevCourses.map((c) => {
+          setCourses((prevCourses) => {
+            const updated = prevCourses.map((c) => {
               const matched = json.progressList.find((p: any) => p.courseId === c.id);
               if (matched) {
+                const updatedModules = c.modules.map((m) => ({
+                  ...m,
+                  completed: Array.isArray(matched.completedModuleIds)
+                    ? matched.completedModuleIds.includes(m.id)
+                    : m.completed
+                }));
+                const isAllCompleted =
+                  Boolean(matched.isCompleted) ||
+                  (updatedModules.length > 0 && updatedModules.every((m) => m.completed));
+                const progressPercent = isAllCompleted
+                  ? 100
+                  : Math.max(
+                      matched.progressPercent ?? 0,
+                      Math.round(
+                        (updatedModules.filter((m) => m.completed).length / updatedModules.length) * 100
+                      )
+                    );
+
                 return {
                   ...c,
                   isEnrolled: true,
-                  progressPercent: matched.progressPercent ?? c.progressPercent,
-                  isCompleted: matched.isCompleted,
+                  modules: updatedModules,
+                  progressPercent,
+                  isCompleted: isAllCompleted,
                   certificateId: matched.certificateId,
                   stoppedAtSeconds: matched.currentTimeSeconds,
                   stoppedModuleIndex: matched.currentModuleIndex
                 };
               }
               return c;
-            })
-          );
+            });
+
+            // Keep selectedCourseForLearning synchronized so active player never gets stale on refresh!
+            setSelectedCourseForLearning((curSelected) => {
+              const refreshed = updated.find((c) => c.id === curSelected.id);
+              return refreshed ? { ...refreshed } : curSelected;
+            });
+
+            return updated;
+          });
         }
       } catch (err) {
         console.warn('[HerLearn] Error fetching user progress:', err);

@@ -442,11 +442,25 @@ export const saveCourseProgress = async (req: Request, res: Response) => {
     }
 
     const emailNorm = String(userEmail).toLowerCase().trim();
-    const isCompleted = progressPercent >= 100;
 
-    // Check if certificate already exists for this course
+    // Check if certificate already exists or if existing progress exists in MongoDB
     const existing = await CourseProgressModel.findOne({ userEmail: emailNorm, courseId });
-    let certificateId = existing?.certificateId || '';
+
+    // Merge completed module IDs so completed modules are permanent and never lost on refresh
+    const incomingCompleted = Array.isArray(completedModuleIds) ? completedModuleIds : [];
+    const mergedCompletedModuleIds = Array.from(
+      new Set([
+        ...(existing?.completedModuleIds || []),
+        ...incomingCompleted
+      ])
+    );
+
+    const isCompleted =
+      progressPercent >= 100 ||
+      Boolean(req.body.isCompleted) ||
+      Boolean(existing?.isCompleted);
+
+    let certificateId = existing?.certificateId || req.body.certificateId || '';
 
     if (isCompleted && !certificateId) {
       // Deterministic yet unique credential identifier
@@ -463,9 +477,9 @@ export const saveCourseProgress = async (req: Request, res: Response) => {
       currentModuleTitle: String(currentModuleTitle || ''),
       currentTimeSeconds: Math.max(0, Math.round(Number(currentTimeSeconds) || 0)),
       durationSeconds: Math.max(0, Math.round(Number(durationSeconds) || 0)),
-      completedModuleIds: Array.isArray(completedModuleIds) ? completedModuleIds : [],
-      progressPercent: Math.min(100, Math.max(0, Math.round(Number(progressPercent) || 0))),
-      isCompleted: isCompleted || Boolean(existing?.isCompleted),
+      completedModuleIds: mergedCompletedModuleIds,
+      progressPercent: isCompleted ? 100 : Math.min(100, Math.max(0, Math.round(Number(progressPercent) || 0))),
+      isCompleted,
       lastWatchedAt: new Date()
     };
 

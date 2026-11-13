@@ -17,4 +17,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // Allow all Render.com deployment hosts and any future custom domains
+    allowedHosts: [
+      'herrise-atjg.onrender.com',
+      '.onrender.com',
+      'localhost',
+    ],
+  },
 })

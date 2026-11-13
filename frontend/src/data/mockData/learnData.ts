@@ -12,18 +12,61 @@ export const initialCourses: Course[] = [
     level: 'Beginner',
     category: 'Financial Literacy',
     thumbnail: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80',
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/WEDIj9JBTC8',
     description: 'Break free from money intimidation. Master personal budgeting, tax strategies, equity mutual funds, sovereign gold bonds, and retirement independence.',
     rating: 4.9,
     enrolledStudents: 3420,
     isEnrolled: true,
     progressPercent: 72,
     modules: [
-      { id: 'm1', title: '1. Mindset Shift: Dismantling Cultural Money Taboos', duration: '18 mins', completed: true },
-      { id: 'm2', title: '2. The Bulletproof 50/30/20 Budgeting Blueprint', duration: '24 mins', completed: true },
-      { id: 'm3', title: '3. Emergency Funds & High-Yield Safety Cushions', duration: '20 mins', completed: true },
-      { id: 'm4', title: '4. Demystifying Mutual Funds, ETFs & Index Investing', duration: '32 mins', completed: true },
-      { id: 'm5', title: '5. Health & Term Insurance Without Getting Mis-sold', duration: '28 mins', completed: false },
-      { id: 'm6', title: '6. Tax Savings for Freelancers & Business Owners', duration: '35 mins', completed: false }
+      {
+        id: 'm1',
+        title: '1. Mindset Shift: Dismantling Cultural Money Taboos',
+        duration: '18 mins',
+        completed: true,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/9aiyFyjriG4',
+        summary: 'Psychological strategies to overcome cultural taboos, claim financial agency, and establish clear investment goals.'
+      },
+      {
+        id: 'm2',
+        title: '2. The Bulletproof 50/30/20 Budgeting Blueprint',
+        duration: '24 mins',
+        completed: true,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/HQzoZfc3GwQ',
+        summary: 'Step-by-step breakdown of the 50/30/20 framework to allocate income between essentials, discretionary spending, and savings.'
+      },
+      {
+        id: 'm3',
+        title: '3. Emergency Funds & High-Yield Safety Cushions',
+        duration: '20 mins',
+        completed: true,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/ss_1720sbf4',
+        summary: 'How to calculate your 6-month runway and shelter it in liquid, high-yield, low-risk instruments.'
+      },
+      {
+        id: 'm4',
+        title: '4. Demystifying Mutual Funds, ETFs & Index Investing',
+        duration: '32 mins',
+        completed: true,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/WEDIj9JBTC8',
+        summary: 'Practical guide to investing in low-cost index funds, large-cap mutual funds, and automated SIP allocations.'
+      },
+      {
+        id: 'm5',
+        title: '5. Health & Term Insurance Without Getting Mis-sold',
+        duration: '28 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/B4tTczDhPuE',
+        summary: 'Key checklists to identify hidden clauses in health and pure term life policies, safeguarding family assets.'
+      },
+      {
+        id: 'm6',
+        title: '6. Tax Savings for Freelancers & Business Owners',
+        duration: '35 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/6dLJvYlWFks',
+        summary: 'Legitimate tax deductions, Section 80C/80D benefits, and presumptive taxation rules for women entrepreneurs.'
+      }
     ]
   },
   {
@@ -37,16 +80,45 @@ export const initialCourses: Course[] = [
     level: 'Intermediate',
     category: 'Entrepreneurship',
     thumbnail: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=800&q=80',
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/vVJrxszq38M',
     description: 'A step-by-step masterclass on sourcing raw materials, packaging design, FSSAI/trademark compliance, HerMarket storefront setup, and organic customer acquisition.',
     rating: 4.9,
     enrolledStudents: 2850,
     isEnrolled: true,
     progressPercent: 40,
     modules: [
-      { id: 'm1', title: '1. Validating Product-Market Fit with Zero Inventory', duration: '22 mins', completed: true },
-      { id: 'm2', title: '2. Costing, COGS & Protecting 50%+ Gross Margins', duration: '30 mins', completed: true },
-      { id: 'm3', title: '3. Packaging, Labelling & Eco-Friendly Supply Chains', duration: '25 mins', completed: false },
-      { id: 'm4', title: '4. Instagram & WhatsApp Commerce That Actually Converts', duration: '35 mins', completed: false }
+      {
+        id: 'm1',
+        title: '1. Validating Product-Market Fit with Zero Inventory',
+        duration: '22 mins',
+        completed: true,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/vVJrxszq38M',
+        summary: 'Techniques for conducting customer discovery interviews, pre-sales landing pages, and rapid MVP testing.'
+      },
+      {
+        id: 'm2',
+        title: '2. Costing, COGS & Protecting 50%+ Gross Margins',
+        duration: '30 mins',
+        completed: true,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/eQVadp8fmQ0',
+        summary: 'Calculations for unit economics, shipping costs, payment gateway fees, and healthy retail margin buffers.'
+      },
+      {
+        id: 'm3',
+        title: '3. Packaging, Labelling & Eco-Friendly Supply Chains',
+        duration: '25 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/aBJzj7BYWNQ',
+        summary: 'Sourcing sustainable packaging suppliers, regulatory barcode certifications, and unboxing delight.'
+      },
+      {
+        id: 'm4',
+        title: '4. Instagram & WhatsApp Commerce That Actually Converts',
+        duration: '35 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/C4eyDXVorEo',
+        summary: 'Automating DM inquiries, catalog broadcasting, and conversational checkout funnels.'
+      }
     ]
   },
   {
@@ -60,15 +132,37 @@ export const initialCourses: Course[] = [
     level: 'Beginner',
     category: 'Artificial Intelligence',
     thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/jC4v5AS4RIM',
     description: 'Learn how to use AI for marketing copywriting, graphic mockups, customer support automation, and data analysis to run a multi-person business by yourself.',
     rating: 4.8,
     enrolledStudents: 4120,
     isEnrolled: false,
     progressPercent: 0,
     modules: [
-      { id: 'm1', title: '1. Mastering Prompt Engineering for Business Tasks', duration: '20 mins', completed: false },
-      { id: 'm2', title: '2. AI Copywriting for High-Converting Ad Funnels', duration: '25 mins', completed: false },
-      { id: 'm3', title: '3. Automated Customer Support & FAQ Chatbots', duration: '30 mins', completed: false }
+      {
+        id: 'm1',
+        title: '1. Mastering Prompt Engineering for Business Tasks',
+        duration: '20 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/jC4v5AS4RIM',
+        summary: 'Formulating structured zero-shot and few-shot system prompts to extract high-precision business output.'
+      },
+      {
+        id: 'm2',
+        title: '2. AI Copywriting for High-Converting Ad Funnels',
+        duration: '25 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/nZ-x-IlpRSI',
+        summary: 'Generating multi-variant ad hooks, email nurturing flows, and persuasive sales page copy in seconds.'
+      },
+      {
+        id: 'm3',
+        title: '3. Automated Customer Support & FAQ Chatbots',
+        duration: '30 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/mEsleV16qdo',
+        summary: 'Connecting custom knowledge bases and automated resolution workflows to handle customer queries 24/7.'
+      }
     ]
   },
   {
@@ -82,14 +176,29 @@ export const initialCourses: Course[] = [
     level: 'Advanced',
     category: 'Communication Skills',
     thumbnail: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80',
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/HAnw168huqA',
     description: 'Command the room, overcome impostor syndrome, negotiate salary increases with confidence, and pitch investors without feeling defensive.',
     rating: 5.0,
     enrolledStudents: 1980,
     isEnrolled: false,
     progressPercent: 0,
     modules: [
-      { id: 'm1', title: '1. The Psychology of Gravitas in High-Stakes Meetings', duration: '25 mins', completed: false },
-      { id: 'm2', title: '2. The 4-Step Salary & Retainer Negotiation Script', duration: '35 mins', completed: false }
+      {
+        id: 'm1',
+        title: '1. The Psychology of Gravitas in High-Stakes Meetings',
+        duration: '25 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/HAnw168huqA',
+        summary: 'Techniques for vocal presence, body language grounding, and commanding confidence under executive pressure.'
+      },
+      {
+        id: 'm2',
+        title: '2. The 4-Step Salary & Retainer Negotiation Script',
+        duration: '35 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/W384K3sDAdU',
+        summary: 'Word-for-word scripts to counter initial lowball offers, anchor on market value, and negotiate bonus clauses.'
+      }
     ]
   },
   {
@@ -103,14 +212,29 @@ export const initialCourses: Course[] = [
     level: 'Intermediate',
     category: 'Programming',
     thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/bMknfKXIFA8',
     description: 'Practical project-based coding course for women breaking into frontend engineering or building their own software products.',
     rating: 4.9,
     enrolledStudents: 1670,
     isEnrolled: false,
     progressPercent: 0,
     modules: [
-      { id: 'm1', title: '1. Modern React Architecture & State Management', duration: '40 mins', completed: false },
-      { id: 'm2', title: '2. TypeScript Fundamentals for Production Apps', duration: '45 mins', completed: false }
+      {
+        id: 'm1',
+        title: '1. Modern React Architecture & State Management',
+        duration: '40 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/bMknfKXIFA8',
+        summary: 'Component composition, custom hooks, reactive state boundaries, and scalable client architecture.'
+      },
+      {
+        id: 'm2',
+        title: '2. TypeScript Fundamentals for Production Apps',
+        duration: '45 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/d56mG7DezGs',
+        summary: 'Generics, discriminated unions, strict typing, and interface contracts for enterprise React web apps.'
+      }
     ]
   },
   {
@@ -124,14 +248,29 @@ export const initialCourses: Course[] = [
     level: 'Intermediate',
     category: 'Digital Marketing',
     thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/3MJXBYDmm6s',
     description: 'Scale your business using Meta Ads, Google Performance Max, UGC creators, and email retention funnels with measurable ROI.',
     rating: 4.8,
     enrolledStudents: 2310,
     isEnrolled: false,
     progressPercent: 0,
     modules: [
-      { id: 'm1', title: '1. Setting Up Pixel Tracking & Conversion APIs', duration: '30 mins', completed: false },
-      { id: 'm2', title: '2. Crafting High-Hook Video Creatives on a Budget', duration: '35 mins', completed: false }
+      {
+        id: 'm1',
+        title: '1. Setting Up Pixel Tracking & Conversion APIs',
+        duration: '30 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/3MJXBYDmm6s',
+        summary: 'Configuring Meta Pixel, server-side Conversions API (CAPI), and custom event tracking parameters.'
+      },
+      {
+        id: 'm2',
+        title: '2. Crafting High-Hook Video Creatives on a Budget',
+        duration: '35 mins',
+        completed: false,
+        videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/xGtZiAmnFSc',
+        summary: 'Mastering the first 3-second hook formula, visual pattern interrupts, and UGC conversion ad formats.'
+      }
     ]
   }
 ];

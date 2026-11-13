@@ -334,6 +334,8 @@ export interface Course {
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   category: string;
   thumbnail: string;
+  videoUrl?: string;
+  videoEmbedUrl?: string;
   description: string;
   rating: number;
   enrolledStudents: number;
@@ -349,6 +351,8 @@ export interface Course {
     title: string;
     duration: string;
     completed: boolean;
+    videoEmbedUrl?: string;
+    summary?: string;
   }[];
 }
 

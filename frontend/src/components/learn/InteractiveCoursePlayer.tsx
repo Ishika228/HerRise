@@ -10,6 +10,7 @@ import {
   Clock,
   Sparkles,
   Volume2,
+  Volume1,
   VolumeX,
   Maximize2,
   BookmarkCheck,
@@ -18,7 +19,10 @@ import {
   MonitorPlay,
   Presentation,
   BookOpen,
-  Check
+  Mic,
+  MessageSquare,
+  Radio,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Course, Certificate } from '../../types';
@@ -45,6 +49,17 @@ function parseDurationToSeconds(durStr?: string): number {
   return 360;
 }
 
+// Generate dynamic educational spoken narration script for any course & module
+function getLessonScript(courseTitle: string, moduleTitle: string, instructor: string): string[] {
+  return [
+    `Welcome to ${moduleTitle} in your masterclass on ${courseTitle}. I am your lead instructor, ${instructor}.`,
+    `In this section, we break down actionable formulas and strategic frameworks designed for real-world execution.`,
+    `Notice the primary benchmarks highlighted on your screen. Building disciplined habits and tracking your progress daily is key.`,
+    `Take a moment to review the practical equations, calibrate your goals, and apply these methods directly into your portfolio.`,
+    `Excellent progress on this lesson. Complete your module notes to earn your verified credential.`
+  ];
+}
+
 export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = ({
   course,
   userEmail,
@@ -55,21 +70,36 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
   onOpenCertificate,
   onToast
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const activeModule = course.modules[activeModuleIndex] || course.modules[0];
   const initialDuration = parseDurationToSeconds(activeModule?.duration);
   const [duration, setDuration] = useState(initialDuration);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [volume, setVolume] = useState(0.9); // 90% default volume
   const [isMuted, setIsMuted] = useState(false);
   const [savedResumeTime, setSavedResumeTime] = useState<number | null>(null);
   const [showResumeBanner, setShowResumeBanner] = useState(false);
   const [lastSavedNotice, setLastSavedNotice] = useState<string>('');
   const [isCompleted, setIsCompleted] = useState<boolean>(Boolean(course.isCompleted || (course.progressPercent && course.progressPercent >= 100)));
   const [certificateData, setCertificateData] = useState<Certificate | null>(null);
-  const [videoError, setVideoError] = useState(false);
+
+  // Watch-time enforcement: track how many seconds user has actually watched
+  const [watchedSeconds, setWatchedSeconds] = useState<number>(0);
+  const watchTimerRef = useRef<any>(null);
+  // YouTube IFrame play-state tracking via postMessage API
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const isYouTubePlayingRef = useRef<boolean>(false);
+  const [isYouTubePlaying, setIsYouTubePlaying] = useState<boolean>(false);
+
+  // Player view mode: 'video' = Real Embedded Video Lecture with full human audio voice; 'interactive' = AI Spoken Voice Narration Canvas
   const [playerMode, setPlayerMode] = useState<'video' | 'interactive'>('video');
+
+  // Voice narration & subtitle state
+  const [currentCaption, setCurrentCaption] = useState<string>('');
+  const [captionIndex, setCaptionIndex] = useState(0);
+  const narrationScript = useRef<string[]>([]);
+  const isSpeakingRef = useRef(false);
 
   const storageKey = `herrise_course_progress_${userEmail || 'guest'}_${course.id}`;
 
@@ -81,15 +111,221 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Update duration when module changes
+  // Initialize narration script for active module
+  useEffect(() => {
+    const script = getLessonScript(course.title, activeModule?.title || 'Lesson', course.instructor);
+    narrationScript.current = script;
+    setCurrentCaption(script[0]);
+    setCaptionIndex(0);
+  }, [course.title, activeModule?.title, course.instructor]);
+
+  // Update duration when module changes — also reset watch timer
   useEffect(() => {
     const modDur = parseDurationToSeconds(activeModule?.duration);
     setDuration(modDur);
     setCurrentTime(0);
     setIsPlaying(false);
+    stopVoiceNarration();
+    // Reset watch-time counter for new module (keep if already completed)
+    if (!activeModule?.completed) {
+      setWatchedSeconds(0);
+    }
+    // Reset YouTube play state tracking for the new module
+    isYouTubePlayingRef.current = false;
+    setIsYouTubePlaying(false);
+    if (watchTimerRef.current) {
+      clearInterval(watchTimerRef.current);
+      watchTimerRef.current = null;
+    }
   }, [activeModuleIndex, activeModule?.duration]);
 
-  // 1. Load saved playback state from Database & LocalStorage on mount or course change
+  // =========================================================================
+  // VOICE SYNTHESIS ENGINE (Plays audible spoken lesson audio through browser)
+  // =========================================================================
+  const stopVoiceNarration = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    isSpeakingRef.current = false;
+  }, []);
+
+  const speakSentence = useCallback(
+    (text: string) => {
+      if (!('speechSynthesis' in window) || isMuted || volume <= 0) return;
+
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = playbackRate * 0.95;
+        utterance.pitch = 1.05;
+        utterance.volume = isMuted ? 0 : volume;
+
+        // Try to pick natural English voice
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(
+          (v) =>
+            v.lang.startsWith('en') &&
+            (v.name.includes('Natural') ||
+              v.name.includes('Female') ||
+              v.name.includes('Zira') ||
+              v.name.includes('Samantha') ||
+              v.name.includes('Jenny') ||
+              v.name.includes('Google UK English Female') ||
+              v.name.includes('Google US English'))
+        ) || voices.find((v) => v.lang.startsWith('en'));
+
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        utterance.onstart = () => {
+          isSpeakingRef.current = true;
+        };
+
+        utterance.onend = () => {
+          isSpeakingRef.current = false;
+        };
+
+        utterance.onerror = () => {
+          isSpeakingRef.current = false;
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('[HerLearn Voice Engine] Speech error:', err);
+      }
+    },
+    [isMuted, volume, playbackRate]
+  );
+
+  // Audible tone to unlock and verify browser audio
+  const playStartChime = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.18); // A5
+      gain.gain.setValueAtTime(isMuted ? 0 : volume * 0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {}
+  }, [isMuted, volume]);
+
+  // Test speaker voice button action
+  const handleTestVoice = () => {
+    playStartChime();
+    speakSentence(`Hello, this is ${course.instructor}. Your course voice narration is active and ready.`);
+    onToast?.('Voice Active 🔊', `Instructor audio is playing at ${Math.round(volume * 100)}% volume`, 'success');
+  };
+
+  // Sync spoken sentences as the timer advances in Interactive mode
+  useEffect(() => {
+    if (!isPlaying || playerMode !== 'interactive') {
+      if (playerMode !== 'interactive') stopVoiceNarration();
+      return;
+    }
+
+    const script = narrationScript.current;
+    if (!script || script.length === 0) return;
+
+    const totalScriptSecs = Math.max(30, duration);
+    const intervalPerSentence = totalScriptSecs / script.length;
+    const targetIdx = Math.min(script.length - 1, Math.floor(currentTime / intervalPerSentence));
+
+    if (targetIdx !== captionIndex || !isSpeakingRef.current) {
+      setCaptionIndex(targetIdx);
+      setCurrentCaption(script[targetIdx]);
+      speakSentence(script[targetIdx]);
+    }
+  }, [isPlaying, playerMode, Math.floor(currentTime / 10), duration, captionIndex, speakSentence, stopVoiceNarration]);
+
+  // Clean up speech synthesis on component unmount
+  useEffect(() => {
+    return () => {
+      stopVoiceNarration();
+    };
+  }, [stopVoiceNarration]);
+
+  // =========================================================================
+  // YOUTUBE IFRAME PLAY-STATE DETECTION via postMessage API
+  // YouTube sends state-change messages: 1=playing, 2=paused, 0=ended, 3=buffering
+  // We listen here and gate the watch-timer so it only counts REAL watch time.
+  // =========================================================================
+  useEffect(() => {
+    const handleYouTubeMessage = (event: MessageEvent) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+        // YouTube IFrame API onStateChange event
+        let playerState: number | undefined;
+        if (data?.event === 'onStateChange') {
+          playerState = data.info;
+        } else if (data?.event === 'infoDelivery' && data?.info?.playerState !== undefined) {
+          playerState = data.info.playerState;
+        }
+
+        if (playerState !== undefined) {
+          // 1 = playing, 3 = buffering (count as watching); anything else = not playing
+          const playing = playerState === 1 || playerState === 3;
+          isYouTubePlayingRef.current = playing;
+          setIsYouTubePlaying(playing);
+        }
+      } catch {
+        // non-YouTube or malformed message — ignore
+      }
+    };
+
+    window.addEventListener('message', handleYouTubeMessage);
+    return () => window.removeEventListener('message', handleYouTubeMessage);
+  }, []);
+
+  // Register this page as a YouTube IFrame API listener after iframe loads
+  const handleIframeLoad = () => {
+    try {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'listening', id: 1 }),
+        '*'
+      );
+    } catch {}
+  };
+
+  // Watch-time counter for Video Lecture mode
+  // ONLY increments when YouTube is actually PLAYING (gated by isYouTubePlayingRef)
+  useEffect(() => {
+    if (playerMode !== 'video' || activeModule?.completed) {
+      if (watchTimerRef.current) {
+        clearInterval(watchTimerRef.current);
+        watchTimerRef.current = null;
+      }
+      return;
+    }
+
+    watchTimerRef.current = setInterval(() => {
+      // Only count a second if YouTube video is genuinely playing right now
+      if (!isYouTubePlayingRef.current) return;
+      setWatchedSeconds((prev) => Math.min(prev + 1, duration || 360));
+    }, 1000);
+
+    return () => {
+      if (watchTimerRef.current) {
+        clearInterval(watchTimerRef.current);
+        watchTimerRef.current = null;
+      }
+    };
+  }, [playerMode, activeModule?.id, activeModule?.completed, duration]);
+
+  // 1. Load saved playback state from Database & LocalStorage on mount
   useEffect(() => {
     let isMounted = true;
 
@@ -129,6 +365,8 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
         if (stoppedTime > 3) {
           setSavedResumeTime(stoppedTime);
           setShowResumeBanner(true);
+          // Note: watchedSeconds is NOT pre-populated from DB —
+          // it must be earned by actually playing the video this session
         }
 
         if (stoppedMod !== activeModuleIndex && course.modules[stoppedMod]) {
@@ -241,13 +479,12 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
   useEffect(() => {
     let interval: any = null;
 
-    if (isPlaying && (videoError || playerMode === 'interactive' || !videoRef.current)) {
+    if (isPlaying) {
       interval = setInterval(() => {
         setCurrentTime((prev) => {
           const next = prev + 1;
           const curDur = duration || 360;
 
-          // Auto-save every 5 seconds
           const now = Date.now();
           if (now - lastSaveRef.current > 5000) {
             lastSaveRef.current = now;
@@ -256,6 +493,7 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
 
           if (next >= curDur) {
             setIsPlaying(false);
+            stopVoiceNarration();
             handleMarkModuleComplete();
             return curDur;
           }
@@ -267,81 +505,21 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPlaying, videoError, playerMode, duration, playbackRate, saveProgressToDb]);
+  }, [isPlaying, duration, playbackRate, saveProgressToDb, stopVoiceNarration]);
 
-  // Video element event listeners
-  const handleTimeUpdate = () => {
-    if (!videoRef.current || videoError || playerMode === 'interactive') return;
-    const current = videoRef.current.currentTime;
-    const dur = videoRef.current.duration;
-    setCurrentTime(current);
-    if (dur && !isNaN(dur) && dur > 10) setDuration(dur);
-
-    const now = Date.now();
-    if (now - lastSaveRef.current > 5000) {
-      lastSaveRef.current = now;
-      saveProgressToDb(current, dur || duration, false);
-    }
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-    saveProgressToDb(currentTime, duration, false);
-    onToast?.('Progress Saved', `Paused at ${formatTime(currentTime)}. Progress saved to database.`, 'info');
-  };
-
-  const handlePlay = () => {
-    setIsPlaying(true);
-    setShowResumeBanner(false);
-  };
-
-  // 4. Reliable Play/Pause Toggle that never gets stuck
+  // 4. Reliable Play/Pause Toggle with Direct Voice Trigger
   const togglePlayback = () => {
-    if (videoError || playerMode === 'interactive') {
-      if (isPlaying) {
-        setIsPlaying(false);
-        saveProgressToDb(currentTime, duration, false);
-        onToast?.('Paused', `Stopped at ${formatTime(currentTime)}`, 'info');
-      } else {
-        setIsPlaying(true);
-        setShowResumeBanner(false);
-      }
-      return;
-    }
-
-    if (!videoRef.current) {
-      setPlayerMode('interactive');
-      setIsPlaying(true);
-      return;
-    }
-
     if (isPlaying) {
-      videoRef.current.pause();
       setIsPlaying(false);
-      saveProgressToDb(videoRef.current.currentTime || currentTime, duration, false);
+      stopVoiceNarration();
+      saveProgressToDb(currentTime, duration, false);
+      onToast?.('Paused', `Stopped at ${formatTime(currentTime)}`, 'info');
     } else {
-      try {
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setIsPlaying(true);
-              setShowResumeBanner(false);
-            })
-            .catch((err) => {
-              console.warn('[HerLearn] HTML5 video play failed, switching to interactive player stream:', err);
-              setVideoError(true);
-              setPlayerMode('interactive');
-              setIsPlaying(true);
-              setShowResumeBanner(false);
-            });
-        } else {
-          setIsPlaying(true);
-        }
-      } catch (err) {
-        setVideoError(true);
-        setPlayerMode('interactive');
-        setIsPlaying(true);
+      setIsPlaying(true);
+      setShowResumeBanner(false);
+      playStartChime();
+      if (playerMode === 'interactive' && currentCaption) {
+        speakSentence(currentCaption);
       }
     }
   };
@@ -350,14 +528,12 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
   const handleResumePlayback = () => {
     if (savedResumeTime !== null) {
       setCurrentTime(savedResumeTime);
-      if (videoRef.current && !videoError && playerMode === 'video') {
-        try {
-          videoRef.current.currentTime = savedResumeTime;
-          videoRef.current.play().catch(() => {});
-        } catch {}
-      }
       setIsPlaying(true);
       setShowResumeBanner(false);
+      playStartChime();
+      if (playerMode === 'interactive' && currentCaption) {
+        speakSentence(currentCaption);
+      }
       onToast?.(
         'Resumed Successfully ▶',
         `Continuing from ${formatTime(savedResumeTime)}`,
@@ -366,49 +542,81 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
     }
   };
 
-  // 6. Scrubbing
+  // 6. Scrubbing — block forward skip if module not yet completed
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const targetTime = Number(e.target.value);
-    setCurrentTime(targetTime);
-    if (videoRef.current && !videoError && playerMode === 'video') {
-      videoRef.current.currentTime = targetTime;
+    // Block seeking forward if module is not yet complete
+    if (targetTime > currentTime && !activeModule?.completed) {
+      onToast?.('No Skipping Allowed 🔒', 'You must watch the full lesson. Skipping forward is disabled.', 'error');
+      return;
     }
+    setCurrentTime(targetTime);
     saveProgressToDb(targetTime, duration, false);
   };
 
   const skipTime = (seconds: number) => {
+    // Block skipping forward if module not yet completed
+    if (seconds > 0 && !activeModule?.completed) {
+      onToast?.('No Skipping Allowed 🔒', 'You must watch the full lesson before skipping ahead.', 'error');
+      return;
+    }
     const newTime = Math.max(0, Math.min(duration || 360, currentTime + seconds));
     setCurrentTime(newTime);
-    if (videoRef.current && !videoError && playerMode === 'video') {
-      videoRef.current.currentTime = newTime;
-    }
     saveProgressToDb(newTime, duration, false);
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (nextMuted) {
+      stopVoiceNarration();
+      onToast?.('Voice Muted', 'Lesson voice muted', 'info');
+    } else {
+      speakSentence(currentCaption);
+      onToast?.('Voice Active 🔊', `Volume set to ${Math.round(volume * 100)}%`, 'success');
     }
-    setIsMuted(!isMuted);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVol = parseFloat(e.target.value);
+    setVolume(newVol);
+    if (newVol > 0 && isMuted) {
+      setIsMuted(false);
+    }
   };
 
   const changeSpeed = () => {
     const rates = [1, 1.25, 1.5, 2];
     const nextIndex = (rates.indexOf(playbackRate) + 1) % rates.length;
     const nextRate = rates[nextIndex];
-    if (videoRef.current) videoRef.current.playbackRate = nextRate;
     setPlaybackRate(nextRate);
+    onToast?.('Speed Changed', `Playback speed set to ${nextRate}x`, 'info');
   };
 
-  // 7. Complete Module
+  // 7. Complete Module — only allowed after full watch
   const handleMarkModuleComplete = async () => {
+    if (!activeModule) return;
+
+    // Determine if the user has watched enough of the current module
+    const watchThreshold = Math.max(30, Math.round((duration || 360) * 0.9));
+    const isModuleWatchComplete = activeModule.completed || watchedSeconds >= watchThreshold;
+
+    if (!isModuleWatchComplete) {
+      const remaining = Math.max(0, watchThreshold - watchedSeconds);
+      onToast?.(
+        'Complete the Video First 🔒',
+        `Watch ${formatTime(remaining)} more to unlock this lesson. You cannot skip the video.`,
+        'error'
+      );
+      return;
+    }
+
     if (activeModule) {
       onModuleComplete(activeModule.id);
+      stopVoiceNarration();
 
       const remaining = course.modules.filter((m) => m.id !== activeModule.id && !m.completed);
-      const isNowCompleted = remaining.length === 0;
-
-      if (isNowCompleted) {
+      const isNowCompleted = remaining.length === 0;      if (isNowCompleted) {
         setIsCompleted(true);
         setIsPlaying(false);
         try {
@@ -499,6 +707,8 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
     onOpenCertificate(certToView);
   };
 
+  const activeVideoUrl = activeModule?.videoEmbedUrl || course.videoEmbedUrl || 'https://www.youtube-nocookie.com/embed/WEDIj9JBTC8';
+
   return (
     <div className="space-y-6">
 
@@ -563,7 +773,6 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
               </p>
             </div>
 
-            {/* Direct In-Place Action Buttons (No different option needed) */}
             <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0 w-full md:w-auto">
               <button
                 onClick={handleOpenCertificateModal}
@@ -592,32 +801,74 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
 
         {/* Video Canvas Column (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
-          <div
-            onClick={togglePlayback}
-            className="bg-black rounded-3xl overflow-hidden shadow-2xl relative aspect-video flex items-center justify-center group cursor-pointer select-none"
-          >
-            {/* Mode 1: HTML5 Video Element */}
-            {playerMode === 'video' && !videoError ? (
-              <video
-                ref={videoRef}
-                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-                poster={course.thumbnail}
-                className="w-full h-full object-cover"
-                onTimeUpdate={handleTimeUpdate}
-                onPause={handlePause}
-                onPlay={handlePlay}
-                onError={() => {
-                  console.warn('External video failed to load, switching to interactive lesson presentation');
-                  setVideoError(true);
-                  setPlayerMode('interactive');
-                }}
-                onEnded={handleMarkModuleComplete}
-                playsInline
-                preload="metadata"
-              />
+
+          {/* Mode Selector & Audio Test Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3 rounded-2xl border border-purple-100 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lesson Mode:</span>
+              <div className="inline-flex rounded-xl bg-purple-50 p-1 border border-purple-100 text-xs font-bold">
+                <button
+                  onClick={() => {
+                    setPlayerMode('video');
+                    stopVoiceNarration();
+                  }}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                    playerMode === 'video'
+                      ? 'bg-[#4A154B] text-white shadow-xs'
+                      : 'text-gray-700 hover:text-[#4A154B]'
+                  }`}
+                >
+                  <MonitorPlay className="w-3.5 h-3.5" />
+                  <span>Video Lecture (Spoken Audio)</span>
+                </button>
+                <button
+                  onClick={() => setPlayerMode('interactive')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                    playerMode === 'interactive'
+                      ? 'bg-[#4A154B] text-white shadow-xs'
+                      : 'text-gray-700 hover:text-[#4A154B]'
+                  }`}
+                >
+                  <Presentation className="w-3.5 h-3.5" />
+                  <span>Interactive Masterclass (AI Voice)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Test Voice Audio Button */}
+            <button
+              onClick={handleTestVoice}
+              className="flex items-center gap-1.5 bg-pink-50 hover:bg-pink-100 text-[#be185d] border border-pink-200 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all"
+              title="Test speaker voice audio"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>🔊 Test Voice Audio</span>
+            </button>
+          </div>
+
+          {/* Media Player Box */}
+          <div className="bg-black rounded-3xl overflow-hidden shadow-2xl relative aspect-video flex items-center justify-center group select-none">
+
+            {/* MODE 1: FULL SPOKEN VIDEO LECTURE (WITH NATIVE HUMAN VOICE) */}
+            {playerMode === 'video' ? (
+              <div className="w-full h-full relative">
+                <iframe
+                  ref={iframeRef}
+                  key={`${course.id}-${activeModule?.id || activeModuleIndex}-${activeVideoUrl}`}
+                  src={`${activeVideoUrl}?rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+                  title={`${course.title} - ${activeModule?.title || 'Lecture'}`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  onLoad={handleIframeLoad}
+                />
+              </div>
             ) : (
-              /* Mode 2: Interactive High-Res Masterclass Stage (100% Reliable & Zero Buffering) */
-              <div className="w-full h-full bg-gradient-to-br from-[#1a0520] via-[#2c0839] to-[#0f0214] flex flex-col justify-between p-6 relative overflow-hidden">
+              /* MODE 2: INTERACTIVE MASTERCLASS (WITH SYNTHESIZED INSTRUCTOR VOICE & DANCING SPECTRUM) */
+              <div
+                onClick={togglePlayback}
+                className="w-full h-full bg-gradient-to-br from-[#1a0520] via-[#2c0839] to-[#0f0214] flex flex-col justify-between p-6 relative overflow-hidden cursor-pointer"
+              >
                 <div className="absolute -top-12 -left-12 w-64 h-64 bg-pink-500/15 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -631,9 +882,22 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                       Module 0{activeModuleIndex + 1} of {course.modules.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>{isPlaying ? 'Streaming Active' : 'Ready'}</span>
+
+                  {/* Audible Voice Status Pill */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-pink-200 border border-white/15">
+                      {isMuted || volume === 0 ? (
+                        <>
+                          <VolumeX className="w-3.5 h-3.5 text-red-300" />
+                          <span>Voice Muted</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3.5 h-3.5 text-emerald-300 animate-pulse" />
+                          <span>Voice: {course.instructor}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -654,59 +918,118 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                       alt={course.instructor}
                       className="w-6 h-6 rounded-full border border-purple-300/40 object-cover"
                     />
-                    <span>Instructor: <strong className="text-white">{course.instructor}</strong></span>
+                    <span>Instructor Voice: <strong className="text-white">{course.instructor}</strong></span>
                   </div>
 
                   {/* Audio Visualizer Waves when Playing */}
                   {isPlaying ? (
-                    <div className="flex items-center justify-center gap-1 pt-2 h-8">
-                      {[40, 70, 30, 90, 60, 100, 45, 80, 55, 95, 65, 35, 75, 50].map((h, i) => (
+                    <div className="flex items-center justify-center gap-1.5 pt-2 h-9">
+                      {[40, 75, 30, 95, 60, 100, 45, 85, 55, 90, 70, 35, 80, 50, 95, 60].map((h, i) => (
                         <span
                           key={i}
-                          className="w-1 bg-gradient-to-t from-pink-500 to-amber-300 rounded-full animate-pulse"
+                          className="w-1.5 bg-gradient-to-t from-[#be185d] via-pink-400 to-amber-300 rounded-full animate-pulse shadow-xs"
                           style={{
-                            height: `${h}%`,
-                            animationDelay: `${i * 80}ms`,
-                            animationDuration: '900ms'
+                            height: isMuted ? '15%' : `${h}%`,
+                            animationDelay: `${i * 65}ms`,
+                            animationDuration: '750ms'
                           }}
                         />
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-purple-300 italic">Click Play to start lesson playback</p>
+                    <p className="text-xs text-purple-300 italic">Click anywhere to start spoken lesson narration</p>
                   )}
                 </div>
 
-                {/* Bottom Topic Notes */}
-                <div className="relative z-10 bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/10 flex items-center justify-between text-xs text-purple-100">
-                  <span className="truncate">Key Objective: Master core methodology and practical execution metrics.</span>
-                  <span className="text-[10px] text-pink-300 shrink-0 ml-2 font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                {/* Bottom Closed Captions Subtitle Box */}
+                <div className="relative z-10 bg-black/60 backdrop-blur-md p-3 rounded-2xl border border-white/15 text-xs text-white max-w-xl mx-auto w-full text-center shadow-lg">
+                  <div className="flex items-center justify-center gap-1 text-[10px] text-pink-300 font-bold uppercase tracking-wider mb-0.5">
+                    <Mic className="w-3 h-3 text-pink-400" />
+                    <span>Instructor Narration</span>
+                  </div>
+                  <p className="italic text-purple-100 font-medium leading-relaxed">
+                    "{currentCaption}"
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* Overlay Center Big Play Button when Paused */}
-            {!isPlaying && (
-              <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 pointer-events-none">
+            {/* Overlay Center Big Play Button in Interactive Mode when Paused */}
+            {playerMode === 'interactive' && !isPlaying && (
+              <div
+                onClick={togglePlayback}
+                className="absolute inset-0 bg-black/45 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 cursor-pointer"
+              >
                 <button
                   type="button"
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#be185d] to-[#fb7185] hover:scale-110 text-white flex items-center justify-center shadow-2xl transition-transform"
-                  title="Start Lesson"
+                  title="Start Lesson with Voice"
                 >
                   <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white ml-1.5" />
                 </button>
-                <span className="text-white text-xs font-bold mt-3 bg-black/70 px-3.5 py-1 rounded-full border border-white/15">
-                  Click to Start: {activeModule?.title}
+                <span className="text-white text-xs font-bold mt-3 bg-black/70 px-3.5 py-1 rounded-full border border-white/15 flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-pink-300" />
+                  <span>Click to Listen: {activeModule?.title}</span>
                 </span>
               </div>
             )}
+          </div>
 
-            {/* Custom Interactive Player Controls Bar */}
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent p-3 sm:p-4 z-30 space-y-2 select-none"
-            >
-              {/* Progress Scrubber Slider */}
+          {/* Spoken Audio Helper Bar for Video Lecture Mode — shows live tracking status */}
+          {playerMode === 'video' && (
+            <div className="bg-white p-4 rounded-2xl border border-purple-100 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isYouTubePlaying ? 'bg-emerald-100 text-emerald-700' : 'bg-pink-100 text-[#be185d]'}`}>
+                  <Volume2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-gray-900 flex items-center gap-1.5 flex-wrap">
+                    <span>Video Watch Tracker</span>
+                    {isYouTubePlaying ? (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
+                        ● Tracking — Video Playing
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">
+                        ⏸ Paused — Press Play to earn watch time
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-gray-500 truncate">
+                    Playing: <strong className="text-gray-700">{activeModule?.title}</strong>. Watch must be fully earned — no skipping.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = activeModule?.summary || `Welcome to ${activeModule?.title}. This session explores core strategies taught by ${course.instructor}.`;
+                    speakSentence(text);
+                    onToast?.('Spoken Overview Playing 🔊', 'Reading module key takeaway aloud', 'info');
+                  }}
+                  className="flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                >
+                  <Radio className="w-3.5 h-3.5 text-pink-300 animate-pulse" />
+                  <span>🔊 Read Lesson Notes Aloud</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={stopVoiceNarration}
+                  className="px-2.5 py-2 bg-purple-50 hover:bg-purple-100 text-[#4A154B] rounded-xl text-xs font-semibold cursor-pointer"
+                  title="Stop audio"
+                >
+                  Stop Audio
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Player Timeline & Controls Bar for Interactive Mode */}
+          {playerMode === 'interactive' && (
+            <div className="bg-white p-4 rounded-2xl border border-purple-100 shadow-2xs space-y-2">
               <div className="flex items-center gap-2">
                 <input
                   type="range"
@@ -714,25 +1037,23 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                   max={duration || 360}
                   value={currentTime}
                   onChange={handleSeek}
-                  className="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer accent-pink-500 hover:h-2.5 transition-all"
+                  className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-[#4A154B] hover:h-2.5 transition-all"
                 />
               </div>
 
-              {/* Controls Row */}
-              <div className="flex items-center justify-between text-white text-xs">
-                {/* Left controls */}
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between text-xs text-gray-700">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={togglePlayback}
-                    className="hover:text-pink-400 cursor-pointer p-1 bg-white/10 rounded-lg"
-                    title={isPlaying ? 'Pause' : 'Play'}
+                    className="p-2 bg-[#4A154B] hover:bg-[#350c36] text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer"
                   >
-                    {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white" />}
+                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
+                    <span>{isPlaying ? 'Pause' : 'Play'}</span>
                   </button>
 
                   <button
                     onClick={() => skipTime(-10)}
-                    className="hover:text-pink-400 cursor-pointer p-1 text-gray-300"
+                    className="p-2 bg-purple-50 hover:bg-purple-100 text-[#4A154B] rounded-xl cursor-pointer"
                     title="Rewind 10s"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -740,56 +1061,49 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
 
                   <button
                     onClick={() => skipTime(10)}
-                    className="hover:text-pink-400 cursor-pointer p-1 text-gray-300"
+                    className="p-2 bg-purple-50 hover:bg-purple-100 text-[#4A154B] rounded-xl cursor-pointer"
                     title="Forward 10s"
                   >
                     <RotateCw className="w-4 h-4" />
                   </button>
 
-                  <div className="font-mono text-[11px] text-gray-200 ml-1">
-                    <span className="font-bold text-white">{formatTime(currentTime)}</span>
-                    <span className="text-gray-400"> / </span>
-                    <span>{formatTime(duration || 360)}</span>
-                  </div>
+                  <span className="font-mono text-xs text-gray-600 ml-1">
+                    <strong className="text-gray-900">{formatTime(currentTime)}</strong> / {formatTime(duration)}
+                  </span>
 
                   {lastSavedNotice && (
-                    <span className="hidden sm:inline-block text-[10px] text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md font-mono border border-emerald-500/20">
+                    <span className="hidden sm:inline-block text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-mono border border-emerald-200">
                       ✓ {lastSavedNotice}
                     </span>
                   )}
                 </div>
 
-                {/* Right controls */}
-                <div className="flex items-center gap-2">
-                  {/* Mode switch */}
-                  <button
-                    onClick={() => setPlayerMode(playerMode === 'video' ? 'interactive' : 'video')}
-                    className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[10px] font-semibold text-purple-200 cursor-pointer hidden sm:flex items-center gap-1"
-                    title="Toggle Player View Mode"
-                  >
-                    {playerMode === 'video' ? <Presentation className="w-3 h-3" /> : <MonitorPlay className="w-3 h-3" />}
-                    <span>{playerMode === 'video' ? 'Interactive' : 'Video'}</span>
-                  </button>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1 rounded-xl">
+                    <button onClick={toggleMute} className="text-[#4A154B] cursor-pointer">
+                      {isMuted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-500" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      className="w-16 h-1 bg-purple-200 rounded appearance-none cursor-pointer accent-[#4A154B]"
+                    />
+                  </div>
 
                   <button
                     onClick={changeSpeed}
-                    className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-mono text-[10px] font-bold cursor-pointer"
-                    title="Playback Speed"
+                    className="px-2 py-1 bg-purple-50 hover:bg-purple-100 rounded-lg font-mono text-[11px] font-bold text-[#4A154B] cursor-pointer"
                   >
                     {playbackRate}x
-                  </button>
-
-                  <button
-                    onClick={toggleMute}
-                    className="hover:text-pink-400 cursor-pointer p-1"
-                    title={isMuted ? 'Unmute' : 'Mute'}
-                  >
-                    {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Lesson Overview & Mark Complete Action */}
           <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs space-y-3">
@@ -807,28 +1121,98 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleMarkModuleComplete}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs cursor-pointer transition-all ${
-                    activeModule?.completed
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{activeModule?.completed ? 'Lesson Completed ✓' : 'Mark Lesson Complete'}</span>
-                </button>
+                {/* Mark Complete button — locked until full video watched */}
+                {(() => {
+                  const watchThreshold = Math.max(30, Math.round((duration || 360) * 0.9));
+                  const isWatchComplete = activeModule?.completed || watchedSeconds >= watchThreshold;
+                  return (
+                    <button
+                      onClick={handleMarkModuleComplete}
+                      disabled={!isWatchComplete}
+                      title={
+                        !isWatchComplete
+                          ? `Watch ${formatTime(Math.max(0, watchThreshold - watchedSeconds))} more to unlock`
+                          : ''
+                      }
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all ${
+                        activeModule?.completed
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
+                          : isWatchComplete
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                          : 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+                      }`}
+                    >
+                      {activeModule?.completed ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : isWatchComplete ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
+                      <span>
+                        {activeModule?.completed
+                          ? 'Lesson Completed ✓'
+                          : isWatchComplete
+                          ? 'Mark Lesson Complete'
+                          : `Watch ${formatTime(Math.max(0, watchThreshold - watchedSeconds))} more`}
+                      </span>
+                    </button>
+                  );
+                })()}
               </div>
             </div>
 
+            {/* Watch Progress Bar (Video mode only, until module complete) */}
+            {playerMode === 'video' && !activeModule?.completed && (() => {
+              const watchThreshold = Math.max(30, Math.round((duration || 360) * 0.9));
+              const pct = Math.min(100, Math.round((watchedSeconds / Math.max(1, watchThreshold)) * 100));
+              const isWatchComplete = watchedSeconds >= watchThreshold;
+              return (
+                <div className="mt-1 mb-2 space-y-1">
+                  <div className="flex justify-between text-[10px] text-gray-500">
+                    <span>Video Watch Progress</span>
+                    <span>{pct}% watched</span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-[#4A154B] to-[#be185d] h-full transition-all duration-1000 rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  {!isWatchComplete && (
+                    <p className="text-[10px] text-orange-600 flex items-center gap-1 font-semibold">
+                      <Lock className="w-3 h-3" />
+                      <span>Watch the full video to unlock completion — skipping is disabled</span>
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="text-xs text-gray-600 leading-relaxed space-y-2">
-              <p>
-                In this lesson, we break down actionable steps to build your financial resilience. Review the practical formulas in the spreadsheet and take notes for the end-of-module assessment.
-              </p>
+              {activeModule?.summary && (
+                <div className="p-3 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-1">
+                  <div className="font-bold text-gray-900 text-xs">Module Objective & Key Takeaway:</div>
+                  <p className="text-gray-700 leading-normal">
+                    {activeModule.summary}
+                  </p>
+                </div>
+              )}
+
+              <div className="p-3 bg-pink-50/60 rounded-2xl border border-pink-100 flex items-start gap-2.5">
+                <MessageSquare className="w-4 h-4 text-[#be185d] mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <div className="font-bold text-pink-900 text-xs">Spoken Lesson Narration:</div>
+                  <p className="italic text-purple-950 leading-normal">
+                    "{currentCaption}"
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 text-[11px] text-purple-900 bg-purple-50 p-2.5 rounded-xl border border-purple-100">
                 <BookmarkCheck className="w-4 h-4 text-[#4A154B] shrink-0" />
                 <span>
-                  <strong>Autosave Active:</strong> Your exact stopped playback position is continuously saved to the cloud database.
+                  <strong>Autosave & Database Sync:</strong> Your exact stopped playback position is continuously saved to MongoDB.
                 </span>
               </div>
             </div>
@@ -886,9 +1270,17 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                       >
                         {m.completed ? '✓' : idx + 1}
                       </div>
-                      <span className="text-xs font-semibold text-gray-800 truncate">
-                        {m.title}
-                      </span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold text-gray-800 truncate block">
+                          {m.title}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] text-pink-700 font-bold flex items-center gap-1 mt-0.5">
+                            <MonitorPlay className="w-3 h-3" />
+                            <span>Playing Topic Video</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span className="text-[10px] text-gray-400 shrink-0 font-mono">
                       {m.duration}
