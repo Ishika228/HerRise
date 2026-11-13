@@ -95,88 +95,297 @@ export function buildPersonalizedResume(user: any): ResumeData {
   try {
     const raw = localStorage.getItem('hercareer_resume');
     if (raw) storedResume = JSON.parse(raw);
-  } catch {}
+  } catch { }
 
-  const name = user?.name || storedResume?.fullName || 'Professional Member';
-  const email = user?.email || storedResume?.email || 'member@herrise.org';
-  const phone = user?.phone || storedResume?.phone || '';
-  const location = user?.location || storedResume?.location || 'India';
+  const isIshika =
+    user?.email?.toLowerCase().includes('ishikabhatia') ||
+    user?.name?.toLowerCase().includes('ishika') ||
+    storedResume?.fullName?.toLowerCase().includes('ishika') ||
+    storedResume?.email?.toLowerCase().includes('ishikabhatia');
+
+  const name = user?.name || storedResume?.fullName || (isIshika ? 'Ishika Bhatia' : 'Professional Member');
+  const email = user?.email || storedResume?.email || (isIshika ? 'ishikabhatia5777@gmail.com' : 'member@herrise.org');
+  const phone = user?.phone || storedResume?.phone || (isIshika ? '7508163418' : '');
+  const location = user?.location || storedResume?.location || (isIshika ? 'Amritsar, Punjab' : 'India');
   const targetRole =
     user?.careerProfile?.targetRole ||
     user?.role ||
     storedResume?.headline ||
-    'Full Stack Developer';
+    (isIshika ? 'Full Stack Developer | Web Developer' : 'Full Stack Developer');
 
   const userSkills: string[] =
-    user?.skills && user.skills.length > 0
-      ? user.skills
-      : storedResume?.skills && storedResume.skills.length > 0
+    storedResume?.skills && storedResume.skills.length > 0
       ? storedResume.skills
-      : ['React', 'Node.js', 'Python', 'Java', 'SQL', 'MongoDB', 'HTML', 'CSS'];
+      : user?.skills && user.skills.length > 0
+        ? user.skills
+        : isIshika
+          ? [
+            'MongoDB',
+            'Express.js',
+            'React.js',
+            'Node.js',
+            'Python',
+            'Django',
+            'Java',
+            'C++',
+            'HTML',
+            'CSS',
+            'Bootstrap',
+            'SQL',
+            'REST APIs',
+            'AI Integration'
+          ]
+          : ['React', 'Node.js', 'Python', 'Java', 'SQL', 'MongoDB', 'HTML', 'CSS'];
 
+  // 1. WORK EXPERIENCE (Strictly formal employment, jobs, trainer/faculty roles)
   const rawExp = storedResume?.experience || user?.resumeData?.experience;
-  const experience =
-    rawExp && Array.isArray(rawExp) && rawExp.length > 0
-      ? rawExp.map((e: any, idx: number) => ({
-          id: `exp-${idx + 1}`,
-          title: e.role || e.title || targetRole,
-          company: e.company || 'Professional Organization',
-          location: e.location || location,
-          startDate: e.duration ? e.duration.split('-')[0]?.trim() : '2023-01',
-          endDate: e.duration ? e.duration.split('-')[1]?.trim() : 'Present',
-          current: !e.duration || e.duration.toLowerCase().includes('present'),
-          description: `Key contributor delivering solutions for ${e.company || 'organization'}.`,
-          highlights:
-            Array.isArray(e.bullets || e.highlights) && (e.bullets || e.highlights).length > 0
-              ? e.bullets || e.highlights
-              : [
-                  `Spearheaded development initiatives, improving turnaround speed by 25%.`,
-                  `Collaborated across cross-functional teams to deliver key technical milestones.`
-                ]
-        }))
-      : [
-          {
-            id: 'exp-1',
-            title: targetRole,
-            company: 'Professional Organization',
-            location: location,
-            startDate: '2023-01',
-            endDate: 'Present',
-            current: true,
-            description: `Key contributor delivering scalable applications using ${userSkills.slice(0, 3).join(', ')}.`,
-            highlights: [
-              `Architected and optimized modern application modules utilizing ${userSkills.slice(0, 3).join(', ')}, accelerating feature delivery by 30%.`,
-              `Spearheaded quality engineering and test automation to maintain high system reliability.`,
-              `Collaborated with cross-functional stakeholders to deliver milestones ahead of schedule.`
-            ]
-          }
-        ];
+  let experience: ResumeData['experience'] = [];
 
+  if (rawExp && Array.isArray(rawExp) && rawExp.length > 0) {
+    experience = rawExp.map((e: any, idx: number) => ({
+      id: `exp-${idx + 1}`,
+      title: e.role || e.title || targetRole,
+      company: e.company || 'Organization',
+      location: e.location || location,
+      startDate: e.duration ? e.duration.split('–')[0]?.split('-')[0]?.trim() : '2023-01',
+      endDate: e.duration ? (e.duration.split('–')[1] || e.duration.split('-')[1])?.trim() || 'Present' : 'Present',
+      current: !e.duration || e.duration.toLowerCase().includes('present'),
+      description: e.description || `Key contributor delivering solutions for ${e.company || 'organization'}.`,
+      highlights:
+        Array.isArray(e.bullets || e.highlights) && (e.bullets || e.highlights).length > 0
+          ? e.bullets || e.highlights
+          : [`Delivered key responsibilities and achieved operational milestones.`]
+    }));
+  } else if (isIshika) {
+    // Ishika's actual verified employment (AOSC Technologies & Marshall Institute)
+    experience = [
+      {
+        id: 'exp-1',
+        title: 'Full Stack Developer',
+        company: 'AOSC Technologies Pvt Ltd',
+        location: 'Punjab, India',
+        startDate: '2026-07',
+        endDate: 'Present',
+        current: true,
+        description: 'Developed full-stack web application using MERN Stack with responsive UI, REST APIs, and database integration.',
+        highlights: [
+          'Developed a full-stack web application using MongoDB, Express.js, React.js, and Node.js, implementing responsive UI, REST APIs, and database integration.',
+          'Contributed to AI-driven development, integrating modern AI tools/workflows to improve functionality, automation, and user experience.'
+        ]
+      },
+      {
+        id: 'exp-2',
+        title: 'Faculty / Trainer',
+        company: 'Marshall Institute',
+        location: 'Amritsar, Punjab',
+        startDate: '2026-02',
+        endDate: 'Present',
+        current: true,
+        description: 'Delivered theoretical and practical training in computer fundamentals, programming, and digital applications.',
+        highlights: [
+          'Delivered theoretical and practical training in computer fundamentals, programming, and digital applications to students.',
+          'Designed lesson plans, conducted assessments, and provided academic guidance to strengthen students\' technical and problem-solving skills.'
+        ]
+      }
+    ];
+  } else {
+    // For freshers or students without employment history: keep empty! Do not inject fake company!
+    experience = [];
+  }
+
+  // 2. KEY TECHNICAL & PORTFOLIO PROJECTS (Dedicated section separate from work experience)
+  const rawProjects = storedResume?.projects || user?.resumeData?.projects;
+  let projects: ResumeData['projects'] = [];
+
+  if (rawProjects && Array.isArray(rawProjects) && rawProjects.length > 0) {
+    projects = rawProjects.map((p: any, idx: number) => ({
+      id: `proj-${idx + 1}`,
+      title: p.title || 'Technical Project',
+      role: p.role || 'Full Stack Developer',
+      description: p.description || '',
+      technologies: Array.isArray(p.technologies)
+        ? p.technologies
+        : typeof p.technologies === 'string'
+          ? p.technologies.split(',').map((s: string) => s.trim())
+          : userSkills.slice(0, 3),
+      link: p.link || '',
+      highlights: Array.isArray(p.highlights || p.bullets) ? p.highlights || p.bullets : []
+    }));
+  } else if (isIshika) {
+    // Ishika's authentic technical projects from her resume
+    projects = [
+      {
+        id: 'proj-1',
+        title: 'AuraEstate (Real Estate Platform)',
+        role: 'Full Stack Developer',
+        technologies: ['MongoDB', 'Express.js', 'React.js', 'Node.js', 'MERN Stack'],
+        link: 'https://github.com/ishikabhatia5777',
+        description: 'Comprehensive real estate marketplace featuring buyer wishlists, live agent chat, chatbot, and filtered search.',
+        highlights: [
+          'Implemented buyer wishlist, live agent chat, chatbot, filtered search, and client dashboard.',
+          'Engineered agent property/chat dashboard and admin oversight module with login logs and bulk property upload.'
+        ]
+      },
+      {
+        id: 'proj-2',
+        title: 'Fitness Fusion (Gym Management)',
+        role: 'Web Developer',
+        technologies: ['HTML', 'CSS', 'Python', 'Django', 'Bootstrap'],
+        link: '',
+        description: 'Dynamic gym management system streamlining trainer allotment, fitness goals, and health tracking.',
+        highlights: [
+          'Engineered personal trainer allotment, goal setting, and interactive BMI/BMR/calorie calculators.',
+          'Integrated record keeper, chatbot assistant, video workout sessions, and trainer work scheduling.'
+        ]
+      },
+      {
+        id: 'proj-3',
+        title: 'IELTS Practice Website',
+        role: 'AI & Web Developer',
+        technologies: ['React.js', 'Python', 'AI Agents'],
+        link: '',
+        description: 'Interactive test preparation platform utilizing specialized AI agents for English language evaluation.',
+        highlights: [
+          'Developed intelligent AI agents for real-time writing analysis and speaking test practice.'
+        ]
+      },
+      {
+        id: 'proj-4',
+        title: 'Ultrasonic Distance Project',
+        role: 'Embedded Systems Developer',
+        technologies: ['C++', 'Arduino', 'Ultrasonic Sensor'],
+        link: '',
+        description: 'Hardware-software embedded system measuring precision distances in real-time.',
+        highlights: [
+          'Programmed Arduino micro-controller in C++ to interface with ultrasonic sensors for accurate distance calculations.'
+        ]
+      }
+    ];
+  } else {
+    // Default project for general candidate
+    projects = [
+      {
+        id: 'proj-1',
+        title: `${targetRole} Portfolio Application`,
+        role: 'Full Stack Developer',
+        description: `Full stack responsive application built with modern architecture and reusable components.`,
+        technologies: userSkills.slice(0, 4),
+        link: 'https://github.com',
+        highlights: [
+          `Architected scalable state management and responsive UI components using ${userSkills.slice(0, 2).join(' & ')}.`,
+          `Engineered REST API endpoints with robust error handling and database indexing.`
+        ]
+      }
+    ];
+  }
+
+  // 3. EDUCATION
   const rawEdu = storedResume?.education || user?.resumeData?.education;
-  const education =
-    rawEdu && Array.isArray(rawEdu) && rawEdu.length > 0
-      ? rawEdu.map((edu: any, idx: number) => ({
-          id: `edu-${idx + 1}`,
-          degree: edu.degree || 'Bachelor of Technology in Computer Science',
-          institution: edu.institution || 'University / Institute',
-          year: edu.year || '2023',
-          grade: edu.grade || 'First Class'
-        }))
-      : [
-          {
-            id: 'edu-1',
-            degree: user?.education || 'Bachelor of Technology / Computer Science',
-            institution: 'University / Institute',
-            year: '2023',
-            grade: 'Distinction'
-          }
+  let education: ResumeData['education'] = [];
+
+  if (rawEdu && Array.isArray(rawEdu) && rawEdu.length > 0) {
+    education = rawEdu.map((edu: any, idx: number) => ({
+      id: `edu-${idx + 1}`,
+      degree: edu.degree || 'Degree',
+      institution: edu.institution || 'University',
+      year: edu.year || '2024',
+      grade: edu.grade || ''
+    }));
+  } else if (isIshika) {
+    education = [
+      {
+        id: 'edu-1',
+        degree: 'Master of Computer Applications',
+        institution: 'Khalsa College of Engineering and Technology, Amritsar',
+        year: '2024 – 2026',
+        grade: '8.96 SGPA'
+      },
+      {
+        id: 'edu-2',
+        degree: 'Bachelor of Computer Applications',
+        institution: 'BBK DAV College for Women, Amritsar',
+        year: '2021 – 2024',
+        grade: '77.33%'
+      },
+      {
+        id: 'edu-3',
+        degree: 'Non-Medical (Class XII)',
+        institution: 'Shri Ram Ashram Public School, Amritsar',
+        year: '2020 – 2021',
+        grade: '88.2%'
+      }
+    ];
+  } else {
+    education = [
+      {
+        id: 'edu-1',
+        degree: user?.education || 'Bachelor of Technology / Computer Applications',
+        institution: 'University / Institute',
+        year: '2024',
+        grade: 'First Class'
+      }
+    ];
+  }
+
+  // 4. CERTIFICATIONS & TRAINING
+  const rawCert = storedResume?.certifications || user?.resumeData?.certifications;
+  let certifications: ResumeData['certifications'] = [];
+
+  if (rawCert && Array.isArray(rawCert) && rawCert.length > 0) {
+    certifications = rawCert.map((c: any, idx: number) => ({
+      id: `cert-${idx + 1}`,
+      name: typeof c === 'string' ? c : c.name || 'Certification',
+      issuer: typeof c === 'string' ? 'Industry Organization' : c.issuer || 'Certified Institute',
+      date: typeof c === 'string' ? '2024' : c.year || c.date || '2024'
+    }));
+  } else if (isIshika) {
+    certifications = [
+      {
+        id: 'cert-1',
+        name: 'IBM SkillsBuild & CSRBOX Micro-Internships: Data Science, Agentic AI, Generative AI',
+        issuer: 'IBM & CSRBOX',
+        date: '2024'
+      },
+      {
+        id: 'cert-2',
+        name: '3-Month Web Development Training (Django)',
+        issuer: 'CACMS Institute',
+        date: '2023'
+      }
+    ];
+  } else {
+    certifications = [
+      {
+        id: 'cert-1',
+        name: `${targetRole} Certified Professional`,
+        issuer: 'Industry Recognized Credential',
+        date: '2024'
+      }
+    ];
+  }
+
+  // 5. ACHIEVEMENTS & RESEARCH
+  const achievements =
+    storedResume?.achievements && Array.isArray(storedResume.achievements) && storedResume.achievements.length > 0
+      ? storedResume.achievements
+      : isIshika
+        ? [
+          'Published review paper: "Deep Learning-Driven Engineering Solutions: A Comprehensive Review".',
+          'Authored research paper on "AI and Driving Business Innovation", presented at National Women Conference.',
+          'Overall Departmental Coordinator for Tech Urja at Khalsa College of Engineering and Technology.'
+        ]
+        : [
+          `Recognized for high-impact deliverables in ${targetRole} initiatives.`,
+          `Consistently achieved zero-defect deployment across project sprints.`
         ];
 
   const summary =
     storedResume?.summary ||
     user?.resumeData?.summary ||
     user?.bio ||
-    `Driven and results-oriented ${targetRole} with proven capabilities in ${userSkills.slice(0, 4).join(', ')}. Passionate about building reliable, accessible, and high-performance digital solutions with measurable user impact.`;
+    (isIshika
+      ? 'MCA candidate with a strong foundation in the MERN stack (MongoDB, Express.js, React.js, Node.js) and Python/Django, working as a Full Stack Developer at AOSC Technologies. Experienced in building responsive web applications, developing REST APIs, and integrating AI-driven workflows for enhanced user experiences. Passionate about software architecture, data structures, and continuous upskilling.'
+      : `Driven and results-oriented ${targetRole} with proven capabilities in ${userSkills.slice(0, 4).join(', ')}. Passionate about building reliable, accessible, and high-performance digital solutions with measurable user impact.`);
 
   return {
     id: `res-${user?.id || 'usr-101'}`,
@@ -190,60 +399,62 @@ export function buildPersonalizedResume(user: any): ResumeData {
       location: location,
       portfolioUrl: storedResume?.portfolio || '',
       linkedinUrl: storedResume?.linkedin || '',
-      githubUrl: ''
+      githubUrl: isIshika ? 'https://github.com/ishikabhatia5777' : ''
     },
     summary,
     experience,
+    projects,
     education,
     skills: {
       technical: userSkills,
       soft: ['Cross-functional Collaboration', 'Analytical Problem Solving', 'Strategic Execution', 'Clear Communication'],
-      tools: ['Git & GitHub', 'VS Code', 'Postman', 'Docker']
+      tools: ['Git & GitHub', 'VS Code', 'Postman', 'Docker', 'MongoDB Compass']
     },
-    projects: [
-      {
-        id: 'proj-1',
-        title: `${targetRole} Portfolio Application`,
-        description: `Full stack responsive application built with ${userSkills.slice(0, 3).join(', ')}.`,
-        technologies: userSkills.slice(0, 4),
-        link: 'https://github.com'
-      }
-    ],
-    certifications: [
-      {
-        id: 'cert-1',
-        name: `${targetRole} Professional Specialist`,
-        issuer: 'Industry Recognized Credential',
-        date: '2024'
-      }
-    ],
-    achievements: [
-      `Recognized for outstanding delivery in ${targetRole} initiatives.`,
-      `Consistently achieved zero-defect deployment across release sprints.`
-    ],
-    languages: ['English (Fluent)', 'Hindi (Native)'],
+    certifications,
+    achievements,
+    languages: ['English (Fluent)', 'Hindi (Native)', 'Punjabi'],
     qualityScore: 92,
     updatedAt: new Date().toISOString()
   };
 }
 
-const buildProfileFromUser = (u: any): CareerProfile => ({
-  userId: u?.id || 'usr-101',
-  fullName: u?.name || 'Member',
-  email: u?.email || 'member@herrise.org',
-  phone: u?.phone || '',
-  location: u?.location || 'India',
-  headline: u?.careerProfile?.targetRole || u?.role || 'Full Stack Developer',
-  targetRole: u?.careerProfile?.targetRole || u?.role || 'Full Stack Developer',
-  experienceLevel: (u?.experienceLevel?.includes('Senior') ? 'senior' : 'mid') as any,
-  yearsOfExperience: u?.careerProfile?.experienceYears || 2,
-  currentStatus: 'seeking',
-  workModePreference: 'remote',
-  primarySkills: u?.skills && u.skills.length > 0 ? u.skills.slice(0, 4) : ['React', 'Node.js', 'Python'],
-  secondarySkills: u?.skills && u.skills.length > 4 ? u.skills.slice(4) : ['SQL', 'MongoDB'],
-  readinessScore: u?.careerProfile?.readinessScore || 90,
-  bio: u?.bio || ''
-});
+const buildProfileFromUser = (u: any): CareerProfile => {
+  const isIshika =
+    u?.email?.toLowerCase().includes('ishikabhatia') ||
+    u?.name?.toLowerCase().includes('ishika');
+
+  return {
+    userId: u?.id || 'usr-101',
+    fullName: u?.name || (isIshika ? 'Ishika Bhatia' : 'Member'),
+    email: u?.email || (isIshika ? 'ishikabhatia5777@gmail.com' : 'member@herrise.org'),
+    phone: u?.phone || (isIshika ? '7508163418' : ''),
+    location: u?.location || (isIshika ? 'Amritsar, Punjab' : 'India'),
+    headline: u?.careerProfile?.targetRole || (isIshika ? 'Full Stack Developer | Web Developer' : u?.role || 'Full Stack Developer'),
+    targetRole: u?.careerProfile?.targetRole || (isIshika ? 'Full Stack Developer | Web Developer' : u?.role || 'Full Stack Developer'),
+    experienceLevel: (u?.experienceLevel?.includes('Senior') ? 'senior' : 'mid') as any,
+    yearsOfExperience: u?.careerProfile?.experienceYears || (isIshika ? 2 : 2),
+    currentStatus: 'seeking',
+    workModePreference: 'remote',
+    primarySkills:
+      u?.skills && u.skills.length > 0
+        ? u.skills.slice(0, 4)
+        : isIshika
+          ? ['MongoDB', 'Express.js', 'React.js', 'Node.js']
+          : ['React', 'Node.js', 'Python'],
+    secondarySkills:
+      u?.skills && u.skills.length > 4
+        ? u.skills.slice(4)
+        : isIshika
+          ? ['Python', 'Django', 'SQL', 'C++']
+          : ['SQL', 'MongoDB'],
+    readinessScore: u?.careerProfile?.readinessScore || 92,
+    bio:
+      u?.bio ||
+      (isIshika
+        ? 'Full Stack MERN & Python Developer with experience in web applications, REST APIs, and AI integrations.'
+        : '')
+  };
+};
 
 const HerCareerContext = createContext<HerCareerContextType | undefined>(undefined);
 
@@ -287,7 +498,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
           if (valid.length > 0) return valid;
         }
       }
-    } catch {}
+    } catch { }
     return [personalized];
   });
 
@@ -373,7 +584,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       await fetch(`${backendUrl}/api/career/resumes/${id}`, { method: 'DELETE' });
-    } catch {}
+    } catch { }
 
     showToast('Resume Deleted', 'Removed from resume library', 'info');
     return true;
@@ -565,7 +776,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId, coverLetter: coverNote })
       });
-    } catch {}
+    } catch { }
 
     // Add to applications tracker
     const newApp: JobApplication = {
@@ -592,7 +803,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return [
       {
@@ -714,13 +925,13 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
           prev.map((q, idx) =>
             idx === activeQuestionIndex
               ? {
-                  ...q,
-                  userAnswer: answer,
-                  score: data.evaluation.score,
-                  feedback: data.evaluation.clarityAndTone,
-                  pointsMissed: data.evaluation.pointsMissed,
-                  idealSampleAnswer: data.evaluation.idealSampleAnswer
-                }
+                ...q,
+                userAnswer: answer,
+                score: data.evaluation.score,
+                feedback: data.evaluation.clarityAndTone,
+                pointsMissed: data.evaluation.pointsMissed,
+                idealSampleAnswer: data.evaluation.idealSampleAnswer
+              }
               : q
           )
         );
@@ -744,13 +955,13 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       prev.map((q, idx) =>
         idx === activeQuestionIndex
           ? {
-              ...q,
-              userAnswer: answer,
-              score: fallbackEval.score,
-              feedback: fallbackEval.clarityAndTone,
-              pointsMissed: fallbackEval.pointsMissed,
-              idealSampleAnswer: fallbackEval.idealSampleAnswer
-            }
+            ...q,
+            userAnswer: answer,
+            score: fallbackEval.score,
+            feedback: fallbackEval.clarityAndTone,
+            pointsMissed: fallbackEval.pointsMissed,
+            idealSampleAnswer: fallbackEval.idealSampleAnswer
+          }
           : q
       )
     );

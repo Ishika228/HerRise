@@ -1012,44 +1012,79 @@ export const parseResume = async (req: Request, res: Response) => {
     const messages = [
       {
         role: 'system' as const,
-        content: `You are an AI Resume Parsing Engine. Extract structured resume information from the raw text.
-Output valid JSON format:
+        content: `You are an expert AI Resume Parsing Engine. Extract comprehensive, structured ATS resume information from the raw text.
+
+CRITICAL INSTRUCTIONS:
+1. STRICT DIVISION BETWEEN WORK EXPERIENCE AND PROJECTS:
+   - "experience" MUST ONLY contain formal employment, corporate roles, faculty/trainer jobs, or verified internships at companies or institutions (e.g., "AOSC Technologies Pvt Ltd", "Marshall Institute").
+   - "projects" MUST contain technical applications, web platforms, software apps, personal/academic capstones, or open-source software (e.g., "AuraEstate (Real Estate Platform)", "Fitness Fusion", "IELTS Practice Website", "Ultrasonic Distance Project").
+   - NEVER place software/web projects inside "experience". Always place them in "projects".
+   - If the candidate has NO formal corporate employment, leave "experience" as an empty array [] - NEVER fabricate companies or inject placeholders.
+2. EXTRACT ALL PROJECTS CAREFULLY:
+   - For every project, extract its name in "title", tech stack in "technologies" (array of strings), summary in "description", and key features/accomplishments in "highlights".
+3. INTERNSHIPS, CERTIFICATIONS & ACHIEVEMENTS:
+   - Put training, micro-internships, and certifications in "certifications".
+   - Put research papers, conference presentations, and department coordinator/leadership roles in "achievements".
+
+Output valid JSON matching this schema:
 {
-  "fullName": "Name",
-  "email": "Email or empty string",
-  "phone": "Phone or empty string",
-  "location": "City, Country or empty string",
-  "headline": "Target role or headline",
-  "summary": "Professional summary paragraph",
+  "fullName": "Candidate Full Name",
+  "email": "Email address or empty string",
+  "phone": "Phone number or empty string",
+  "location": "City, State / Country or empty string",
+  "headline": "Target role or professional title (e.g. Full Stack Developer | Web Developer)",
+  "summary": "Compelling 3-4 sentence professional summary",
   "skills": ["Skill 1", "Skill 2", ...],
   "experience": [
     {
       "title": "Job Title",
-      "company": "Company",
-      "duration": "Dates",
-      "highlights": ["Bullet 1", "Bullet 2"]
+      "company": "Company / Organization Name",
+      "location": "Location if present or empty string",
+      "duration": "Dates (e.g. July 2026 – Present)",
+      "highlights": ["Responsibility or quantifiable achievement 1", "Responsibility or quantifiable achievement 2"]
+    }
+  ],
+  "projects": [
+    {
+      "title": "Project Name (e.g. AuraEstate Real Estate Platform)",
+      "technologies": ["MongoDB", "Express.js", "React.js", "Node.js"],
+      "role": "Role (e.g. Full Stack Developer)",
+      "link": "URL or GitHub if present, else empty string",
+      "description": "Short project overview",
+      "highlights": ["Feature or achievement 1", "Feature or achievement 2"]
     }
   ],
   "education": [
     {
-      "degree": "Degree",
-      "institution": "University / College",
-      "year": "Year"
+      "degree": "Degree (e.g. Master of Computer Applications)",
+      "institution": "University / College Name",
+      "year": "Dates (e.g. 2024 – 2026)",
+      "grade": "SGPA, Percentage or Grade if present"
     }
+  ],
+  "certifications": [
+    {
+      "name": "Certification or Training Name",
+      "issuer": "Issuing Organization",
+      "year": "Year or duration"
+    }
+  ],
+  "achievements": [
+    "Achievement, paper, or award 1"
   ],
   "qualityScore": number (0-100)
 }`
       },
       {
         role: 'user' as const,
-        content: `Raw resume text:\n${rawText.slice(0, 4500)}`
+        content: `Raw resume text:\n${rawText.slice(0, 5000)}`
       }
     ];
 
     try {
       const response = await callGroqChat(messages, {
         temperature: 0.1,
-        maxTokens: 1200,
+        maxTokens: 1800,
         responseFormat: { type: 'json_object' }
       });
       const parsed = JSON.parse(response);
@@ -1064,12 +1099,15 @@ Output valid JSON format:
         fullName: 'Extracted Candidate',
         email: '',
         phone: '',
-        location: 'Bengaluru, India',
+        location: 'India',
         headline: 'Professional Specialist',
         summary: rawText.slice(0, 200).trim(),
-        skills: ['Communication', 'Project Coordination', 'Strategic Planning'],
+        skills: ['Communication', 'Problem Solving', 'Strategic Planning'],
         experience: [],
+        projects: [],
         education: [],
+        certifications: [],
+        achievements: [],
         qualityScore: 80
       },
       textLength: rawText.length

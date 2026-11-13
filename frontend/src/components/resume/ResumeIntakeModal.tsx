@@ -61,6 +61,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     summary: '',
     skills: [],
     experience: [],
+    projects: [],
     education: [],
     certifications: [],
     languages: ['English']
@@ -141,22 +142,39 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
           skills: Array.isArray(p.skills) ? p.skills : [],
           experience: Array.isArray(p.experience)
             ? p.experience.map((exp: any) => ({
-                role: exp.role || 'Role',
-                company: exp.company || 'Company / Project',
-                location: exp.location || '',
-                duration: exp.duration || 'Recent',
-                bullets: Array.isArray(exp.bullets) ? exp.bullets : []
-              }))
+              role: exp.role || exp.title || 'Role',
+              company: exp.company || 'Organization',
+              location: exp.location || '',
+              duration: exp.duration || 'Recent',
+              bullets: Array.isArray(exp.bullets || exp.highlights) ? exp.bullets || exp.highlights : []
+            }))
+            : [],
+          projects: Array.isArray(p.projects)
+            ? p.projects.map((proj: any) => ({
+              title: proj.title || 'Technical Project',
+              role: proj.role || 'Full Stack Developer',
+              technologies: Array.isArray(proj.technologies)
+                ? proj.technologies.join(', ')
+                : proj.technologies || '',
+              link: proj.link || '',
+              description: proj.description || '',
+              highlights: Array.isArray(proj.highlights || proj.bullets)
+                ? proj.highlights || proj.bullets
+                : []
+            }))
             : [],
           education: Array.isArray(p.education)
             ? p.education.map((edu: any) => ({
-                degree: edu.degree || 'Degree',
-                institution: edu.institution || 'University',
-                year: edu.year || '',
-                grade: edu.grade || ''
-              }))
+              degree: edu.degree || 'Degree',
+              institution: edu.institution || 'University',
+              year: edu.year || '',
+              grade: edu.grade || ''
+            }))
             : [],
-          certifications: Array.isArray(p.certifications) ? p.certifications : [],
+          certifications: Array.isArray(p.certifications)
+            ? p.certifications.map((c: any) => (typeof c === 'string' ? c : c.name || 'Certification'))
+            : [],
+          achievements: Array.isArray(p.achievements) ? p.achievements : [],
           languages: Array.isArray(p.languages) && p.languages.length > 0 ? p.languages : ['English']
         };
 
@@ -287,6 +305,31 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     }));
   };
 
+  // Project entry management (Kept strictly distinct from Work Experience)
+  const addProjectEntry = () => {
+    setResumeData((prev) => ({
+      ...prev,
+      projects: [
+        ...(prev.projects || []),
+        {
+          title: '',
+          role: 'Full Stack Developer',
+          technologies: '',
+          link: '',
+          description: '',
+          highlights: ['Engineered key features and optimized system architecture.']
+        }
+      ]
+    }));
+  };
+
+  const removeProjectEntry = (index: number) => {
+    setResumeData((prev) => ({
+      ...prev,
+      projects: (prev.projects || []).filter((_, i) => i !== index)
+    }));
+  };
+
   // Education entry management
   const addEducationEntry = () => {
     setResumeData((prev) => ({
@@ -356,11 +399,10 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('upload')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'upload'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'upload'
                 ? 'bg-white text-[#4A154B] shadow-md'
                 : 'text-purple-200 hover:text-white hover:bg-white/10'
-            }`}
+              }`}
           >
             <Upload className="w-4 h-4" />
             <span>Option 1: Upload Existing Resume</span>
@@ -368,11 +410,10 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('create')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'create'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'create'
                 ? 'bg-white text-[#4A154B] shadow-md'
                 : 'text-purple-200 hover:text-white hover:bg-white/10'
-            }`}
+              }`}
           >
             <Wand2 className="w-4 h-4" />
             <span>Option 2: Don't Have a Resume? Build One Now</span>
@@ -686,82 +727,194 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                   </div>
                 </div>
 
-                {/* Card 4: Work Experience & Technical Projects */}
+                {/* Card 4: Work Experience (Strictly Formal Employment & Jobs) */}
                 <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Briefcase className="w-3.5 h-3.5 text-[#4A154B]" />
-                      <span>Work History & Key Projects ({resumeData.experience.length})</span>
-                    </h5>
+                    <div>
+                      <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-[#4A154B]" />
+                        <span>Work Experience ({resumeData.experience.length} Roles)</span>
+                      </h5>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        Only includes formal employment, corporate roles, and trainer positions.
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={addExperienceEntry}
-                      className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1"
+                      className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <Plus className="w-3 h-3" /> Add Entry
+                      <Plus className="w-3 h-3" /> Add Experience
                     </button>
                   </div>
 
-                  <div className="space-y-3">
-                    {resumeData.experience.map((exp, idx) => (
-                      <div key={idx} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                            <input
-                              type="text"
-                              value={exp.role}
-                              onChange={(e) => {
-                                const expCopy = [...resumeData.experience];
-                                expCopy[idx].role = e.target.value;
-                                setResumeData({ ...resumeData, experience: expCopy });
-                              }}
-                              placeholder="Role / Project Title"
-                              className="font-bold text-xs text-gray-900 border-b border-gray-200 pb-0.5 outline-none"
-                            />
-                            <input
-                              type="text"
-                              value={exp.company}
-                              onChange={(e) => {
-                                const expCopy = [...resumeData.experience];
-                                expCopy[idx].company = e.target.value;
-                                setResumeData({ ...resumeData, experience: expCopy });
-                              }}
-                              placeholder="Company or Organization"
-                              className="text-xs text-gray-700 border-b border-gray-200 pb-0.5 outline-none"
-                            />
-                            <input
-                              type="text"
-                              value={exp.duration}
-                              onChange={(e) => {
-                                const expCopy = [...resumeData.experience];
-                                expCopy[idx].duration = e.target.value;
-                                setResumeData({ ...resumeData, experience: expCopy });
-                              }}
-                              placeholder="Duration (e.g. 2022 - Present)"
-                              className="text-xs text-gray-500 border-b border-gray-200 pb-0.5 outline-none"
-                            />
+                  {resumeData.experience.length === 0 ? (
+                    <div className="p-3 bg-white rounded-xl border border-dashed border-gray-200 text-center">
+                      <p className="text-xs text-gray-500">
+                        No corporate work history listed — your technical projects below will be showcased as your primary proof of work.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {resumeData.experience.map((exp, idx) => (
+                        <div key={idx} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                              <input
+                                type="text"
+                                value={exp.role}
+                                onChange={(e) => {
+                                  const expCopy = [...resumeData.experience];
+                                  expCopy[idx].role = e.target.value;
+                                  setResumeData({ ...resumeData, experience: expCopy });
+                                }}
+                                placeholder="Job Title (e.g. Full Stack Developer)"
+                                className="font-bold text-xs text-gray-900 border-b border-gray-200 pb-0.5 outline-none focus:border-[#4A154B]"
+                              />
+                              <input
+                                type="text"
+                                value={exp.company}
+                                onChange={(e) => {
+                                  const expCopy = [...resumeData.experience];
+                                  expCopy[idx].company = e.target.value;
+                                  setResumeData({ ...resumeData, experience: expCopy });
+                                }}
+                                placeholder="Company (e.g. AOSC Technologies Pvt Ltd)"
+                                className="text-xs text-gray-700 border-b border-gray-200 pb-0.5 outline-none focus:border-[#4A154B]"
+                              />
+                              <input
+                                type="text"
+                                value={exp.duration}
+                                onChange={(e) => {
+                                  const expCopy = [...resumeData.experience];
+                                  expCopy[idx].duration = e.target.value;
+                                  setResumeData({ ...resumeData, experience: expCopy });
+                                }}
+                                placeholder="Duration (e.g. July 2026 – Present)"
+                                className="text-xs text-gray-500 border-b border-gray-200 pb-0.5 outline-none focus:border-[#4A154B]"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeExperienceEntry(idx)}
+                              className="text-gray-400 hover:text-red-500 p-1 cursor-pointer"
+                              title="Delete position"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeExperienceEntry(idx)}
-                            className="text-gray-400 hover:text-red-500 p-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
 
-                        {/* Bullets */}
-                        <div className="space-y-1 pt-1">
-                          {exp.bullets.map((b, bIdx) => (
-                            <p key={bIdx} className="text-xs text-gray-600 flex items-start gap-1.5">
-                              <span className="text-[#4A154B] font-bold">•</span>
-                              <span>{b}</span>
-                            </p>
-                          ))}
+                          {/* Bullets */}
+                          <div className="space-y-1 pt-1">
+                            {exp.bullets.map((b, bIdx) => (
+                              <p key={bIdx} className="text-xs text-gray-600 flex items-start gap-1.5">
+                                <span className="text-[#4A154B] font-bold">•</span>
+                                <span>{b}</span>
+                              </p>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Card 5: Key Technical & Portfolio Projects (Cleanly separated from Work Experience) */}
+                <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                        <span>Key Technical & Portfolio Projects ({(resumeData.projects || []).length})</span>
+                      </h5>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        Web applications, software systems, personal/academic projects, or open-source repositories.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addProjectEntry}
+                      className="text-xs font-bold text-teal-700 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" /> Add Project
+                    </button>
                   </div>
+
+                  {(resumeData.projects || []).length === 0 ? (
+                    <div className="p-3 bg-white rounded-xl border border-dashed border-gray-200 text-center">
+                      <p className="text-xs text-gray-500">
+                        No projects listed yet. Click "+ Add Project" to highlight your portfolio.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(resumeData.projects || []).map((proj, pIdx) => (
+                        <div key={pIdx} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                              <input
+                                type="text"
+                                value={proj.title}
+                                onChange={(e) => {
+                                  const projCopy = [...(resumeData.projects || [])];
+                                  projCopy[pIdx].title = e.target.value;
+                                  setResumeData({ ...resumeData, projects: projCopy });
+                                }}
+                                placeholder="Project Name (e.g. AuraEstate)"
+                                className="font-bold text-xs text-gray-900 border-b border-gray-200 pb-0.5 outline-none focus:border-teal-600"
+                              />
+                              <input
+                                type="text"
+                                value={typeof proj.technologies === 'string' ? proj.technologies : (proj.technologies || []).join(', ')}
+                                onChange={(e) => {
+                                  const projCopy = [...(resumeData.projects || [])];
+                                  projCopy[pIdx].technologies = e.target.value;
+                                  setResumeData({ ...resumeData, projects: projCopy });
+                                }}
+                                placeholder="Tech Stack (e.g. React, Node.js, MongoDB)"
+                                className="text-xs text-teal-800 border-b border-gray-200 pb-0.5 outline-none focus:border-teal-600"
+                              />
+                              <input
+                                type="text"
+                                value={proj.link || ''}
+                                onChange={(e) => {
+                                  const projCopy = [...(resumeData.projects || [])];
+                                  projCopy[pIdx].link = e.target.value;
+                                  setResumeData({ ...resumeData, projects: projCopy });
+                                }}
+                                placeholder="Live / GitHub Link (optional)"
+                                className="text-xs text-blue-600 border-b border-gray-200 pb-0.5 outline-none focus:border-blue-600"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeProjectEntry(pIdx)}
+                              className="text-gray-400 hover:text-red-500 p-1 cursor-pointer"
+                              title="Delete project"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {proj.description && (
+                            <p className="text-xs text-gray-700">{proj.description}</p>
+                          )}
+
+                          {/* Highlights / Bullets */}
+                          {proj.highlights && proj.highlights.length > 0 && (
+                            <div className="space-y-1 pt-1">
+                              {proj.highlights.map((h, hIdx) => (
+                                <p key={hIdx} className="text-xs text-gray-600 flex items-start gap-1.5">
+                                  <span className="text-teal-600 font-bold">•</span>
+                                  <span>{h}</span>
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Card 5: Education */}
@@ -835,13 +988,12 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     key={s}
                     type="button"
                     onClick={() => setCreateStep(s as any)}
-                    className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                      createStep === s
+                    className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all cursor-pointer ${createStep === s
                         ? 'bg-[#4A154B] text-white'
                         : createStep > s
-                        ? 'bg-purple-100 text-[#4A154B]'
-                        : 'bg-gray-100 text-gray-400'
-                    }`}
+                          ? 'bg-purple-100 text-[#4A154B]'
+                          : 'bg-gray-100 text-gray-400'
+                      }`}
                   >
                     {s}
                   </button>
@@ -993,11 +1145,10 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                         <div
                           key={i}
                           onClick={() => setResumeData({ ...resumeData, summary: opt })}
-                          className={`p-3 rounded-xl border text-xs leading-relaxed cursor-pointer transition-all ${
-                            resumeData.summary === opt
+                          className={`p-3 rounded-xl border text-xs leading-relaxed cursor-pointer transition-all ${resumeData.summary === opt
                               ? 'bg-white border-[#4A154B] shadow-xs ring-1 ring-[#4A154B]'
                               : 'bg-white/80 border-purple-100 hover:bg-white'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-gray-800">{opt}</p>
@@ -1295,11 +1446,10 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                           key={sk}
                           type="button"
                           onClick={() => (isAdded ? removeSkill(sk) : addSkill(sk))}
-                          className={`text-xs px-3 py-1 rounded-lg border font-semibold transition-all cursor-pointer ${
-                            isAdded
+                          className={`text-xs px-3 py-1 rounded-lg border font-semibold transition-all cursor-pointer ${isAdded
                               ? 'bg-[#4A154B] text-white border-[#4A154B]'
                               : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300'
-                          }`}
+                            }`}
                         >
                           {isAdded ? `✓ ${sk}` : `+ ${sk}`}
                         </button>

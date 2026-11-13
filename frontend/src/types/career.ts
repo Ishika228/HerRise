@@ -57,9 +57,11 @@ export interface ResumeData {
   projects: {
     id: string;
     title: string;
+    role?: string;
     description: string;
     technologies: string[];
     link?: string;
+    highlights?: string[];
   }[];
   certifications: {
     id: string;

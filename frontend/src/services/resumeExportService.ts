@@ -18,6 +18,15 @@ export interface AtsResumeData {
     duration: string;
     bullets: string[];
   }>;
+  projects?: Array<{
+    title: string;
+    role?: string;
+    technologies?: string | string[];
+    description?: string;
+    link?: string;
+    highlights?: string[];
+    bullets?: string[];
+  }>;
   education: Array<{
     degree: string;
     institution: string;
@@ -25,6 +34,7 @@ export interface AtsResumeData {
     grade?: string;
   }>;
   certifications?: string[];
+  achievements?: string[];
   languages?: string[];
 }
 
@@ -84,20 +94,20 @@ export async function downloadAtsWord(data: AtsResumeData): Promise<void> {
           // Professional Title / Headline
           ...(data.headline
             ? [
-                new Paragraph({
-                  alignment: AlignmentType.CENTER,
-                  spacing: { after: 240 },
-                  children: [
-                    new TextRun({
-                      text: data.headline.toUpperCase(),
-                      bold: true,
-                      size: 22, // 11pt
-                      font: 'Calibri',
-                      color: '2D3748'
-                    })
-                  ]
-                })
-              ]
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 240 },
+                children: [
+                  new TextRun({
+                    text: data.headline.toUpperCase(),
+                    bold: true,
+                    size: 22, // 11pt
+                    font: 'Calibri',
+                    color: '2D3748'
+                  })
+                ]
+              })
+            ]
             : []),
 
           // 2. PROFESSIONAL SUMMARY
@@ -148,75 +158,166 @@ export async function downloadAtsWord(data: AtsResumeData): Promise<void> {
             ]
           }),
 
-          // 4. PROFESSIONAL EXPERIENCE
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 200, after: 120 },
-            children: [
-              new TextRun({
-                text: 'PROFESSIONAL EXPERIENCE',
-                bold: true,
-                size: 24,
-                font: 'Calibri'
-              })
-            ]
-          }),
-          ...data.experience.flatMap((exp) => [
-            new Paragraph({
-              spacing: { before: 140, after: 40 },
-              children: [
-                new TextRun({
-                  text: exp.role || 'Professional Role',
-                  bold: true,
-                  size: 22,
-                  font: 'Calibri'
-                }),
-                new TextRun({
-                  text: ` — ${exp.company || 'Organization'}`,
-                  size: 22,
-                  font: 'Calibri'
-                }),
-                new TextRun({
-                  text: `  (${exp.duration || 'Dates'})`,
-                  italics: true,
-                  size: 20,
-                  font: 'Calibri'
-                })
-              ]
-            }),
-            ...(exp.location
-              ? [
-                  new Paragraph({
-                    spacing: { after: 80 },
-                    children: [
-                      new TextRun({
-                        text: exp.location,
-                        italics: true,
-                        size: 18,
-                        font: 'Calibri',
-                        color: '555555'
-                      })
-                    ]
+          // 4. PROFESSIONAL EXPERIENCE (only if present)
+          ...(data.experience && data.experience.length > 0
+            ? [
+              new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 200, after: 120 },
+                children: [
+                  new TextRun({
+                    text: 'PROFESSIONAL EXPERIENCE',
+                    bold: true,
+                    size: 24,
+                    font: 'Calibri'
                   })
                 ]
-              : []),
-            ...exp.bullets.map(
-              (bullet) =>
+              }),
+              ...data.experience.flatMap((exp) => [
                 new Paragraph({
-                  bullet: { level: 0 },
-                  spacing: { after: 60 },
+                  spacing: { before: 140, after: 40 },
                   children: [
                     new TextRun({
-                      text: bullet,
+                      text: exp.role || 'Professional Role',
+                      bold: true,
+                      size: 22,
+                      font: 'Calibri'
+                    }),
+                    new TextRun({
+                      text: ` — ${exp.company || 'Organization'}`,
+                      size: 22,
+                      font: 'Calibri'
+                    }),
+                    new TextRun({
+                      text: `  (${exp.duration || 'Dates'})`,
+                      italics: true,
                       size: 20,
                       font: 'Calibri'
                     })
                   ]
-                })
-            )
-          ]),
+                }),
+                ...(exp.location
+                  ? [
+                    new Paragraph({
+                      spacing: { after: 80 },
+                      children: [
+                        new TextRun({
+                          text: exp.location,
+                          italics: true,
+                          size: 18,
+                          font: 'Calibri',
+                          color: '555555'
+                        })
+                      ]
+                    })
+                  ]
+                  : []),
+                ...exp.bullets.map(
+                  (bullet) =>
+                    new Paragraph({
+                      bullet: { level: 0 },
+                      spacing: { after: 60 },
+                      children: [
+                        new TextRun({
+                          text: bullet,
+                          size: 20,
+                          font: 'Calibri'
+                        })
+                      ]
+                    })
+                )
+              ])
+            ]
+            : []),
 
-          // 5. EDUCATION
+          // 5. KEY TECHNICAL & PORTFOLIO PROJECTS
+          ...(data.projects && data.projects.length > 0
+            ? [
+              new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 220, after: 120 },
+                children: [
+                  new TextRun({
+                    text: 'KEY TECHNICAL & PORTFOLIO PROJECTS',
+                    bold: true,
+                    size: 24,
+                    font: 'Calibri'
+                  })
+                ]
+              }),
+              ...data.projects.flatMap((proj) => {
+                const techList = Array.isArray(proj.technologies)
+                  ? proj.technologies.join(', ')
+                  : proj.technologies || '';
+                const bullets = proj.highlights || proj.bullets || [];
+
+                return [
+                  new Paragraph({
+                    spacing: { before: 140, after: 40 },
+                    children: [
+                      new TextRun({
+                        text: proj.title || 'Technical Project',
+                        bold: true,
+                        size: 22,
+                        font: 'Calibri'
+                      }),
+                      ...(techList
+                        ? [
+                          new TextRun({
+                            text: `  [${techList}]`,
+                            italics: true,
+                            size: 20,
+                            font: 'Calibri',
+                            color: '0d9488'
+                          })
+                        ]
+                        : []),
+                      ...(proj.link
+                        ? [
+                          new TextRun({
+                            text: `  (${proj.link})`,
+                            size: 19,
+                            font: 'Calibri',
+                            color: '2563eb'
+                          })
+                        ]
+                        : [])
+                    ]
+                  }),
+                  ...(proj.description
+                    ? [
+                      new Paragraph({
+                        spacing: { after: 60 },
+                        children: [
+                          new TextRun({
+                            text: proj.description,
+                            size: 20,
+                            font: 'Calibri'
+                          })
+                        ]
+                      })
+                    ]
+                    : []),
+                  ...bullets.map(
+                    (b) =>
+                      new Paragraph({
+                        bullet: { level: 0 },
+                        spacing: { after: 50 },
+                        children: [
+                          new TextRun({
+                            text: b,
+                            size: 20,
+                            font: 'Calibri'
+                          })
+                        ]
+                      })
+                  )
+                ];
+              })
+            ]
+            : []),
+
+          // 6. EDUCATION
           new Paragraph({
             heading: HeadingLevel.HEADING_2,
             spacing: { before: 240, after: 100 },
@@ -249,64 +350,96 @@ export async function downloadAtsWord(data: AtsResumeData): Promise<void> {
               })
           ),
 
-          // 6. CERTIFICATIONS (if any)
+          // 7. CERTIFICATIONS (if any)
           ...(data.certifications && data.certifications.length > 0
             ? [
-                new Paragraph({
-                  heading: HeadingLevel.HEADING_2,
-                  spacing: { before: 200, after: 100 },
-                  children: [
-                    new TextRun({
-                      text: 'CERTIFICATIONS & ACCREDITATIONS',
-                      bold: true,
-                      size: 24,
-                      font: 'Calibri'
-                    })
-                  ]
-                }),
-                ...data.certifications.map(
-                  (cert) =>
-                    new Paragraph({
-                      bullet: { level: 0 },
-                      spacing: { after: 60 },
-                      children: [
-                        new TextRun({
-                          text: cert,
-                          size: 20,
-                          font: 'Calibri'
-                        })
-                      ]
-                    })
-                )
-              ]
+              new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 200, after: 100 },
+                children: [
+                  new TextRun({
+                    text: 'CERTIFICATIONS & ACCREDITATIONS',
+                    bold: true,
+                    size: 24,
+                    font: 'Calibri'
+                  })
+                ]
+              }),
+              ...data.certifications.map(
+                (cert) =>
+                  new Paragraph({
+                    bullet: { level: 0 },
+                    spacing: { after: 60 },
+                    children: [
+                      new TextRun({
+                        text: cert,
+                        size: 20,
+                        font: 'Calibri'
+                      })
+                    ]
+                  })
+              )
+            ]
             : []),
 
-          // 7. LANGUAGES (if any)
+          // 8. ACHIEVEMENTS & RESEARCH (if any)
+          ...(data.achievements && data.achievements.length > 0
+            ? [
+              new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 200, after: 100 },
+                children: [
+                  new TextRun({
+                    text: 'KEY ACHIEVEMENTS & RESEARCH',
+                    bold: true,
+                    size: 24,
+                    font: 'Calibri'
+                  })
+                ]
+              }),
+              ...data.achievements.map(
+                (ach) =>
+                  new Paragraph({
+                    bullet: { level: 0 },
+                    spacing: { after: 60 },
+                    children: [
+                      new TextRun({
+                        text: ach,
+                        size: 20,
+                        font: 'Calibri'
+                      })
+                    ]
+                  })
+              )
+            ]
+            : []),
+
+          // 9. LANGUAGES (if any)
           ...(data.languages && data.languages.length > 0
             ? [
-                new Paragraph({
-                  heading: HeadingLevel.HEADING_2,
-                  spacing: { before: 200, after: 100 },
-                  children: [
-                    new TextRun({
-                      text: 'LANGUAGES',
-                      bold: true,
-                      size: 24,
-                      font: 'Calibri'
-                    })
-                  ]
-                }),
-                new Paragraph({
-                  spacing: { after: 120 },
-                  children: [
-                    new TextRun({
-                      text: data.languages.join('  •  '),
-                      size: 20,
-                      font: 'Calibri'
-                    })
-                  ]
-                })
-              ]
+              new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 200, after: 100 },
+                children: [
+                  new TextRun({
+                    text: 'LANGUAGES',
+                    bold: true,
+                    size: 24,
+                    font: 'Calibri'
+                  })
+                ]
+              }),
+              new Paragraph({
+                spacing: { after: 120 },
+                children: [
+                  new TextRun({
+                    text: data.languages.join('  •  '),
+                    size: 20,
+                    font: 'Calibri'
+                  })
+                ]
+              })
+            ]
             : [])
         ]
       }
@@ -423,7 +556,7 @@ export function downloadAtsPdf(data: AtsResumeData): void {
     cursorY += skillLines.length * 13 + 12;
   }
 
-  // 3. PROFESSIONAL EXPERIENCE
+  // 3. PROFESSIONAL EXPERIENCE (only if present)
   if (data.experience && data.experience.length > 0) {
     renderSectionHeader('Professional Experience');
 
@@ -467,6 +600,66 @@ export function downloadAtsPdf(data: AtsResumeData): void {
       });
 
       cursorY += 6;
+    });
+  }
+
+  // 4. KEY TECHNICAL & PORTFOLIO PROJECTS
+  if (data.projects && data.projects.length > 0) {
+    renderSectionHeader('Key Technical & Portfolio Projects');
+
+    data.projects.forEach((proj) => {
+      checkPageBreak(35);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      pdf.setTextColor(25, 25, 25);
+
+      const techStr = Array.isArray(proj.technologies)
+        ? proj.technologies.join(', ')
+        : proj.technologies || '';
+      pdf.text(proj.title || 'Technical Project', margin, cursorY);
+
+      if (techStr) {
+        pdf.setFont('helvetica', 'italic');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(13, 148, 136); // teal
+        const titleWidth = pdf.getTextWidth((proj.title || 'Technical Project') + '  ');
+        if (margin + titleWidth < pageWidth - margin - 100) {
+          pdf.text(`[${techStr}]`, margin + titleWidth, cursorY);
+        }
+      }
+
+      if (proj.link) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(37, 99, 235);
+        pdf.text(proj.link, pageWidth - margin, cursorY, { align: 'right' });
+      }
+      cursorY += 13;
+
+      if (proj.description) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(50, 50, 50);
+        const descLines = pdf.splitTextToSize(proj.description, contentWidth);
+        checkPageBreak(descLines.length * 12 + 4);
+        pdf.text(descLines, margin, cursorY);
+        cursorY += descLines.length * 12 + 3;
+      }
+
+      const bullets = proj.highlights || proj.bullets || [];
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(40, 40, 40);
+
+      bullets.forEach((b) => {
+        const line = `•   ${b}`;
+        const bLines = pdf.splitTextToSize(line, contentWidth - 10);
+        checkPageBreak(bLines.length * 11 + 3);
+        pdf.text(bLines, margin + 8, cursorY);
+        cursorY += bLines.length * 11 + 2;
+      });
+
+      cursorY += 5;
     });
   }
 
@@ -518,7 +711,24 @@ export function downloadAtsPdf(data: AtsResumeData): void {
     cursorY += 8;
   }
 
-  // 6. LANGUAGES
+  // 6. ACHIEVEMENTS & RESEARCH
+  if (data.achievements && data.achievements.length > 0) {
+    renderSectionHeader('Key Achievements & Research');
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(40, 40, 40);
+
+    data.achievements.forEach((ach) => {
+      const line = `•   ${ach}`;
+      const achLines = pdf.splitTextToSize(line, contentWidth);
+      checkPageBreak(achLines.length * 12);
+      pdf.text(achLines, margin + 8, cursorY);
+      cursorY += achLines.length * 12 + 2;
+    });
+    cursorY += 8;
+  }
+
+  // 7. LANGUAGES
   if (data.languages && data.languages.length > 0) {
     renderSectionHeader('Languages');
     pdf.setFont('helvetica', 'normal');
