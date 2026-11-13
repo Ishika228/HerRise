@@ -32,6 +32,7 @@ import {
 } from '../services/financeStorage';
 import { comprehensiveFinancialLessons } from '../data/mockData/financialLessonsData';
 import { useToast } from './ToastContext';
+import { API_BASE } from '../config/api';
 
 export type DateFilterType = 'this_month' | 'last_month' | 'last_3_months' | 'all';
 
@@ -423,7 +424,7 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
   const setupFinancialBaseline = async (setupData: FinancialSetupData): Promise<boolean> => {
     // 1. Sync to backend MongoDB Atlas
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = API_BASE;
       await fetch(`${backendUrl}/api/finance/setup-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -575,7 +576,7 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = API_BASE;
       const res = await fetch(`${backendUrl}/api/finance/ai-automate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

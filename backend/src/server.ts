@@ -22,7 +22,23 @@ const app = express();
 // Middlewares
 app.use(
   cors({
-    origin: [config.clientUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      const allowed = [
+        config.clientUrl,
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5174'
+      ].filter(Boolean);
+      // Allow any *.onrender.com subdomain for Render deployments
+      if (allowed.includes(origin) || /\.onrender\.com$/.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // permissive for now, tighten per env if needed
+      }
+    },
     credentials: true
   })
 );

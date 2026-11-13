@@ -24,6 +24,7 @@ import {
 import { AtsResumeData, downloadAtsPdf, downloadAtsWord } from '../../services/resumeExportService';
 import { useToast } from '../../context/ToastContext';
 import { isProjectEntry } from '../../context/HerCareerContext';
+import { API_BASE } from '../../config/api';
 
 interface ResumeIntakeModalProps {
   initialName?: string;
@@ -111,13 +112,13 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
         const formData = new FormData();
         formData.append('resume', selectedFile);
         setParseProgress('Groq AI scanning resume & extracting ATS structure...');
-        response = await fetch('http://localhost:5000/api/career/parse-resume', {
+        response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           body: formData
         });
       } else {
         setParseProgress('Groq AI parsing resume text...');
-        response = await fetch('http://localhost:5000/api/career/parse-resume', {
+        response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: pastedText })
@@ -254,7 +255,7 @@ showToast('Resume Extracted!', 'Groq AI successfully extracted all details.', 's
 const handleGenerateSummary = async () => {
   setIsGeneratingSummary(true);
   try {
-    const res = await fetch('http://localhost:5000/api/career/generate-summary', {
+    const res = await fetch(`${API_BASE}/api/career/generate-summary`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

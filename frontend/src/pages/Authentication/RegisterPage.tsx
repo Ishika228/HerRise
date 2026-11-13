@@ -25,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ResumeIntakeModal } from '../../components/resume/ResumeIntakeModal';
 import { AtsResumeData } from '../../services/resumeExportService';
+import { API_BASE } from '../../config/api';
 
 interface GoalOption {
   id: string;
@@ -141,13 +142,13 @@ export const RegisterPage: React.FC = () => {
         const formData = new FormData();
         formData.append('resume', selectedFile);
         setParseProgress('Groq AI extracting candidate identity, skills, experience & education...');
-        response = await fetch('http://localhost:5000/api/career/parse-resume', {
+        response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           body: formData
         });
       } else {
         setParseProgress('Groq AI analyzing resume text...');
-        response = await fetch('http://localhost:5000/api/career/parse-resume', {
+        response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: pastedText })

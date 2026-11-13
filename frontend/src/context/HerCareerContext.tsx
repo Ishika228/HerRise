@@ -12,6 +12,7 @@ import {
 } from '../types/career';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
+import { API_BASE } from '../config/api';
 
 interface HerCareerContextType {
   // Profile
@@ -579,7 +580,7 @@ const HerCareerContext = createContext<HerCareerContextType | undefined>(undefin
 export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl = API_BASE;
 
   // 1. Profile State initialized dynamically from authenticated user
   const [profile, setProfile] = useState<CareerProfile>(() => {

@@ -26,6 +26,7 @@ import {
   initialAssistantMessages
 } from '../../data/mockData/aiPromptsData';
 import { ChatMessage } from '../../types';
+import { API_BASE } from '../../config/api';
 
 export const AIAssistantPage: React.FC = () => {
   const { user } = useAuth();
@@ -73,7 +74,7 @@ export const AIAssistantPage: React.FC = () => {
     // Call Live Backend Groq AI Endpoint
     let reply = '';
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = API_BASE;
       const res = await fetch(`${backendUrl}/api/finance/ai-consult`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

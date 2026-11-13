@@ -21,6 +21,7 @@ import {
 import { Modal } from './Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { API_BASE } from '../../config/api';
 
 export type SupportedModule = 'career' | 'business' | 'fund' | 'market' | 'learn' | 'network';
 
@@ -246,7 +247,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
 
       // 2. Persist to MongoDB Atlas via backend API
       try {
-        await fetch('http://localhost:5000/api/auth/module-profile', {
+        await fetch(`${API_BASE}/api/auth/module-profile`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

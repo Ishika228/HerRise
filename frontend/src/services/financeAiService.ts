@@ -7,6 +7,7 @@ import {
   BudgetRecord,
   FinancialProfile
 } from '../types/finance';
+import { API_BASE } from '../config/api';
 
 export interface FinanceAIContext {
   profile: FinancialProfile;
@@ -136,7 +137,7 @@ export async function fetchHerFinanceAIResponse(
   userQuery: string,
   context: FinanceAIContext
 ): Promise<{ text: string; actionSuggestion?: { label: string; tab: string }; source: 'groq-llm' | 'context-engine' }> {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl = API_BASE;
 
   try {
     const res = await fetch(`${backendUrl}/api/finance/ai-consult`, {
