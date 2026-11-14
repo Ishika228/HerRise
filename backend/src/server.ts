@@ -19,6 +19,7 @@ import marketRoutes from './routes/marketRoutes.js';
 import learnRoutes from './routes/learnRoutes.js';
 import networkRoutes from './routes/networkRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
+import assistantRoutes from './routes/assistantRoutes.js';
 import { syncAustralianQualifications } from './services/courseSyncService.js';
 
 const app = express();
@@ -86,6 +87,7 @@ app.use('/api/market', marketRoutes);
 app.use('/api/learn', learnRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/network', networkRoutes);
+app.use('/api/assistant', assistantRoutes);
 
 // Serve compiled React frontend in production if dist exists
 const frontendDist = path.resolve(process.cwd(), 'frontend/dist');

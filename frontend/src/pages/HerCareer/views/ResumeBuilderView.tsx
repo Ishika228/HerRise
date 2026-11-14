@@ -23,6 +23,7 @@ import { useHerCareer, isProjectEntry, separateExperienceAndProjects } from '../
 import { useToast } from '../../../context/ToastContext';
 import { ResumeData } from '../../../types/career';
 import { downloadAtsPdf, downloadAtsWord, AtsResumeData } from '../../../services/resumeExportService';
+import { ResumeIntakeModal } from '../../../components/resume/ResumeIntakeModal';
 
 export const ResumeBuilderView: React.FC = () => {
   const {
@@ -43,9 +44,20 @@ export const ResumeBuilderView: React.FC = () => {
   const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+  const [showIntakeWizard, setShowIntakeWizard] = useState(false);
   const [isPolishing, setIsPolishing] = useState<string | null>(null);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
+  // Complete resume creation from interactive wizard
+  const handleWizardComplete = async (atsResume: AtsResumeData) => {
+    setShowIntakeWizard(false);
+    await importParsedResume({
+      ...atsResume,
+      title: `${atsResume.fullName || 'My'} ATS Resume`
+    });
+    showToast('Resume Created! 🎉', 'Your qualifications, experience, and skills have been applied to your resume.', 'success');
+  };
 
   // Upload and parse any resume (PDF/Word/Docx/Text) dynamically without hardcoded data
   const handleResumeFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,6 +286,17 @@ export const ResumeBuilderView: React.FC = () => {
             </button>
           </div>
 
+          {/* Launch New Resume Wizard */}
+          <button
+            type="button"
+            onClick={() => setShowIntakeWizard(true)}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#4A154B] to-[#be185d] hover:from-[#3b0764] hover:to-[#9d174d] text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            title="Interactive step-by-step wizard to build your resume with Qualifications, Experience, and Skills"
+          >
+            <Sparkles className="w-4 h-4 text-pink-300" />
+            <span>New Resume Wizard</span>
+          </button>
+
           {/* Upload & Import Any Resume Button */}
           <input
             ref={fileInputRef}
@@ -345,6 +368,33 @@ export const ResumeBuilderView: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Wizard Guidance Banner */}
+      {(!activeResume.education?.length || !activeResume.experience?.length || !activeResume.education[0]?.degree) && (
+        <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 p-4 sm:p-5 rounded-3xl border border-purple-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#4A154B] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Sparkles className="w-5 h-5 text-pink-200" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900">
+                Want a guided walkthrough to build your complete ATS resume?
+              </h4>
+              <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
+                Our step-by-step wizard asks for your Qualifications, Experience, and Skills, and generates an AI summary.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowIntakeWizard(true)}
+            className="px-4 py-2.5 bg-[#4A154B] hover:bg-[#350c36] text-white text-xs font-bold rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-pink-300" />
+            <span>Launch Resume Wizard</span>
+          </button>
+        </div>
+      )}
 
       {activeTab === 'editor' ? (
         /* ==================== EDITOR MODE ==================== */
@@ -1286,6 +1336,21 @@ export const ResumeBuilderView: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Interactive Step-by-Step Resume Creator Wizard Modal */}
+      {showIntakeWizard && (
+        <ResumeIntakeModal
+          isOpen={showIntakeWizard}
+          onClose={() => setShowIntakeWizard(false)}
+          defaultTab="create"
+          initialName={activeResume.personalInfo.fullName}
+          initialEmail={activeResume.personalInfo.email}
+          initialPhone={activeResume.personalInfo.phone}
+          initialLocation={activeResume.personalInfo.location}
+          initialHeadline={activeResume.title}
+          onComplete={handleWizardComplete}
+        />
       )}
     </div>
   );
