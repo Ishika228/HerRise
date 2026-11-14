@@ -18,11 +18,11 @@ export default defineConfig({
     },
   },
   server: {
-    // Allow all Render.com deployment hosts and any future custom domains
-    allowedHosts: [
-      'herrise-atjg.onrender.com',
-      '.onrender.com',
-      'localhost',
-    ],
+    host: '0.0.0.0',
+    allowedHosts: true,
+  },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: true,
   },
 })

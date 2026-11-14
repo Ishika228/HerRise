@@ -115,11 +115,11 @@ app.use(errorHandler);
 
 // Start Server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(config.port, async () => {
+  app.listen(config.port, '0.0.0.0', async () => {
     console.log(`=========================================`);
     console.log(`🌸 HerRise AI Backend API Server`);
-    console.log(`🚀 Live on: http://localhost:${config.port}`);
-    console.log(`🩺 Health check: http://localhost:${config.port}/api/health`);
+    console.log(`🚀 Live on: http://0.0.0.0:${config.port}`);
+    console.log(`🩺 Health check: http://0.0.0.0:${config.port}/api/health`);
     console.log(`=========================================`);
 
     // Initialize MongoDB connection & seed initial data

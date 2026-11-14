@@ -37,6 +37,8 @@ import {
   launchRoadmap
 } from '../../data/mockData/businessData';
 import { BusinessPlan, RoadmapMilestone } from '../../types';
+import { BusinessIdeaGenerator } from './components/BusinessIdeaGenerator';
+import { downloadBusinessPlanPdf } from '../../services/businessPlanPdfService';
 
 export const HerBusinessPage: React.FC = () => {
   const { user } = useAuth();
@@ -50,8 +52,8 @@ export const HerBusinessPage: React.FC = () => {
     return localStorage.getItem('herrise_business_setup_completed') !== 'true';
   });
 
-  // Tabs: Ideas, Feasibility, Pricing, Plan Builder, Roadmap
-  const [activeTab, setActiveTab] = useState<'ideas' | 'pricing' | 'plan' | 'roadmap' | 'feasibility'>('ideas');
+  // Tabs: Generator, Ideas, Feasibility, Pricing, Plan Builder, Roadmap
+  const [activeTab, setActiveTab] = useState<'generator' | 'ideas' | 'pricing' | 'plan' | 'roadmap' | 'feasibility'>('generator');
 
   // Business plan state dynamically personalized
   const [businessPlan, setBusinessPlan] = useState<BusinessPlan>(() => ({
@@ -161,8 +163,12 @@ export const HerBusinessPage: React.FC = () => {
   };
 
   const handleExportPlan = () => {
-    showToast('Business Plan Exported', 'Full 10-section executive plan ready for print/download', 'success');
-    window.print();
+    downloadBusinessPlanPdf(businessPlan, businessPlan.businessName);
+    showToast(
+      'Business Plan Downloaded! 📄',
+      `Official A4 Executive PDF exported for "${businessPlan.businessName}".`,
+      'success'
+    );
   };
 
   const completedMilestones = milestones.filter((m) => m.completed).length;
@@ -222,6 +228,15 @@ export const HerBusinessPage: React.FC = () => {
 
           {/* Navigation Pills */}
           <div className="flex flex-wrap gap-1.5 bg-purple-50/70 p-1.5 rounded-2xl text-xs font-semibold">
+            <button
+              onClick={() => setActiveTab('generator')}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'generator' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-pink-300" />
+              <span>AI Idea & Plan Generator</span>
+            </button>
             <button
               onClick={() => setActiveTab('ideas')}
               className={`px-3 py-2 rounded-xl transition-all cursor-pointer ${
@@ -302,9 +317,51 @@ export const HerBusinessPage: React.FC = () => {
           />
         </div>
 
+        {/* TAB 0: AI BUSINESS IDEA GENERATOR & STRATEGIC PLANNER */}
+        {activeTab === 'generator' && (
+          <BusinessIdeaGenerator
+            onApplyToPlan={(generated) => {
+              setBusinessPlan((prev) => ({
+                ...prev,
+                ...generated
+              }));
+              setActiveTab('plan');
+            }}
+            onOpenPricing={(cogs, margin) => {
+              setPricingCalc((prev) => ({
+                ...prev,
+                rawMaterialCost: cogs,
+                targetGrossMargin: margin
+              }));
+              setActiveTab('pricing');
+            }}
+          />
+        )}
+
         {/* TAB 1: CURATED BUSINESS IDEAS */}
         {activeTab === 'ideas' && (
           <div className="space-y-6">
+            {/* Callout to AI Generator */}
+            <div className="bg-gradient-to-r from-purple-900 via-[#4A154B] to-[#701a75] text-white p-5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-pink-300 shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-white">Looking for a custom business blueprint built around your budget & skills?</h4>
+                  <p className="text-xs text-purple-200">
+                    Use our AI Generator to explore trending 2026 opportunities or input your own passion to generate an instant executive plan.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('generator')}
+                className="bg-white hover:bg-pink-50 text-[#4A154B] font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0 transition-transform hover:scale-105"
+              >
+                <span>Launch AI Generator →</span>
+              </button>
+            </div>
+
             <div className="text-left space-y-1">
               <h3 className="text-base font-bold text-gray-900">Curated Micro-Enterprise Blueprints</h3>
               <p className="text-xs text-gray-500">
@@ -553,9 +610,10 @@ export const HerBusinessPage: React.FC = () => {
               <button
                 onClick={handleExportPlan}
                 className="flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs cursor-pointer"
+                title="Download complete 10-section A4 PDF document"
               >
                 <Download className="w-4 h-4 text-pink-300" />
-                <span>Export / Print Plan</span>
+                <span>Download Plan (PDF)</span>
               </button>
             </div>
 

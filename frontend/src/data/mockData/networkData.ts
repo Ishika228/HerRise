@@ -1,6 +1,19 @@
 import { Mentor, Workshop, CommunityPost } from '../../types';
 
+// ─── Connection Interface ────────────────────────────────────────────────────
+export interface Connection {
+  id: string;
+  name: string;
+  avatar: string;
+  profession: string;
+  industry: string;
+  status: 'connected' | 'mentor' | 'pending';
+  connectedSince?: string;
+}
+
+// ─── Mentors ─────────────────────────────────────────────────────────────────
 export const initialMentors: Mentor[] = [
+  // ── Original 4 ──
   {
     id: 'mentor-1',
     name: 'Dr. Radhika Sen',
@@ -64,10 +77,78 @@ export const initialMentors: Mentor[] = [
     rating: 4.92,
     sessionsCompleted: 87,
     badges: ['Legal Specialist']
+  },
+
+  // ── New 4 ──
+  {
+    id: 'mentor-5',
+    name: 'Ananya Krishnan',
+    designation: 'Senior Engineering Manager',
+    company: 'Infosys BPM',
+    avatar: 'https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=200&q=80',
+    industry: 'IT & Technology',
+    experienceYears: 11,
+    expertise: ['Cloud Architecture', 'Women in Tech', 'Agile Leadership', 'System Design'],
+    languages: ['English', 'Tamil', 'Kannada'],
+    bio: 'Engineering manager leading a 40-person cloud team. Passionate about building technical pipelines for women re-entering STEM after career breaks.',
+    availability: 'Next available: Wednesday, 7:00 PM',
+    rating: 4.9,
+    sessionsCompleted: 113,
+    badges: ['Tech Mentor', 'STEM Champion']
+  },
+  {
+    id: 'mentor-6',
+    name: 'Ritika Malhotra',
+    designation: 'Serial Entrepreneur & Business Strategist',
+    company: 'Venture Studio India',
+    avatar: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=200&q=80',
+    industry: 'Business & Entrepreneurship',
+    experienceYears: 13,
+    expertise: ['Business Model Design', 'Go-To-Market Strategy', 'B2B Sales', 'Scaling Operations'],
+    languages: ['English', 'Hindi', 'Punjabi'],
+    bio: 'Founded and exited two B2B SaaS companies. Now runs a venture studio that co-builds businesses with first-time women entrepreneurs from ideation to revenue.',
+    availability: 'Next available: Saturday, 10:00 AM',
+    rating: 4.87,
+    sessionsCompleted: 76,
+    badges: ['Serial Founder', 'Startup Coach']
+  },
+  {
+    id: 'mentor-7',
+    name: 'Deepa Rao',
+    designation: 'Chartered Financial Analyst & Wealth Advisor',
+    company: 'FinHer Advisory',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+    industry: 'Finance & Wealth Management',
+    experienceYears: 15,
+    expertise: ['Personal Finance Planning', 'Mutual Fund Strategy', 'Tax Optimization', 'Financial Independence'],
+    languages: ['English', 'Hindi', 'Telugu'],
+    bio: 'CFA and SEBI-registered advisor dedicated to making financial planning accessible to women. Has helped 500+ women build their first investment portfolio.',
+    availability: 'Next available: Tuesday, 5:30 PM',
+    rating: 4.96,
+    sessionsCompleted: 189,
+    badges: ['CFA', 'Financial Literacy Champion']
+  },
+  {
+    id: 'mentor-8',
+    name: 'Nisha Patel',
+    designation: 'Head of Growth & Digital Marketing',
+    company: 'BrandWave Digital',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    industry: 'Marketing & Digital Media',
+    experienceYears: 8,
+    expertise: ['SEO & Content Strategy', 'Social Media Growth', 'Performance Marketing', 'Brand Building'],
+    languages: ['English', 'Hindi', 'Gujarati'],
+    bio: 'Digital marketing leader who has grown 15+ brands from zero to 100K followers. Specialises in low-budget growth strategies for women-owned micro-businesses.',
+    availability: 'Next available: Sunday, 3:00 PM',
+    rating: 4.85,
+    sessionsCompleted: 64,
+    badges: ['Growth Expert', 'Social Media Pro']
   }
 ];
 
+// ─── Workshops ────────────────────────────────────────────────────────────────
 export const initialWorkshops: Workshop[] = [
+  // ── Original 3 ──
   {
     id: 'ws-1',
     title: 'Masterclass: Crafting an Investor-Ready Pitch Deck for Women Founders',
@@ -109,10 +190,56 @@ export const initialWorkshops: Workshop[] = [
     description: 'Understand Section 44ADA presumptive taxation, GST threshold limits, legal expense deductions, and how to legally cut your tax bill by up to 50%.',
     attendeesCount: 194,
     isRegistered: false
+  },
+
+  // ── New 3 ──
+  {
+    id: 'ws-4',
+    title: 'Building Confidence in the Workplace: Speak Up, Stand Out',
+    mentorName: 'Ritika Malhotra',
+    mentorRole: 'Serial Entrepreneur @ Venture Studio India',
+    mentorAvatar: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=200&q=80',
+    date: 'Tuesday, Dec 2, 2026',
+    time: '7:00 PM - 8:30 PM IST',
+    duration: '90 Mins',
+    category: 'Leadership',
+    description: 'Practical frameworks to overcome imposter syndrome, assert boundaries professionally, and build an executive presence that gets you noticed — without changing who you are.',
+    attendeesCount: 156,
+    isRegistered: false
+  },
+  {
+    id: 'ws-5',
+    title: 'Resume Building & Interview Prep: Land Your Dream Role in 30 Days',
+    mentorName: 'Meenakshi Sundaram',
+    mentorRole: 'Head of Returnships @ CognitiveWave',
+    mentorAvatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=200&q=80',
+    date: 'Friday, Dec 5, 2026',
+    time: '6:00 PM - 7:30 PM IST',
+    duration: '90 Mins',
+    category: 'Career Growth',
+    description: 'Write a resume that passes ATS screening, craft a 60-second elevator pitch, and practise live mock interview rounds with real-time feedback from a returnship expert.',
+    attendeesCount: 274,
+    isRegistered: false
+  },
+  {
+    id: 'ws-6',
+    title: 'Digital Marketing for Entrepreneurs: Grow Your Brand on ₹0 Ad Budget',
+    mentorName: 'Nisha Patel',
+    mentorRole: 'Head of Growth @ BrandWave Digital',
+    mentorAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    date: 'Sunday, Dec 7, 2026',
+    time: '4:00 PM - 5:30 PM IST',
+    duration: '90 Mins',
+    category: 'Marketing',
+    description: 'Master organic Instagram, SEO-driven blog content, WhatsApp Business flows, and Google My Business — the exact playbook used to scale 15+ women-owned brands to 100K reach.',
+    attendeesCount: 203,
+    isRegistered: false
   }
 ];
 
+// ─── Community Posts ──────────────────────────────────────────────────────────
 export const initialCommunityPosts: CommunityPost[] = [
+  // ── Original 2 ──
   {
     id: 'post-1',
     authorName: 'Tanvi Deshmukh',
@@ -120,7 +247,7 @@ export const initialCommunityPosts: CommunityPost[] = [
     authorRole: 'Founder, Mitti Handmade Pottery',
     timeAgo: '2 hours ago',
     category: 'Founder Win 🎉',
-    content: 'Thrilled to share that we just fulfilled our 500th order on HerMarket! 🌸 Three months ago, I was terrified to price my terracotta planters beyond ₹200. Following Mentor Pooja’s advice on value-based pricing and eco packaging gave me the confidence to charge what our craftsmanship is truly worth. Keep going, sisters!',
+    content: "Thrilled to share that we just fulfilled our 500th order on HerMarket! 🌸 Three months ago, I was terrified to price my terracotta planters beyond ₹200. Following Mentor Pooja's advice on value-based pricing and eco packaging gave me the confidence to charge what our craftsmanship is truly worth. Keep going, sisters!",
     likes: 48,
     isLiked: false,
     comments: [
@@ -147,7 +274,7 @@ export const initialCommunityPosts: CommunityPost[] = [
     authorRole: 'Returning Software Engineer',
     timeAgo: '5 hours ago',
     category: 'Career Advice 💡',
-    content: 'Quick note to anyone dreading explaining a career break in interviews: I had a 3-year gap taking care of my twin toddlers. In today’s final round interview, instead of being apologetic, I highlighted my time-management discipline, upskilling certifications, and volunteer website builds. The hiring manager praised my clarity and sent the offer letter an hour later! Own your story!',
+    content: "Quick note to anyone dreading explaining a career break in interviews: I had a 3-year gap taking care of my twin toddlers. In today's final round interview, instead of being apologetic, I highlighted my time-management discipline, upskilling certifications, and volunteer website builds. The hiring manager praised my clarity and sent the offer letter an hour later! Own your story!",
     likes: 89,
     isLiked: true,
     comments: [
@@ -159,9 +286,66 @@ export const initialCommunityPosts: CommunityPost[] = [
         timeAgo: '3 hours ago'
       }
     ]
+  },
+
+  // ── New 2 ──
+  {
+    id: 'post-3',
+    authorName: 'Anjali Sharma',
+    authorAvatar: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=200&q=80',
+    authorRole: 'Product Manager, TechPath Solutions',
+    timeAgo: '8 hours ago',
+    category: 'Career Growth 🚀',
+    content: "Big career win to celebrate with this community! 🎊 After attending Mentor Meenakshi's Resume Bootcamp, I completely rewrote my LinkedIn summary and applied the impact-first bullet point method. Result: 3 recruiter calls in one week after 6 months of silence. I also negotiated a 28% salary hike by using the BATNA framework she shared. This network is genuinely transforming careers. If you are hesitating to book a session, please do not. It is worth every rupee.",
+    likes: 134,
+    isLiked: false,
+    comments: [
+      {
+        id: 'c-4',
+        authorName: 'Ritu Ganguly',
+        authorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
+        content: 'This is incredible Anjali! The BATNA method is so underrated for salary negotiation.',
+        timeAgo: '6 hours ago'
+      },
+      {
+        id: 'c-5',
+        authorName: 'Deepika Nair',
+        authorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+        content: 'Bookmarking this post. 28% jump is phenomenal — congratulations!',
+        timeAgo: '5 hours ago'
+      }
+    ]
+  },
+  {
+    id: 'post-4',
+    authorName: 'Swati Nair',
+    authorAvatar: 'https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=200&q=80',
+    authorRole: 'Self-Employed Artisan & HerFinance Graduate',
+    timeAgo: '1 day ago',
+    category: 'Financial Learning 💰',
+    content: "Sharing something I genuinely wish someone had told me at 25: a SIP of just ₹2,000/month started today is worth more than ₹10,000/month started 10 years later - thanks to compounding. I completed the HerFinance financial literacy modules and booked a session with Mentor Deepa. She helped me set up my first MF portfolio in under an hour, completely aligned to my irregular freelance income cycle. No jargon, no pressure. Just practical money moves. Financial independence is for all of us - start wherever you are.",
+    likes: 211,
+    isLiked: false,
+    comments: [
+      {
+        id: 'c-6',
+        authorName: 'Preethi Iyer',
+        authorAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+        content: 'The SIP compounding example just clicked for me. Setting up mine today!',
+        timeAgo: '20 hours ago'
+      },
+      {
+        id: 'c-7',
+        authorName: 'Tanvi Deshmukh',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        content: 'Mentor Deepa is amazing! She helped me understand the difference between ELSS and PPF in one session.',
+        timeAgo: '18 hours ago'
+      }
+    ]
   }
 ];
 
+// ─── Success Stories (unchanged) ──────────────────────────────────────────────
 export const successStoriesData = [
   {
     name: 'Kavita Joshi',
@@ -192,3 +376,81 @@ export const successStoriesData = [
   }
 ];
 
+// ─── Connections ──────────────────────────────────────────────────────────────
+export const initialConnections: Connection[] = [
+  // 2 mentors
+  {
+    id: 'conn-1',
+    name: 'Dr. Radhika Sen',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    profession: 'Managing Partner & Angel Investor',
+    industry: 'Investment & Venture Capital',
+    status: 'mentor',
+    connectedSince: 'Oct 2026'
+  },
+  {
+    id: 'conn-2',
+    name: 'Meenakshi Sundaram',
+    avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=200&q=80',
+    profession: 'Head of Global Talent & Returnship Programs',
+    industry: 'Tech & Career Coaching',
+    status: 'mentor',
+    connectedSince: 'Sep 2026'
+  },
+
+  // 4 connections
+  {
+    id: 'conn-3',
+    name: 'Anjali Sharma',
+    avatar: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=200&q=80',
+    profession: 'Product Manager',
+    industry: 'IT & Technology',
+    status: 'connected',
+    connectedSince: 'Nov 2026'
+  },
+  {
+    id: 'conn-4',
+    name: 'Swati Nair',
+    avatar: 'https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=200&q=80',
+    profession: 'Self-Employed Artisan',
+    industry: 'Handmade & Craft',
+    status: 'connected',
+    connectedSince: 'Oct 2026'
+  },
+  {
+    id: 'conn-5',
+    name: 'Ritu Ganguly',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
+    profession: 'Product Lead',
+    industry: 'D2C & E-commerce',
+    status: 'connected',
+    connectedSince: 'Sep 2026'
+  },
+  {
+    id: 'conn-6',
+    name: 'Kavita Menon',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    profession: 'Freelance Content Strategist',
+    industry: 'Marketing & Media',
+    status: 'connected',
+    connectedSince: 'Aug 2026'
+  },
+
+  // 2 pending
+  {
+    id: 'conn-7',
+    name: 'Deepika Nair',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+    profession: 'Financial Analyst',
+    industry: 'Finance & Banking',
+    status: 'pending'
+  },
+  {
+    id: 'conn-8',
+    name: 'Arjun Kapoor',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    profession: 'Business Development Manager',
+    industry: 'Business & Entrepreneurship',
+    status: 'pending'
+  }
+];
