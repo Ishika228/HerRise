@@ -198,6 +198,8 @@ export interface IJobListing extends Document {
   applyUrl?: string;
   postedDate: string;
   matchScore?: number;
+  qualification?: string;
+  qualificationCategory?: string;
 }
 
 const JobListingSchema = new Schema<IJobListing>(
@@ -218,6 +220,8 @@ const JobListingSchema = new Schema<IJobListing>(
     returneeFriendly: { type: Boolean, default: false },
     verified: { type: Boolean, default: true },
     applyUrl: { type: String },
+    qualification: { type: String },
+    qualificationCategory: { type: String },
     postedDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
   },
   { timestamps: true }

@@ -23,7 +23,11 @@ export const config = {
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   jwtSecret: process.env.JWT_SECRET || 'herrise_secret_key_default',
   groqApiKey: process.env.GROQ_API_KEY || '',
+  jobdataApiKey: process.env.JOBDATA_API_KEY || process.env.JDL_API_KEY || '',
+  digitalServicesAdminToken: process.env.DIGITAL_SERVICES_ADMIN_TOKEN || '',
+  digitalServicesWhatsapp: (process.env.DIGITAL_SERVICES_WHATSAPP || '').replace(/\D/g, ''),
   mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/herrise_db',
-  mongoDbName: process.env.MONGODB_DB_NAME || 'herrise_db'
+  mongoDbName: process.env.MONGODB_DB_NAME || 'herrise_db',
+  startupDbApiBase: process.env.STARTUPDB_API_BASE || 'https://startupdb.com/api/v1'
 };
 

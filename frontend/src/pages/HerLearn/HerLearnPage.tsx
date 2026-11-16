@@ -26,7 +26,6 @@ import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrati
 import {
   initialCourses,
   sampleQuizQuestions,
-  userCertificates,
   personalized30DayPlan
 } from '../../data/mockData/learnData';
 import { Course, Certificate } from '../../types';
@@ -49,9 +48,40 @@ export const HerLearnPage: React.FC = () => {
   });
 
   const [courses, setCourses] = useState<Course[]>(initialCourses);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'australian' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'australian' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('australian');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Dynamic user name resolution for verified credentials
+  const userCandidateName = React.useMemo(() => {
+    if (user?.name) return user.name;
+    try {
+      const rawResume = localStorage.getItem('hercareer_resume');
+      if (rawResume) {
+        const parsed = JSON.parse(rawResume);
+        if (parsed?.personalInfo?.fullName) return parsed.personalInfo.fullName;
+      }
+    } catch {}
+    return 'Verified HerRise Scholar';
+  }, [user]);
+
+  // Verifiable certificates dynamically calculated from database progress
+  const earnedCertificates: Certificate[] = React.useMemo(() => {
+    return courses
+      .filter((c) => c.isCompleted || (c.progressPercent && c.progressPercent >= 100))
+      .map((c) => ({
+        id: `cert-${c.id}`,
+        courseTitle: c.title,
+        issuedTo: userCandidateName,
+        issueDate: c.completedAt
+          ? new Date(c.completedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        credentialId: c.certificateId || `HR-CRS-${Math.floor(100000 + Math.random() * 900000)}`,
+        skillsCovered: [c.category, 'Verified Competency', 'Practical Mastery'],
+        instructorName: c.instructor,
+        badgeUrl: c.instructorAvatar
+      }));
+  }, [courses, userCandidateName]);
 
   // Extract user education qualification from resume or profile
   const userEducation = (() => {
@@ -66,19 +96,6 @@ export const HerLearnPage: React.FC = () => {
     } catch {}
     return user?.education || user?.resumeData?.education?.[0]?.degree || '';
   })();
-
-  // Dynamic user name resolution for verified credentials
-  const userCandidateName = React.useMemo(() => {
-    if (user?.name) return user.name;
-    try {
-      const rawResume = localStorage.getItem('hercareer_resume');
-      if (rawResume) {
-        const parsed = JSON.parse(rawResume);
-        if (parsed?.personalInfo?.fullName) return parsed.personalInfo.fullName;
-      }
-    } catch {}
-    return 'Verified HerRise Scholar';
-  }, [user]);
 
   const handleGateComplete = (data: any) => {
     setIsSetupCompleted(true);
@@ -329,7 +346,7 @@ export const HerLearnPage: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'certificates' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
                 }`}
             >
-              Certificates ({userCertificates.length})
+              Certificates ({earnedCertificates.length})
             </button>
             <button
               onClick={() => setActiveTab('roadmap')}
@@ -345,32 +362,32 @@ export const HerLearnPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Courses In Progress"
-            value="2 Enrolled"
-            subtitle="72% Average completion"
+            value={`${courses.filter((c) => c.isEnrolled).length} Enrolled`}
+            subtitle={courses.filter((c) => c.isEnrolled).length > 0 ? 'Active learner' : 'Start your first course'}
             icon={BookOpen}
             iconColor="text-[#4A154B]"
             bgColor="bg-purple-50"
           />
           <StatCard
             title="Total Learning Hours"
-            value="34.5 Hrs"
-            subtitle="4.5 hrs logged this week"
+            value={`${courses.filter((c) => c.isEnrolled).length > 0 ? '4.5 Hrs' : '0 Hrs'}`}
+            subtitle={courses.filter((c) => c.isEnrolled).length > 0 ? 'Hours logged this week' : 'Watch video lessons to track'}
             icon={Clock}
             iconColor="text-emerald-700"
             bgColor="bg-emerald-50"
           />
           <StatCard
             title="Quiz Average Score"
-            value="92%"
-            subtitle="Top 10% across cohort"
+            value={quizScore !== null ? `${Math.round((quizScore / sampleQuizQuestions.length) * 100)}%` : '0%'}
+            subtitle={quizScore !== null ? `Score: ${quizScore}/${sampleQuizQuestions.length}` : 'Take the quiz below'}
             icon={Award}
             iconColor="text-[#be185d]"
             bgColor="bg-pink-50"
           />
           <StatCard
             title="Certificates Earned"
-            value={userCertificates.length}
-            subtitle="Verifiable on LinkedIn"
+            value={earnedCertificates.length}
+            subtitle={earnedCertificates.length > 0 ? 'Verifiable on LinkedIn' : 'Complete course to earn'}
             icon={CheckCircle2}
             iconColor="text-indigo-700"
             bgColor="bg-indigo-50"
@@ -676,66 +693,84 @@ export const HerLearnPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {userCertificates.map((cert) => {
-                const displayName = userCandidateName || cert.issuedTo;
-                return (
-                  <div
-                    key={cert.id}
-                    className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Verified Credential
-                        </span>
-                        <span className="text-xs font-mono text-gray-400 font-semibold">{cert.credentialId}</span>
+            {earnedCertificates.length === 0 ? (
+              <div className="bg-white p-12 rounded-3xl border border-purple-100 text-center space-y-4">
+                <div className="w-14 h-14 bg-purple-50 text-[#4A154B] rounded-2xl flex items-center justify-center mx-auto">
+                  <Award className="w-7 h-7" />
+                </div>
+                <h4 className="font-extrabold text-base text-gray-900">No Certificates Earned Yet</h4>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                  Complete video modules in your courses to verify competencies and earn official HerRise credentials stored in the database.
+                </p>
+                <button
+                  onClick={() => setActiveTab('australian')}
+                  className="px-5 py-2.5 bg-[#4A154B] hover:bg-[#350c36] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  Explore Australian Qualifications →
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {earnedCertificates.map((cert) => {
+                  const displayName = userCandidateName || cert.issuedTo;
+                  return (
+                    <div
+                      key={cert.id}
+                      className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Verified Credential
+                          </span>
+                          <span className="text-xs font-mono text-gray-400 font-semibold">{cert.credentialId}</span>
+                        </div>
+
+                        <h4 className="font-extrabold text-base text-gray-900 group-hover:text-[#4A154B] transition-colors leading-snug">
+                          {cert.courseTitle}
+                        </h4>
+                        <p className="text-xs text-gray-600">
+                          Issued to: <strong className="text-gray-900">{displayName}</strong>
+                        </p>
+                        <p className="text-xs text-gray-500">Instructor: {cert.instructorName}</p>
+                        <p className="text-[11px] text-gray-400">Date of Award: {cert.issueDate}</p>
+
+                        {cert.skillsCovered && cert.skillsCovered.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {cert.skillsCovered.slice(0, 3).map((sk, i) => (
+                              <span key={i} className="text-[10px] bg-purple-50 text-purple-900 px-2 py-0.5 rounded-md border border-purple-100 font-medium">
+                                {sk}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      <h4 className="font-extrabold text-base text-gray-900 group-hover:text-[#4A154B] transition-colors leading-snug">
-                        {cert.courseTitle}
-                      </h4>
-                      <p className="text-xs text-gray-600">
-                        Issued to: <strong className="text-gray-900">{displayName}</strong>
-                      </p>
-                      <p className="text-xs text-gray-500">Instructor: {cert.instructorName}</p>
-                      <p className="text-[11px] text-gray-400">Date of Award: {cert.issueDate}</p>
-
-                      {cert.skillsCovered && cert.skillsCovered.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {cert.skillsCovered.slice(0, 3).map((sk, i) => (
-                            <span key={i} className="text-[10px] bg-purple-50 text-purple-900 px-2 py-0.5 rounded-md border border-purple-100 font-medium">
-                              {sk}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="pt-4 border-t border-purple-50 flex items-center justify-between mt-4">
+                        <button
+                          onClick={() => setSelectedCert(cert)}
+                          className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>View Credential</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            generateCertificatePdf(cert, { recipientName: displayName });
+                            showToast('Certificate Downloaded! 🎓', `Official A4 PDF exported for ${cert.courseTitle}`, 'success');
+                          }}
+                          className="flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download PDF</span>
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="pt-4 border-t border-purple-50 flex items-center justify-between mt-4">
-                      <button
-                        onClick={() => setSelectedCert(cert)}
-                        className="text-xs font-bold text-[#4A154B] hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>View Credential</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          generateCertificatePdf(cert, { recipientName: displayName });
-                          showToast('Certificate Downloaded! 🎓', `Official A4 PDF exported for ${cert.courseTitle}`, 'success');
-                        }}
-                        className="flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-2xs"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download PDF</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

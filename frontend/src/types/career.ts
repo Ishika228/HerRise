@@ -94,10 +94,16 @@ export interface JobListing {
   verified: boolean;
   applyUrl?: string;
   postedDate: string;
+  qualification?: string;
+  qualificationCategory?: string;
   matchScore?: number;
   suitabilityReason?: string;
   matchingSkills?: string[];
   missingSkills?: string[];
+  qualificationEligibility?: {
+    status: 'Fully Qualified' | 'Eligible via Transferable Skills' | 'Upskilling Recommended';
+    details: string;
+  };
 }
 
 export interface JobApplication {

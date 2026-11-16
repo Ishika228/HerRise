@@ -10,6 +10,175 @@ export interface KnowledgeMatch {
   suggestedActions?: Array<{ label: string; actionPath: string }>;
 }
 
+interface TitleInfo {
+  id: string;
+  label: string;
+  icon: string;
+  role: string;
+  specialty: string;
+  path: string;
+}
+
+const TITLE_REGISTRY: Record<string, TitleInfo> = {
+  general: {
+    id: 'general',
+    label: 'All-in-One Advisor',
+    icon: '✨',
+    role: 'Universal Copilot',
+    specialty: 'holistic cross-discipline advice across finance, career, business, funding, and marketing',
+    path: '/assistant'
+  },
+  finance: {
+    id: 'finance',
+    label: 'HerFinance Advisor',
+    icon: '💰',
+    role: 'Financial Planning & Wealth Specialist',
+    specialty: 'personal budgeting (50/30/20 rule), emergency funds, SIP investments, savings goals, and expense tracking',
+    path: '/finance'
+  },
+  career: {
+    id: 'career',
+    label: 'HerCareer Coach',
+    icon: '💼',
+    role: 'Career Strategy & ATS Resume Coach',
+    specialty: 'resume building, ATS optimization, explaining career breaks, interview preparation, and salary negotiations',
+    path: '/career'
+  },
+  business: {
+    id: 'business',
+    label: 'HerBusiness Strategist',
+    icon: '🚀',
+    role: 'Venture & Business Development Strategist',
+    specialty: 'high-margin business ideas, unit economics, 55%+ pricing formulas, and customer acquisition',
+    path: '/business'
+  },
+  fund: {
+    id: 'fund',
+    label: 'HerFund Guide',
+    icon: '🏛️',
+    role: 'Government Schemes & Funding Specialist',
+    specialty: 'government loans (Mudra, Stand-Up India, SIDBI), subsidies, collateral-free credit, and 6-slide investor pitch decks',
+    path: '/fund'
+  },
+  market: {
+    id: 'market',
+    label: 'HerMarket Optimizer',
+    icon: '🛍️',
+    role: 'E-Commerce & Digital Marketplace Specialist',
+    specialty: 'storefront optimization, compelling product copywriting, fragile item packaging, and customer retention',
+    path: '/market'
+  }
+};
+
+function detectTargetDiscipline(q: string): string | null {
+  // 1. Career (resumes, gaps, interviews, hiring, promotions)
+  if (
+    /\b(resume|cv|ats|interview|interviews|career|job|jobs|hiring|hire|recruiter|recruiters|sabbatical|maternity|childcare|promotion|promotions|raise|counteroffer)\b/i.test(q) ||
+    q.includes('career break') ||
+    q.includes('career gap') ||
+    q.includes('gap in') ||
+    q.includes('comeback') ||
+    q.includes('restart') ||
+    q.includes('work experience') ||
+    q.includes('summary rewrite') ||
+    q.includes('bullet point') ||
+    (q.includes('salary') && !q.includes('budget'))
+  ) {
+    return 'career';
+  }
+
+  // 2. Finance (budgeting, 50/30/20, emergency funds, SIP, FD, savings, expenses)
+  if (
+    /\b(budget|budgeting|sip|sips|fd|fds|invest|investing|investment|investments|savings|saving|expense|expenses|spend|spending|emergency fund|compound interest)\b/i.test(q) ||
+    q.includes('50/30/20') ||
+    q.includes('mutual fund') ||
+    q.includes('fixed deposit') ||
+    q.includes('safety fund') ||
+    q.includes('rainy day') ||
+    q.includes('how to save') ||
+    q.includes('cut cost') ||
+    q.includes('money management')
+  ) {
+    return 'finance';
+  }
+
+  // 3. Fund (government schemes, Mudra, Stand-Up India, loans, subsidies, pitch decks)
+  if (
+    /\b(loan|loans|grant|grants|scheme|schemes|subsid|subsidy|subsidies|mudra|sidbi|stand-up|pmmy|pitch deck|angel|investor|investors)\b/i.test(q) ||
+    q.includes('stand up india') ||
+    q.includes('bank loan') ||
+    q.includes('business loan') ||
+    q.includes('raise capital') ||
+    q.includes('seed capital') ||
+    q.includes('pitch presentation')
+  ) {
+    return 'fund';
+  }
+
+  // 4. Market (storefronts, e-commerce, product copy, packaging, repeat orders)
+  if (
+    /\b(packaging|package|packages|storefront|store|product description|copywriting|marketplace|e-commerce|unboxing|fragile|repeat order|retention|candle|candles)\b/i.test(q) ||
+    q.includes('bubble wrap') ||
+    q.includes('glass packaging') ||
+    q.includes('how to sell') ||
+    q.includes('repeat customer') ||
+    q.includes('hermarket')
+  ) {
+    return 'market';
+  }
+
+  // 5. Business (ideas, validation, pricing formula, margins, client acquisition)
+  if (
+    /\b(business|startup|startups|entrepreneur|hustle|margin|margins|pricing|price|client|clients|customer|customers)\b/i.test(q) ||
+    q.includes('business idea') ||
+    q.includes('business plan') ||
+    q.includes('start a business') ||
+    q.includes('side hustle') ||
+    q.includes('home business') ||
+    q.includes('gross margin') ||
+    q.includes('cost of goods') ||
+    q.includes('customer acquisition')
+  ) {
+    return 'business';
+  }
+
+  return null;
+}
+
+/**
+ * Exported helper: returns a cross-discipline referral KnowledgeMatch if the
+ * query belongs to a different specialist, or null if the query is on-topic.
+ * Call this BEFORE forwarding to any LLM.
+ */
+export function detectCrossDiscipline(
+  query: string,
+  activeTopic: string
+): KnowledgeMatch | null {
+  if (!activeTopic || activeTopic === 'general') return null;
+  const q = query.toLowerCase().trim();
+  const targetKey = detectTargetDiscipline(q);
+  if (!targetKey || targetKey === activeTopic) return null;
+
+  const current = TITLE_REGISTRY[activeTopic] || TITLE_REGISTRY.finance;
+  const target = TITLE_REGISTRY[targetKey];
+  if (!target) return null;
+
+  return {
+    title: `Connect with ${target.label}`,
+    response: `### ${target.icon} You Need the ${target.label}
+
+You are currently consulting with the **${current.label}**, your dedicated specialist for *${current.specialty}*.
+
+Your question is best handled by our **${target.label}** — the expert in *${target.specialty.split(',')[0]}*.
+
+> 💡 **Switch to ${target.label}** using the Focus Discipline bar above, or tap the button below to get specialized, step-by-step guidance tailored exactly to your question.`,
+    suggestedActions: [
+      { label: `Switch to ${target.label}`, actionPath: `#topic-${target.id}` },
+      { label: `Open ${target.label} Portal`, actionPath: target.path }
+    ]
+  };
+}
+
 export function generateSmartAssistantResponse(
   query: string,
   topic: string = 'general',
@@ -18,6 +187,35 @@ export function generateSmartAssistantResponse(
   const q = query.toLowerCase().trim();
   const userName = userContext?.name ? userContext.name.split(' ')[0] : 'there';
   const targetRole = userContext?.targetRole || 'Growth Professional';
+  const activeTopic = (topic || 'general').toLowerCase();
+
+  // -----------------------------------------------------------------
+  // 0. SPECIALIST DISCIPLINE ROUTING
+  // If the user selected a specific title (not 'general') and asks a question
+  // for a different title, reassign politely to that specialist without off-topic advice.
+  // -----------------------------------------------------------------
+  const targetKey = detectTargetDiscipline(q);
+
+  if (activeTopic !== 'general' && targetKey && targetKey !== activeTopic) {
+    const current = TITLE_REGISTRY[activeTopic] || TITLE_REGISTRY.finance;
+    const target = TITLE_REGISTRY[targetKey];
+
+    return {
+      title: `Referred to ${target.label}`,
+      response: `### ${target.icon} Reassigned to ${target.label}
+
+You have currently selected **${current.label}** (which specializes in *${current.specialty}*).
+
+Your question is about **${target.specialty.split(',')[0]}**, which is handled by our **${target.label}**!
+
+> **Please switch to ${target.label}:**
+> To get specialized guidance and dedicated interactive tools for this query, please click the **${target.icon} ${target.label}** tab in the Focus Discipline bar above, or use the direct action button below.`,
+      suggestedActions: [
+        { label: `Switch to ${target.label}`, actionPath: `#topic-${target.id}` },
+        { label: `Open ${target.label} Portal`, actionPath: target.path }
+      ]
+    };
+  }
 
   // -----------------------------------------------------------------
   // 1. CAREER & JOBS INTENTS
@@ -318,6 +516,90 @@ Test volume break-even scenarios with our interactive tools in **[HerBusiness](/
   }
 
   // -----------------------------------------------------------------
+  // 3.5. HERMARKET & PACKAGING INTENTS
+  // -----------------------------------------------------------------
+  if (
+    q.includes('packaging') ||
+    q.includes('fragile') ||
+    q.includes('bubble wrap') ||
+    q.includes('glass')
+  ) {
+    return {
+      title: 'Affordable & Sustainable Packaging for Fragile Goods',
+      response: `### 📦 Sustainable Packaging Architecture for Fragile Items
+
+Protect your margins and customer goodwill by eliminating transit breakage with eco-conscious materials:
+
+1. **The 3-Layer Protection Protocol**:
+   - **Primary Layer (Scratch Guard):** Wrap the item in biodegradable tissue or kraft paper.
+   - **Cushioning Layer (Shock Absorption):** Use 100% recyclable expandable honeycomb kraft paper instead of plastic bubble wrap. It locks without tape and absorbs 40% more drop impact.
+   - **Outer Shield (Rigid Structure):** 3-ply or 5-ply corrugated cardboard boxes with a 1-inch buffer all around.
+2. **Cost-Effective Sourcing**:
+   - Source kraft honeycomb rolls in bulk from wholesale distributors (saves 50% vs retail rolls, approx. ₹8–₹12 per package).
+3. **The Unboxing Touch**:
+   - Include a personalized 'Handcrafted with Love' branded sticker and a prominent 'Fragile: Handle with Care' label on the outer box.`,
+      suggestedActions: [
+        { label: 'Explore HerMarket Portal', actionPath: '/market' }
+      ]
+    };
+  }
+
+  if (
+    q.includes('product description') ||
+    q.includes('copywriting') ||
+    q.includes('storefront copy') ||
+    q.includes('candle')
+  ) {
+    return {
+      title: 'High-Converting Product Description Formula',
+      response: `### ✨ High-Converting Product Description Blueprint
+
+Turn casual window shoppers into proud paying customers using the Sensory + Story + Spec framework:
+
+1. **The Hook (Sensory Headline)**:
+   - *"Hand-Poured French Lavender & Warm Vanilla Botanical Soy Candle"*
+2. **The Emotional Benefit (2 Sentences)**:
+   - *"Transform your evening sanctuary. Hand-poured with 100% natural golden soy wax and therapeutic essential oils, designed to melt away daily stress without soot or synthetic fragrances."*
+3. **Transparent Specifications**:
+   - **Burn Time:** 45+ clean-burning hours
+   - **Wick:** Lead-free organic braided cotton
+   - **Wax:** 100% biodegradable golden soy wax
+   - **Weight:** 220g / 7.8 oz in an amber reusable glass vessel
+4. **Care Instructions**:
+   - *"Trim wick to 1/4 inch before each burn for a smooth, even wax pool."*`,
+      suggestedActions: [
+        { label: 'Optimize HerMarket Listing', actionPath: '/market' }
+      ]
+    };
+  }
+
+  if (
+    q.includes('repeat order') ||
+    q.includes('retention') ||
+    q.includes('loyalty') ||
+    q.includes('customer repeat')
+  ) {
+    return {
+      title: 'Driving Repeat Purchases on Marketplaces',
+      response: `### 🔁 4 Proven Tactics to Double Repeat Orders
+
+Acquiring a new customer costs 5x more than retaining an existing one. Here is how to keep them returning:
+
+1. **The Unboxing Bounceback Coupon**:
+   - Insert an elegant printed postcard inside every package with a personalized note: *"Thank you for supporting a woman-owned venture! Use code \`HERRISE15\` for 15% off your next order within 30 days."*
+2. **Surprise Sample Gifting**:
+   - Include a free mini sample of an upcoming product variant. 40% of recipients buy the full-sized version on their next visit.
+3. **Automated Replenishment Reminders**:
+   - For consumable goods (skincare, candles, teas), send an email or WhatsApp check-in at Day 25: *"How is your jar lasting? Replenish now before it runs out."*
+4. **Loyalty VIP Perks**:
+   - Offer early preview access to festive collections for returning customers.`,
+      suggestedActions: [
+        { label: 'View HerMarket Dashboard', actionPath: '/market' }
+      ]
+    };
+  }
+
+  // -----------------------------------------------------------------
   // 4. GOVERNMENT SCHEMES & FUNDING INTENTS
   // -----------------------------------------------------------------
   if (
@@ -400,7 +682,7 @@ HerLearn provides structured, industry-recognized courses tailored for career ac
    - Modern React.js, TypeScript, Node.js, and MongoDB Atlas.
    - Real-world deployment on cloud providers with hands-on capstone projects.
 2. **Python & AI Engineering**:
-   - Python programming fundamentals, REST APIs with FastAPI, LangChain, and Groq/LLM integrations.
+   - Python programming fundamentals, REST APIs with FastAPI, LangChain, and Generative AI & Enterprise LLM integrations.
 3. **Financial Literacy Masterclasses**:
    - Wealth psychology, smart asset allocation, micro-investing, and tax optimization.
 4. **Australian Qualifications Framework (AQF)**:
@@ -449,65 +731,284 @@ Open **[HerNetwork](/network)** to connect with a mentor today!`,
   }
 
   // -----------------------------------------------------------------
-  // 7. GREETINGS & GENERAL INTENTS
+  // 7. GREETINGS & COACH-SPECIFIC INTENTS
   // -----------------------------------------------------------------
-  if (
+  const isGreeting =
     q === 'hi' ||
     q === 'hello' ||
     q === 'hey' ||
     q.includes('who are you') ||
     q.includes('help me') ||
-    q.includes('what can you do')
-  ) {
+    q.includes('what can you do') ||
+    q.includes('how to start');
+
+  if (isGreeting) {
+    if (activeTopic === 'career') {
+      return {
+        title: 'Welcome to HerCareer Coach',
+        response: `### 💼 Hello ${userName}! I am your HerCareer Coach.
+
+I am dedicated to helping you maximize your market compensation, advance your leadership trajectory, and craft winning resumes:
+
+1. **📄 High-Impact ATS Resume Optimization**:
+   - Format single-column resumes scored against modern applicant tracking systems.
+2. **🌸 Navigating Career Gaps & Comebacks**:
+   - Reframe sabbaticals, maternity breaks, or caregiving pauses as executive strengths.
+3. **🎯 Live Behavioral Interview Practice**:
+   - Master the STAR framework (Situation, Task, Action, Result) for challenging leadership questions.
+4. **💼 Strategic Salary Negotiation**:
+   - Benchmark compensation bands and negotiate total compensation packages with confidence.
+
+**What career milestone can we tackle today?** Type your question or choose a suggested topic below!`,
+        suggestedActions: [
+          { label: 'Open ATS Resume Builder', actionPath: '/career' },
+          { label: 'Practice Interviews', actionPath: '/career' },
+          { label: 'Explore Career Roadmaps', actionPath: '/career' }
+        ]
+      };
+    }
+
+    if (activeTopic === 'business') {
+      return {
+        title: 'Welcome to HerBusiness Strategist',
+        response: `### 🚀 Hello ${userName}! I am your HerBusiness Strategist.
+
+I help women entrepreneurs conceptualize, validate, and scale high-margin profitable businesses:
+
+1. **💡 High-Margin Business Idea Generation**:
+   - Identify low-investment, service or product businesses with 60%+ gross margins.
+2. **🏷️ Sustainable 55%+ Pricing Blueprint**:
+   - Calculate your true Cost of Goods Sold (materials + packaging + labor) for sustainable profitability.
+3. **🎯 Zero-Ad-Spend Customer Acquisition**:
+   - Execute a 30-day playbook to secure your first 25 paying clients from warm networks and community partners.
+4. **📑 Comprehensive Business Plan & Pitch**:
+   - Generate an itemized financial plan and downloadable investor-ready business roadmap.
+
+**What business concept or question would you like to explore?**`,
+        suggestedActions: [
+          { label: 'Launch Idea Generator', actionPath: '/business' },
+          { label: 'Pricing & Margin Calculator', actionPath: '/business' },
+          { label: 'Download Business Plan', actionPath: '/business' }
+        ]
+      };
+    }
+
+    if (activeTopic === 'fund') {
+      return {
+        title: 'Welcome to HerFund Guide',
+        response: `### 🏛️ Hello ${userName}! I am your HerFund Guide.
+
+I specialize in navigating Indian government funding schemes, subsidies, and investor capital for women-owned enterprises:
+
+1. **🏛️ Government Schemes & Subsidies**:
+   - Pradhan Mantri Mudra Yojana (Shishu, Kishore, Tarun) and Stand-Up India (₹10L to ₹1Cr).
+2. **📋 Public Sector Bank Loan Checklists**:
+   - Prepare required KYC, Udyam registration, projected P&L, and project reports for smooth approval.
+3. **📊 6-Slide Investor Pitch Deck Architecture**:
+   - Structure a compelling story covering customer pain, market sizing (TAM/SAM/SOM), and traction.
+4. **🛡️ Collateral-Free Microloans**:
+   - Learn how the Credit Guarantee Scheme (CGS) protects your personal assets.
+
+**How can I help you secure capital today?**`,
+        suggestedActions: [
+          { label: 'Explore Mudra & Stand-Up Schemes', actionPath: '/fund' },
+          { label: 'Open Pitch Studio', actionPath: '/fund' },
+          { label: 'Loan Document Checklist', actionPath: '/fund' }
+        ]
+      };
+    }
+
+    if (activeTopic === 'market') {
+      return {
+        title: 'Welcome to HerMarket Optimizer',
+        response: `### 🛍️ Hello ${userName}! I am your HerMarket Optimizer.
+
+I help women artisans, makers, and founders dominate digital marketplaces and build enduring brand loyalty:
+
+1. **✨ Sensory & High-Converting Product Descriptions**:
+   - Turn browsers into buyers using the Sensory + Story + Specification framework.
+2. **📦 Eco-Friendly Packaging for Fragile Goods**:
+   - Eliminate transit breakage with expandable honeycomb kraft paper and custom corrugated boxes.
+3. **🔁 Doubling Repeat Orders**:
+   - Implement unboxing bounceback cards, QR re-order discounts, and sample gifting.
+4. **🏪 Storefront Setup & SEO**:
+   - Optimize titles, tags, and category placement to rank on marketplace search feeds.
+
+**What product or storefront listing can we optimize today?**`,
+        suggestedActions: [
+          { label: 'Product Description Formula', actionPath: '/market' },
+          { label: 'Sustainable Packaging Guide', actionPath: '/market' },
+          { label: 'HerMarket Dashboard', actionPath: '/market' }
+        ]
+      };
+    }
+
+    if (activeTopic === 'finance') {
+      return {
+        title: 'Welcome to HerFinance Advisor',
+        response: `### 💰 Hello ${userName}! I am your HerFinance Advisor.
+
+I am dedicated to your complete personal financial security, cash-flow mastery, and wealth compounding:
+
+1. **📊 50/30/20 Budgeting Allocation**:
+   - Balance essentials, lifestyle joy, and wealth creation without guilt.
+2. **🛡️ Ironclad 6-Month Emergency Fund**:
+   - Protect yourself and your family from unexpected medical or career disruptions.
+3. **📈 Direct SIP Wealth Compounding**:
+   - Outpace inflation through diversified, disciplined equity index funds.
+4. **✂️ Expense Auditing & Waste Reduction**:
+   - Identify phantom subscriptions and negotiate lower recurring costs.
+
+**What financial goal would you like to review today?**`,
+        suggestedActions: [
+          { label: 'Calculate 50/30/20 Budget', actionPath: '/finance' },
+          { label: 'Set Emergency Fund Goal', actionPath: '/finance' },
+          { label: 'SIP vs FD Calculator', actionPath: '/finance' }
+        ]
+      };
+    }
+
+    // Default Universal General Greeting
     return {
       title: 'Welcome to HerRise AI Assistant',
-      response: `### 🌸 Hello ${userName}! I am your HerRise AI Copilot.
+      response: `### 🌸 Hello ${userName}! I am your HerRise All-in-One Advisor.
 
 I am designed to guide you through every stage of your personal, financial, and career growth. Here is what we can do together:
 
-1. **💼 Career Acceleration (HerCareer)**:
-   - Build a verified ATS resume, practice interview questions, plan your promotion roadmap, or craft an empowering narrative for a career break.
-2. **💰 Financial Freedom (HerFinance)**:
-   - Calculate your 50/30/20 budget, build an emergency safety net, automate SIPs, and track daily cash flows.
-3. **🚀 Venture Launchpad (HerBusiness & HerMarket)**:
-   - Generate profitable business ideas, calculate sustainable unit economics (55%+ margins), and set up an e-commerce storefront.
-4. **🏛️ Capital & Government Schemes (HerFund)**:
-   - Navigate Stand-Up India, Mudra loans, SIDBI grants, and investor pitch decks.
-5. **🎓 Upskilling (HerLearn)**:
-   - Complete technical and financial courses with verified certificates.
-6. **🤝 Mentorship (HerNetwork)**:
-   - Connect 1-on-1 with industry mentors, attend workshops, and share achievements.
+1. **💼 Career Acceleration (HerCareer)**: Build an ATS resume, practice interviews, and negotiate compensation.
+2. **💰 Financial Freedom (HerFinance)**: Calculate 50/30/20 budgets, build emergency reserves, and automate SIPs.
+3. **🚀 Venture Launchpad (HerBusiness)**: Generate validated business ideas, calculate 55%+ gross margins, and build business plans.
+4. **🏛️ Capital & Government Schemes (HerFund)**: Stand-Up India, Mudra loans, SIDBI schemes, and pitch decks.
+5. **🛍️ Marketplace Optimization (HerMarket)**: Product copy, sustainable packaging, and repeat order retention.
 
 **What specific goal would you like to tackle right now?** Click any suggested topic below or type your question!`,
       suggestedActions: [
         { label: 'Create ATS Resume', actionPath: '/career' },
-        { label: 'Generate Business Idea', actionPath: '/business' },
         { label: 'Optimize My Budget', actionPath: '/finance' },
-        { label: 'Find a Mentor', actionPath: '/network' }
+        { label: 'Generate Business Idea', actionPath: '/business' },
+        { label: 'Explore Mudra Loans', actionPath: '/fund' }
       ]
     };
   }
 
   // -----------------------------------------------------------------
-  // 8. CONTEXTUAL DEFAULT FALLBACK
+  // 8. COACH-SPECIFIC DEFAULT FALLBACK
   // -----------------------------------------------------------------
+  if (activeTopic === 'career') {
+    return {
+      title: 'Career Strategy Guidance',
+      response: `### 💼 HerCareer Coach Guidance on "${query}"
+
+Here is a focused career development framework for your objective:
+
+1. **Target Role Alignment**:
+   - Identify the top 5 high-impact skills required for your target seniority.
+2. **Resume & Portfolio Proof**:
+   - Validate each core competency using quantifiable metric bullets (*"Increased efficiency by 25%"*).
+3. **Recommended Next Step**:
+   - Use our **[HerCareer Resume Builder](/career)** to export an ATS-compliant PDF, or practice questions in **[HerCareer Interview Prep](/career)**!`,
+      suggestedActions: [
+        { label: 'Open ATS Resume Builder', actionPath: '/career' },
+        { label: 'Practice Interviews', actionPath: '/career' }
+      ]
+    };
+  }
+
+  if (activeTopic === 'business') {
+    return {
+      title: 'Venture Strategy Guidance',
+      response: `### 🚀 HerBusiness Strategist Guidance on "${query}"
+
+Here is a focused entrepreneurial roadmap for your venture:
+
+1. **Unit Economics & Margin Check**:
+   - Always verify that retail price yields at least 55% gross margin after all direct materials, packaging, and transaction fees.
+2. **Customer Validation**:
+   - Conduct 15 informal customer discovery interviews before purchasing inventory or building complex software.
+3. **Recommended Next Step**:
+   - Use our **[HerBusiness Idea & Plan Generator](/business)** to draft your complete launch model!`,
+      suggestedActions: [
+        { label: 'Launch Idea Generator', actionPath: '/business' },
+        { label: 'Pricing Calculator', actionPath: '/business' }
+      ]
+    };
+  }
+
+  if (activeTopic === 'fund') {
+    return {
+      title: 'Funding Strategy Guidance',
+      response: `### 🏛️ HerFund Guide on "${query}"
+
+Here is a strategic funding framework for your capital requirement:
+
+1. **Scheme Matching**:
+   - Match your capital needs with collateral-free government programs like Mudra (up to ₹10L) or Stand-Up India (₹10L to ₹1Cr).
+2. **Document Readiness**:
+   - Keep 2 years of ITR, bank statements, Udyam registration, and projected cash-flow statements organized.
+3. **Recommended Next Step**:
+   - Review verified schemes in **[HerFund](/fund)** or build your slide deck in **[HerFund Pitch Studio](/fund)**!`,
+      suggestedActions: [
+        { label: 'Explore HerFund Schemes', actionPath: '/fund' },
+        { label: 'Open Pitch Studio', actionPath: '/fund' }
+      ]
+    };
+  }
+
+  if (activeTopic === 'market') {
+    return {
+      title: 'Marketplace Optimization Guidance',
+      response: `### 🛍️ HerMarket Optimizer Guidance on "${query}"
+
+Here is an e-commerce playbook for your digital storefront:
+
+1. **Visual & Copy Optimization**:
+   - Lead with clear benefit headlines, authentic artisan photography, and sensory descriptions.
+2. **Packaging & Repeat Orders**:
+   - Use expandable honeycomb paper wrap and include a 15% discount card for re-orders.
+3. **Recommended Next Step**:
+   - Review your listings on **[HerMarket](/market)**!`,
+      suggestedActions: [
+        { label: 'Open HerMarket Dashboard', actionPath: '/market' }
+      ]
+    };
+  }
+
+  if (activeTopic === 'finance') {
+    return {
+      title: 'Financial Planning Guidance',
+      response: `### 💰 HerFinance Advisor Guidance on "${query}"
+
+Here is a financial roadmap for your goal:
+
+1. **Cash Flow Check**:
+   - Ensure your fixed living needs do not exceed 50% of verified monthly inflow.
+2. **Reserve & Compounding**:
+   - Maintain a 6-month liquid cushion before expanding discretionary commitments.
+3. **Recommended Next Step**:
+   - Audit your numbers in **[HerFinance Budget Dashboard](/finance)**!`,
+      suggestedActions: [
+        { label: 'Open HerFinance Budget', actionPath: '/finance' },
+        { label: 'Set Savings Goal', actionPath: '/finance' }
+      ]
+    };
+  }
+
   return {
-    title: 'Actionable Guidance from HerRise AI',
+    title: 'Guidance from HerRise All-in-One Advisor',
     response: `### 💡 Strategic Guidance on "${query}"
 
 Thank you for your question. Here is an actionable roadmap tailored for your objectives:
 
-1. **Establish the Foundation**:
-   - Define your clear 30-day milestone and break it down into daily 15-minute habits.
-2. **Utilize HerRise AI Tools**:
-   - For career transitions and resume polishing, use **[HerCareer](/career)**.
-   - For wealth budgeting and financial allocations, visit **[HerFinance](/finance)**.
-   - For business feasibility and pricing models, explore **[HerBusiness](/business)**.
-   - For loan schemes and investor pitch decks, review **[HerFund](/fund)**.
-   - For skill certifications, check **[HerLearn](/learn)**.
-   - For 1:1 mentorship and community discussions, visit **[HerNetwork](/network)**.
-3. **Next Recommended Step**:
-   - Would you like a tailored action plan for **career advancement**, **personal budgeting**, or **starting a business**? Tell me what you'd like to prioritize and I'll generate the exact step-by-step breakdown!`,
+1. **Define Your Milestone**:
+   - Break down your 30-day objective into clear, weekly deliverables.
+2. **Access Dedicated HerRise Tools**:
+   - For career & resume tools, visit **[HerCareer](/career)**.
+   - For budgeting & investments, explore **[HerFinance](/finance)**.
+   - For business plans & pricing formulas, check **[HerBusiness](/business)**.
+   - For loans & grants, review **[HerFund](/fund)**.
+   - For marketplace sales, visit **[HerMarket](/market)**.
+3. **Choose Your Focus**:
+   - Switch to any specialized discipline above for in-depth, dedicated advisory!`,
     suggestedActions: [
       { label: 'Open HerCareer', actionPath: '/career' },
       { label: 'Open HerFinance', actionPath: '/finance' },

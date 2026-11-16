@@ -11,14 +11,16 @@ import {
   Clock,
   MapPin,
   Building,
-  Calendar,
   ChevronRight,
   ShieldCheck,
   RotateCcw,
   Search,
-  ExternalLink
+  ExternalLink,
+  GraduationCap
 } from 'lucide-react';
 import { useHerCareer } from '../../../context/HerCareerContext';
+import { useAuth } from '../../../context/AuthContext';
+import { calculateQualificationFit } from '../../../utils/qualificationMatcher';
 import { HerCareerTab } from '../HerCareerLayout';
 
 interface HerCareerDashboardViewProps {
@@ -26,7 +28,59 @@ interface HerCareerDashboardViewProps {
 }
 
 export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ onNavigateTab }) => {
-  const { stats, jobs, applications, activeResume, profile } = useHerCareer();
+  const { stats, jobs, applications, activeResume, profile, resumes, interviewQuestions } = useHerCareer();
+  const { user } = useAuth();
+
+  const candidateQualification =
+    activeResume?.education?.[0]?.degree ||
+    user?.education ||
+    user?.resumeData?.education?.[0]?.degree ||
+    '';
+
+  const scheduledInterviews = React.useMemo(() => {
+    return applications.filter(
+      (app) => app.status === 'Interview Scheduled' || app.status === 'Interview Completed'
+    );
+  }, [applications]);
+
+  const matchedJobs = React.useMemo(() => {
+    return [...jobs]
+      .map((job) => ({
+        ...job,
+        fit: calculateQualificationFit(candidateQualification, job)
+      }))
+      .sort((a, b) => b.fit.score - a.fit.score);
+  }, [jobs, candidateQualification]);
+
+  // 1. Dynamic user resume count (unique valid user resumes)
+  const userValidResumesCount = React.useMemo(() => {
+    const list = Array.isArray(resumes) ? resumes : [];
+    const unique = Array.from(new Map(list.map((r) => [r.id || r.title, r])).values());
+    const valid = unique.filter(
+      (r) =>
+        (r.personalInfo?.fullName && r.personalInfo.fullName.trim() !== '') ||
+        (r.experience && r.experience.length > 0) ||
+        (r.education && r.education.length > 0)
+    );
+    return valid.length > 0 ? valid.length : (activeResume?.personalInfo?.fullName ? 1 : 0);
+  }, [resumes, activeResume]);
+
+  // 2. Truly recommended jobs matching candidate qualification & skills
+  const candidateRecommendedJobsCount = React.useMemo(() => {
+    if (!candidateQualification || candidateQualification.trim() === '') {
+      return jobs.length;
+    }
+    const highMatch = matchedJobs.filter((j) => j.fit.score >= 70);
+    return highMatch.length > 0 ? highMatch.length : matchedJobs.length;
+  }, [matchedJobs, candidateQualification, jobs.length]);
+
+  // 3. Dynamic interview prep simulation progress
+  const interviewQuestionsAnswered = Array.isArray(interviewQuestions)
+    ? interviewQuestions.filter((q) => q.userAnswer && q.score).length
+    : 0;
+  const interviewProgress = Array.isArray(interviewQuestions) && interviewQuestions.length > 0
+    ? Math.round((interviewQuestionsAnswered / interviewQuestions.length) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -44,8 +98,10 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             </div>
           </div>
           <div className="mt-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stats.totalResumes}</h3>
-            <p className="text-[11px] text-teal-600 font-semibold mt-0.5">ATS-Optimized</p>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{userValidResumesCount}</h3>
+            <p className="text-[11px] text-teal-600 font-semibold mt-0.5">
+              {userValidResumesCount > 0 ? 'Active & ATS-Optimized' : 'No Resume Uploaded'}
+            </p>
           </div>
         </div>
 
@@ -61,8 +117,12 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             </div>
           </div>
           <div className="mt-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stats.recommendedJobs}</h3>
-            <p className="text-[11px] text-teal-600 font-semibold mt-0.5">Verified & Returnee</p>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{candidateRecommendedJobsCount}</h3>
+            <p className="text-[11px] text-teal-600 font-semibold mt-0.5">
+              {candidateQualification
+                ? `Matched to ${candidateQualification.split('(')[0].trim()}`
+                : 'Verified Opportunities'}
+            </p>
           </div>
         </div>
 
@@ -78,8 +138,10 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             </div>
           </div>
           <div className="mt-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stats.applicationsSubmitted}</h3>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">Tracked Active</p>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{applications.length}</h3>
+            <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+              {applications.length > 0 ? 'Tracked Active' : '0 Applied Yet'}
+            </p>
           </div>
         </div>
 
@@ -95,8 +157,10 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             </div>
           </div>
           <div className="mt-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stats.interviewPrepProgress}%</h3>
-            <p className="text-[11px] text-indigo-600 font-semibold mt-0.5">Simulations Ready</p>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{interviewProgress}%</h3>
+            <p className="text-[11px] text-indigo-600 font-semibold mt-0.5">
+              {interviewQuestionsAnswered > 0 ? `${interviewQuestionsAnswered} Questions Completed` : 'Simulations Ready'}
+            </p>
           </div>
         </div>
       </div>
@@ -174,41 +238,19 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
         </div>
       </div>
 
-      {/* 3. AI-Generated Career Insights Banner */}
-      <div className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f766e] text-white p-5 sm:p-6 rounded-3xl shadow-md">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1.5 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-300" />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-teal-300">
-                AI Career Intelligence
-              </span>
-            </div>
-            <p className="text-sm font-semibold text-white leading-relaxed">
-              Your profile matches <strong>92%</strong> of the core qualifications for <strong>{profile.targetRole}</strong>. 
-              Adding 1 quantified metric to your primary resume and practicing technical communication can boost your interview callback rate significantly.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigateTab('assistant')}
-            className="bg-teal-500 hover:bg-teal-400 text-slate-950 px-4.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md shrink-0 cursor-pointer flex items-center gap-1.5"
-          >
-            <span>Ask AI Copilot</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Middle Row: Recommended Jobs & Resume Status */}
+      {/* 3. Middle Row: Recommended Jobs & Resume Status */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Recommended Jobs (7 cols) */}
         <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-extrabold text-sm text-slate-900">Personalized Job Matches</h3>
-              <p className="text-xs text-slate-500">Based on your skills & work mode preferences</p>
+              <p className="text-xs text-slate-500">
+                Tailored for qualification:{' '}
+                <span className="font-bold text-teal-800">
+                  {candidateQualification || 'All Backgrounds'}
+                </span>
+              </p>
             </div>
             <button
               type="button"
@@ -221,21 +263,28 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
           </div>
 
           <div className="space-y-3">
-            {jobs.slice(0, 3).map((job) => (
+            {matchedJobs.slice(0, 3).map((job) => (
               <div
                 key={job.jobId}
                 className="p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-slate-900 text-sm">{job.title}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${job.fit?.badgeClass || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                      {job.fit?.badgeText}
+                    </span>
                     {job.returneeFriendly && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-800">
                         Returnee Friendly
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                  <div className="flex items-center gap-1 text-[11px] text-purple-900 font-semibold">
+                    <GraduationCap className="w-3 h-3 text-[#4A154B] shrink-0" />
+                    <span className="truncate">{job.qualification || 'Relevant Degree'}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 pt-0.5">
                     <span className="flex items-center gap-1 font-semibold text-slate-700">
                       <Building className="w-3.5 h-3.5 text-slate-400" />
                       {job.company}
@@ -334,96 +383,6 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             <Sparkles className="w-4 h-4 text-teal-400" />
             <span>Run Deep AI Resume Analysis</span>
           </button>
-        </div>
-      </div>
-
-      {/* 5. Bottom Row: Upcoming Interviews & Recent Applications */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Upcoming Interviews (5 cols) */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-600" />
-              <h3 className="font-extrabold text-sm text-slate-900">Upcoming Interviews</h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => onNavigateTab('interview')}
-              className="text-xs font-bold text-indigo-700 hover:underline cursor-pointer"
-            >
-              Practice AI Simulation →
-            </button>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-200 text-indigo-900">
-                Technical Round
-              </span>
-              <span className="text-[11px] font-bold text-indigo-800">Nov 15, 2:00 PM IST</span>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 text-sm">Fintech Spark India</h4>
-              <p className="text-xs text-slate-600">Senior Frontend Engineer Role</p>
-            </div>
-            <p className="text-[11px] text-slate-500">Interviewer: Priya Raman (Director of Engineering)</p>
-
-            <button
-              type="button"
-              onClick={() => onNavigateTab('interview')}
-              className="w-full mt-2 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Mic className="w-3.5 h-3.5" />
-              <span>Simulate Questions for this Role</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Recent Applications Tracker (7 cols) */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <h3 className="font-extrabold text-sm text-slate-900">Recent Applications</h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => onNavigateTab('tracker')}
-              className="text-xs font-bold text-teal-700 hover:underline cursor-pointer"
-            >
-              View Full Board ({applications.length}) →
-            </button>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {applications.length === 0 ? (
-              <p className="py-6 text-center text-xs text-slate-400">No applications tracked yet.</p>
-            ) : (
-              applications.slice(0, 3).map((app) => (
-                <div key={app.id} className="py-3 flex items-center justify-between text-xs">
-                  <div>
-                    <h4 className="font-bold text-slate-900">{app.title}</h4>
-                    <span className="text-[11px] text-slate-500">
-                      {app.company} • Applied on {app.appliedDate}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`font-bold px-2.5 py-1 rounded-full text-[11px] ${
-                        app.status === 'Interview Scheduled'
-                          ? 'bg-indigo-100 text-indigo-800'
-                          : app.status === 'Applied'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {app.status}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
         </div>
       </div>
     </div>

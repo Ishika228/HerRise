@@ -38,6 +38,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { StatCard } from '../../components/cards/StatCard';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
+import { calculateQualificationFit } from '../../utils/qualificationMatcher';
 import { useMarket } from '../../context/MarketContext';
 import { useHerCareer } from '../../context/HerCareerContext';
 
@@ -108,42 +109,14 @@ function buildAIPrompts(resume: any, profile: any, user: any): string[] {
   ];
 }
 
-/* ------------------------------------------------------------------ */
-/* Workshop suggestions based on domain                                */
-/* ------------------------------------------------------------------ */
-function getWorkshopForDomain(domain: string) {
-  const workshops: Record<string, { title: string; date: string; time: string; mentor: string; role: string }> = {
-    Tech: {
-      title: 'Women in Tech: Breaking Into Senior Engineering Roles',
-      date: 'Nov 20, 2026',
-      time: '7:00 PM IST',
-      mentor: 'Priya Sharma',
-      role: 'Senior SDE @ Google'
-    },
-    Finance: {
-      title: 'Navigating Finance Careers as a Woman Leader',
-      date: 'Nov 22, 2026',
-      time: '6:30 PM IST',
-      mentor: 'Ananya Kapoor',
-      role: 'VP Finance @ HDFC'
-    },
-    Professional: {
-      title: 'Personal Branding for Career Growth',
-      date: 'Nov 18, 2026',
-      time: '5:00 PM IST',
-      mentor: 'Meera Joshi',
-      role: 'Career Coach @ LinkedIn'
-    }
-  };
-  return workshops[domain] || workshops['Professional'];
-}
+const EMPTY_ARRAY: any[] = [];
 
 /* ================================================================== */
 export const DashboardOverview: React.FC = () => {
   const { user } = useAuth();
   const { totalIncome, totalExpenses, currentSavings } = useFinance();
   const { orders } = useMarket();
-  const { activeResume, profile, jobs } = useHerCareer();
+  const { activeResume, profile, jobs, candidateQualification, setCandidateQualification } = useHerCareer();
   const navigate = useNavigate();
 
   /* Auth guard */
@@ -152,8 +125,8 @@ export const DashboardOverview: React.FC = () => {
   }, [user, navigate]);
 
   /* ── Resume data (context > localStorage > user) ── */
-  const lsResume = getResumeFromStorage();
-  const lsProfile = getProfileFromStorage();
+  const lsResume = React.useMemo(() => getResumeFromStorage(), []);
+  const lsProfile = React.useMemo(() => getProfileFromStorage(), []);
   const resume = activeResume?.personalInfo?.fullName ? activeResume : lsResume;
   const careerProfile = profile?.targetRole ? profile : lsProfile;
 
@@ -165,15 +138,15 @@ export const DashboardOverview: React.FC = () => {
   const displayLocation =
     resume?.personalInfo?.location || user?.location;
   const techSkills: string[] =
-    resume?.skills?.technical || user?.skills || [];
-  const softSkills: string[] = resume?.skills?.soft || [];
-  const tools: string[] = resume?.skills?.tools || [];
-  const allSkills = [...techSkills, ...softSkills, ...tools];
+    resume?.skills?.technical || user?.skills || EMPTY_ARRAY;
+  const softSkills: string[] = resume?.skills?.soft || EMPTY_ARRAY;
+  const tools: string[] = resume?.skills?.tools || EMPTY_ARRAY;
+  const allSkills = React.useMemo(() => [...techSkills, ...softSkills, ...tools], [techSkills, softSkills, tools]);
   const summary: string = resume?.summary || '';
-  const experience = resume?.experience || [];
-  const projects = resume?.projects || [];
-  const education = resume?.education || [];
-  const certifications = resume?.certifications || [];
+  const experience = resume?.experience || EMPTY_ARRAY;
+  const projects = resume?.projects || EMPTY_ARRAY;
+  const education = resume?.education || EMPTY_ARRAY;
+  const certifications = resume?.certifications || EMPTY_ARRAY;
   const hasResume = Boolean(resume?.personalInfo?.fullName);
   const profileStrength = calcProfileStrength(resume, user);
   const domain = getDomainLabel(resume);
@@ -186,49 +159,67 @@ export const DashboardOverview: React.FC = () => {
   const wantsLearn = userGoals.some((g) => /learn|skill|course/i.test(g)) || hasResume;
   const wantsNetwork = userGoals.some((g) => /mentor|network|leader/i.test(g));
 
-  /* ── Matched Jobs (live from HerCareer context, fallback to empty) ── */
+  /* ── Qualification resolution ── */
+  const detectedQualification = React.useMemo(() => {
+    const resumeDegree = resume?.education?.[0]?.degree;
+    const resumeField = resume?.education?.[0]?.fieldOfStudy;
+    if (resumeDegree) {
+      return resumeField && !resumeDegree.toLowerCase().includes(resumeField.toLowerCase())
+        ? `${resumeDegree} (${resumeField})`
+        : resumeDegree;
+    }
+    if (typeof user?.education === 'string' && user.education.trim()) {
+      return user.education.trim();
+    }
+    if (Array.isArray(user?.education) && user.education[0]?.degree) {
+      return user.education[0].degree;
+    }
+    if (user?.resumeData?.education?.[0]?.degree) {
+      return user.resumeData.education[0].degree;
+    }
+    if (careerProfile?.education) {
+      return careerProfile.education;
+    }
+    return '';
+  }, [resume, user, careerProfile]);
+
+  const activeQualification = candidateQualification || detectedQualification || 'Bachelor of Technology (Computer Science)';
+
+  /* ── Matched Jobs (live from HerCareer context, scored strictly by educational qualification & skills) ── */
   const matchedJobs = React.useMemo(() => {
     const liveJobs = Array.isArray(jobs) ? jobs : [];
-    if (liveJobs.length === 0 || techSkills.length === 0) return liveJobs;
+    if (liveJobs.length === 0) return liveJobs;
+
     return liveJobs
       .map((job: any) => {
+        const fit = calculateQualificationFit(activeQualification, job);
         const jobSkills: string[] = job.skills || [];
         const matching = jobSkills.filter((sk) =>
-          techSkills.some((us) =>
-            sk.toLowerCase().includes(us.toLowerCase()) ||
-            us.toLowerCase().includes(sk.toLowerCase())
+          techSkills.some(
+            (us) =>
+              sk.toLowerCase().includes(us.toLowerCase()) ||
+              us.toLowerCase().includes(sk.toLowerCase())
           )
         );
-        const matchPercentage = Math.min(
-          98,
-          Math.max(80, Math.round(76 + (matching.length / (jobSkills.length || 1)) * 22))
-        );
-        return { ...job, matchingSkills: matching, matchPercentage };
+        const matchPercentage = fit.score || (job.matchPercentage ?? 85);
+
+        return {
+          ...job,
+          matchingSkills: matching,
+          matchPercentage,
+          fit
+        };
       })
       .sort((a: any, b: any) => b.matchPercentage - a.matchPercentage);
-  }, [jobs, techSkills]);
+  }, [jobs, techSkills, activeQualification]);
 
-  /* ── Cashflow trend chart ── */
-  const dynamicMonthlyTrend = [
-    { month: '3 Mo Ago', income: Math.round(totalIncome * 0.85), expenses: Math.round(totalExpenses * 0.9) },
-    { month: '2 Mo Ago', income: Math.round(totalIncome * 0.92), expenses: Math.round(totalExpenses * 0.95) },
-    { month: 'Last Mo', income: Math.round(totalIncome * 0.97), expenses: Math.round(totalExpenses * 0.88) },
-    { month: 'Current', income: totalIncome, expenses: totalExpenses }
-  ];
+  /* ── Cashflow trend chart (actual user transactions only) ── */
+  const dynamicMonthlyTrend = (totalIncome > 0 || totalExpenses > 0) ? [
+    { month: 'Current Period', income: totalIncome, expenses: totalExpenses }
+  ] : [];
 
   /* ── Personalized AI prompts ── */
   const aiPrompts = buildAIPrompts(resume, careerProfile, user);
-
-  /* ── Workshop card ── */
-  const workshop = getWorkshopForDomain(domain);
-
-  /* ── Recommended course label ── */
-  const eduDeg = education[0]?.degree || '';
-  const topCourseLabel = techSkills[0]
-    ? `${techSkills[0]} Advanced Qualification`
-    : eduDeg
-    ? `Upskill from your ${eduDeg}`
-    : 'Australian Nationally Recognised Course';
 
   /* ── Quick Actions (goal-ordered) ── */
   const allQuickActions = [
@@ -257,11 +248,6 @@ export const DashboardOverview: React.FC = () => {
 
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2.5 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-bold text-pink-200">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Personalized HerRise AI Dashboard</span>
-              </div>
-
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 Welcome back, {displayName}! 🌸
               </h1>
@@ -319,17 +305,6 @@ export const DashboardOverview: React.FC = () => {
                   ? `Your profile has been analyzed. We found ${matchedJobs.length} live job openings and curated Australian qualifications matched to your background.`
                   : 'Upload your resume to unlock personalized job matches, course recommendations, and AI-powered career insights.'}
               </p>
-
-              {/* Goals badges */}
-              {userGoals.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {userGoals.map((goal, idx) => (
-                    <span key={idx} className="text-[10px] font-semibold bg-white/15 px-2.5 py-0.5 rounded-full border border-white/25 text-pink-100">
-                      ✓ {goal}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Profile Strength widget */}
@@ -533,308 +508,201 @@ export const DashboardOverview: React.FC = () => {
         )}
 
         {/* ============================================================= */}
-        {/* CAREER MATCHES (live jobs from HerCareer context)              */}
+        {/* CAREER MATCHES: RANKED STRICTLY BY EDUCATIONAL QUALIFICATION   */}
         {/* ============================================================= */}
-        {wantsCareer && matchedJobs.length > 0 && (
-          <div className="bg-white p-6 rounded-3xl border border-pink-100 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-pink-50 gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-pink-100 text-[#be185d] flex items-center justify-center">
-                  <Target className="w-4 h-4" />
+        {matchedJobs.length > 0 && (
+          <div className="bg-white p-6 rounded-3xl border border-pink-100 shadow-xs space-y-4 relative">
+            <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-pink-50 gap-3">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#be185d] to-[#4A154B] text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <GraduationCap className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-gray-900">
-                    Recommended Opportunities for Your Stack
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Filtered by:{' '}
-                    <span className="font-semibold text-purple-900">
-                      {techSkills.slice(0, 4).join(', ') || displayRole || 'Your Profile'}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-extrabold text-gray-900">
+                      Opportunities Matched to Your Educational Qualification
+                    </h3>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      {matchedJobs.filter((j: any) => j.matchPercentage >= 90).length} High Fit Roles
                     </span>
-                  </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-1">
+                    <span>Ranked for:</span>
+                    <span className="font-bold text-[#4A154B] bg-purple-100/70 px-2.5 py-0.5 rounded-lg border border-purple-200">
+                      🎓 {activeQualification}
+                    </span>
+                    {detectedQualification && activeQualification === detectedQualification && (
+                      <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-semibold">
+                        Auto-detected from Profile / Resume
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <Link to="/career" className="text-xs font-bold text-[#be185d] hover:underline flex items-center gap-1">
-                View All {matchedJobs.length} Matches <ChevronRight className="w-4 h-4" />
-              </Link>
+
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <Link to="/career" className="text-xs font-bold text-[#be185d] hover:underline flex items-center gap-1">
+                  View All ({matchedJobs.length}) <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              {matchedJobs.slice(0, 3).map((job: any) => (
-                <div
-                  key={job.id}
-                  className="bg-purple-50/30 hover:bg-purple-50/70 p-4 rounded-2xl border border-purple-100 hover:border-[#4A154B] transition-all flex flex-col justify-between gap-3 group"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                          {job.matchPercentage}% ATS Match
-                        </span>
-                        <h4 className="font-bold text-sm text-gray-900 mt-1.5 group-hover:text-[#4A154B] transition-colors leading-snug">
-                          {job.title}
-                        </h4>
-                        <p className="text-xs text-gray-500">{job.company} • {job.location}</p>
-                      </div>
-                      <span className="text-xl shrink-0">{job.logo}</span>
-                    </div>
-                    <p className="text-xs font-bold text-[#4A154B]">{job.salaryRange}</p>
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {(job.skills || []).slice(0, 3).map((sk: string) => (
-                        <span key={sk} className="text-[10px] font-medium bg-white px-2 py-0.5 rounded-md border border-purple-100 text-gray-700">
-                          {sk}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/career')}
-                    className="w-full flex items-center justify-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {matchedJobs.slice(0, 3).map((job: any) => {
+                const isDirectMatch = job.matchPercentage >= 95 || job.fit?.isMatch;
+                return (
+                  <div
+                    key={job.jobId || job.id}
+                    className="bg-purple-50/30 hover:bg-purple-50/70 p-4 rounded-2xl border border-purple-100 hover:border-[#4A154B] transition-all flex flex-col justify-between gap-3 group shadow-2xs hover:shadow-sm"
                   >
-                    Apply with ATS Resume <ArrowRight className="w-3.5 h-3.5 text-pink-300" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                                isDirectMatch
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : 'bg-purple-100 text-purple-800 border-purple-200'
+                              }`}
+                            >
+                              {job.matchPercentage}% {isDirectMatch ? 'Direct Qualification Match' : 'Transferable Fit'}
+                            </span>
+                            {job.workMode && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
+                                {job.workMode}
+                              </span>
+                            )}
+                          </div>
 
-        {/* ============================================================= */}
-        {/* BUSINESS / GRANTS (shown if user wants business)              */}
-        {/* ============================================================= */}
-        {wantsBusiness && (
-          <div className="bg-gradient-to-r from-amber-50/60 to-rose-50/60 p-6 rounded-3xl border border-amber-200 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-amber-200/60 gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                  <Rocket className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-gray-900">Startup Launchpad & Grants Readiness</h3>
-                  <p className="text-xs text-gray-600">Personalized capital schemes & business models for your journey</p>
-                </div>
-              </div>
-              <Link to="/fund" className="text-xs font-bold text-amber-900 hover:underline flex items-center gap-1">
-                Explore Grants <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="bg-white p-4 rounded-2xl border border-amber-100 space-y-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Government Initiative</span>
-                <h4 className="font-bold text-sm text-gray-900">Stand-Up India Scheme</h4>
-                <p className="text-gray-500">Bank loans between ₹10 Lakhs and ₹1 Crore for women entrepreneurs setting up greenfield ventures.</p>
-                <button onClick={() => navigate('/fund')} className="font-bold text-[#4A154B] hover:underline flex items-center gap-1 pt-1">
-                  Check Eligibility →
-                </button>
-              </div>
-              <div className="bg-white p-4 rounded-2xl border border-amber-100 space-y-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-[#be185d]">Micro-Grant</span>
-                <h4 className="font-bold text-sm text-gray-900">HerRise Catalyst Grant (₹1,50,000)</h4>
-                <p className="text-gray-500">Zero-equity seed grant for early-stage women founders launching products or consulting services.</p>
-                <button onClick={() => navigate('/fund')} className="font-bold text-[#4A154B] hover:underline flex items-center gap-1 pt-1">
-                  Apply for Grant →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+                          <h4 className="font-bold text-sm text-gray-900 mt-2 group-hover:text-[#4A154B] transition-colors leading-snug">
+                            {job.title}
+                          </h4>
+                          <p className="text-xs text-gray-500 font-medium">
+                            {job.company} • {job.location}
+                          </p>
 
-        {/* ============================================================= */}
-        {/* QUICK ACTIONS ROW (goal-ordered)                               */}
-        {/* ============================================================= */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              Quick Actions (Personalized for Your Goals)
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
-            {prioritizedActions.map((action, idx) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => navigate(action.path)}
-                  className={`bg-white hover:bg-purple-50/70 border p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 shadow-xs hover:shadow-sm transition-all group cursor-pointer ${
-                    action.preferred ? 'border-[#4A154B]/40 ring-1 ring-[#4A154B]/20' : 'border-purple-100'
-                  }`}
-                >
-                  <div className={`p-2 rounded-xl ${action.color} group-hover:scale-110 transition-transform`}>
-                    <Icon className="w-4 h-4" />
+                          {/* Required qualification requirement badge */}
+                          <div className="flex items-start gap-1.5 text-[11px] font-semibold text-purple-900 bg-purple-100/70 px-2.5 py-1.5 rounded-xl border border-purple-200 mt-2">
+                            <GraduationCap className="w-3.5 h-3.5 text-[#4A154B] shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="text-[10px] uppercase font-bold text-purple-700 block tracking-wider">Required Degree:</span>
+                              <span className="line-clamp-2 leading-tight text-gray-900">{job.qualification || 'Relevant Tertiary Qualification'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {job.logo ? (
+                          job.logo.startsWith('http') ? (
+                            <img
+                              src={job.logo}
+                              alt={job.company || 'Company'}
+                              className="w-11 h-11 rounded-xl object-cover shrink-0 border border-purple-100 bg-white shadow-2xs"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <span className="text-xl shrink-0">{job.logo}</span>
+                          )
+                        ) : (
+                          <div className="w-11 h-11 rounded-xl bg-purple-100 text-[#4A154B] flex items-center justify-center shrink-0">
+                            <Briefcase className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* AI Fit explanation if available */}
+                      {job.fit?.explanation && (
+                        <p className="text-[11px] text-gray-600 bg-white/80 p-2 rounded-lg border border-purple-50 italic leading-relaxed">
+                          💡 {job.fit.explanation}
+                        </p>
+                      )}
+
+                      <p className="text-xs font-bold text-[#4A154B]">{job.salaryRange}</p>
+
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {(job.skills || []).slice(0, 3).map((sk: string) => (
+                          <span key={sk} className="text-[10px] font-medium bg-white px-2 py-0.5 rounded-md border border-purple-100 text-gray-700">
+                            {sk}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => navigate('/career')}
+                      className="w-full flex items-center justify-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      Apply with ATS Resume <ArrowRight className="w-3.5 h-3.5 text-pink-300" />
+                    </button>
                   </div>
-                  <span className="text-xs font-bold text-gray-800 leading-tight">{action.label}</span>
-                  <span className="text-[10px] text-gray-400 leading-none">{action.sub}</span>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ============================================================= */}
-        {/* MAIN GRID: CASHFLOW + LEARNING + WORKSHOP + AI                 */}
+        {/* MAIN GRID: REAL CASHFLOW + UNIFIED AI COPILOT                  */}
         {/* ============================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left col (8) */}
-          <div className="lg:col-span-8 space-y-6">
-
-            {/* Financial trend chart */}
+          {/* Left col (7) - Real Cashflow Chart */}
+          <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-purple-50 gap-2">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Income vs. Expense Trend</h3>
-                  <p className="text-xs text-gray-500">Your 4-Month Cashflow Health</p>
+                  <h3 className="text-base font-bold text-gray-900">Live Cashflow Overview</h3>
+                  <p className="text-xs text-gray-500">Your Recorded Financial Activity</p>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-semibold">
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#4A154B]" />
-                    <span className="text-gray-700">Income</span>
+                    <span className="text-gray-700">Income (₹{totalIncome.toLocaleString()})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#fb7185]" />
-                    <span className="text-gray-700">Expenses</span>
+                    <span className="text-gray-700">Expenses (₹{totalExpenses.toLocaleString()})</span>
                   </div>
                   <Link to="/finance" className="text-xs text-[#4A154B] font-bold hover:underline">
-                    View Details →
+                    Manage →
                   </Link>
                 </div>
               </div>
-              <div className="h-64 mt-4 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dynamicMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3e8ff" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <Tooltip
-                      formatter={(val: any) => [`₹${Number(val).toLocaleString()}`, '']}
-                      contentStyle={{ borderRadius: '12px', border: '1px solid #e9d5ff', fontSize: '12px' }}
-                    />
-                    <Bar dataKey="income" fill="#4A154B" radius={[6, 6, 0, 0]} name="Income" />
-                    <Bar dataKey="expenses" fill="#fb7185" radius={[6, 6, 0, 0]} name="Expense" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
 
-            {/* Recommended course card (resume-driven) */}
-            <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-purple-50">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-[#4A154B]" />
-                  <h3 className="text-base font-bold text-gray-900">
-                    {hasResume ? 'Recommended for You' : 'Start Learning Today'}
-                  </h3>
+              {(totalIncome > 0 || totalExpenses > 0) ? (
+                <div className="h-64 mt-4 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={dynamicMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3e8ff" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                      <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
+                      <Tooltip
+                        formatter={(val: any) => [`₹${Number(val).toLocaleString()}`, '']}
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #e9d5ff', fontSize: '12px' }}
+                      />
+                      <Bar dataKey="income" fill="#4A154B" radius={[6, 6, 0, 0]} name="Income" />
+                      <Bar dataKey="expenses" fill="#fb7185" radius={[6, 6, 0, 0]} name="Expense" />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <Link to="/learn" className="text-xs text-[#4A154B] font-bold hover:underline">
-                  All Courses →
-                </Link>
-              </div>
-
-              <div className="mt-4 bg-gradient-to-r from-purple-50/60 to-pink-50/60 p-4 rounded-2xl border border-purple-100 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-[#4A154B] to-[#be185d] rounded-2xl flex items-center justify-center shrink-0">
-                  <BookOpen className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
-                    🇦🇺 Nationally Recognised
-                  </span>
-                  <h4 className="text-sm font-bold text-gray-900 mt-1.5 leading-snug">
-                    {topCourseLabel}
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {eduDeg
-                      ? `Tailored for your ${eduDeg} background — progress your Australian qualification level`
-                      : 'Browse 1000+ accredited Australian qualifications matched to your skills'}
+              ) : (
+                <div className="h-56 mt-4 w-full flex flex-col items-center justify-center text-center p-6 bg-purple-50/20 rounded-2xl border border-dashed border-purple-200">
+                  <Wallet className="w-8 h-8 text-purple-300 mb-2" />
+                  <p className="text-xs font-bold text-gray-700">No Transactions Recorded Yet</p>
+                  <p className="text-[11px] text-gray-500 max-w-sm mt-0.5">
+                    Log your real earnings and expenses in HerFinance to display your cashflow chart.
                   </p>
-                  {techSkills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {techSkills.slice(0, 3).map((sk, i) => (
-                        <span key={i} className="text-[10px] bg-white border border-purple-100 px-2 py-0.5 rounded-md text-purple-800 font-medium">
-                          {sk}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <Link to="/finance" className="mt-3 text-xs font-bold text-[#4A154B] bg-white px-3.5 py-1.5 rounded-xl border border-purple-200 hover:bg-purple-50">
+                    Add Transaction in HerFinance →
+                  </Link>
                 </div>
-                <button
-                  onClick={() => navigate('/learn')}
-                  className="w-full sm:w-auto bg-[#4A154B] text-white px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#350c36] transition-colors shrink-0 cursor-pointer"
-                >
-                  Explore Courses
-                </button>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Right col (4) */}
-          <div className="lg:col-span-4 space-y-6">
-
-            {/* Upcoming Workshop card — domain-matched */}
-            <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-purple-50">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-[#be185d]" />
-                  <h3 className="text-sm font-bold text-gray-900">Upcoming Workshop</h3>
-                </div>
-                <span className="text-[10px] font-bold bg-pink-100 text-[#be185d] px-2 py-0.5 rounded-full">
-                  {domain}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <h4 className="text-xs font-bold text-gray-900 leading-snug">{workshop.title}</h4>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Clock className="w-3.5 h-3.5 text-purple-700" />
-                  <span>{workshop.date} • {workshop.time}</span>
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4A154B] to-[#be185d] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {workshop.mentor.charAt(0)}
-                  </div>
-                  <div className="text-[11px]">
-                    <span className="font-semibold text-gray-800">{workshop.mentor}</span>
-                    <span className="text-gray-400 block">{workshop.role}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => navigate('/network')}
-                  className="w-full mt-2 bg-purple-50 hover:bg-[#4A154B] hover:text-white text-[#4A154B] font-bold text-xs py-2 rounded-xl transition-all cursor-pointer"
-                >
-                  Join / View Details
-                </button>
-              </div>
-            </div>
-
-            {/* AI Assistant quick launcher — resume-contextual prompts */}
-            <div className="bg-gradient-to-br from-[#4A154B] to-[#701a75] text-white p-6 rounded-3xl shadow-md space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-pink-300" />
-                <h4 className="font-bold text-sm">Need Fast Advice?</h4>
-              </div>
-              <p className="text-xs text-purple-100 leading-relaxed">
-                {hasResume
-                  ? `HerRise AI analyzed your resume. Ask anything about your ${displayRole || 'career'} path, skills, or qualifications.`
-                  : 'HerRise AI copilot can analyze your resume, optimize bullet points, or review your cashflow health.'}
-              </p>
-              <div className="space-y-1.5 pt-1">
-                {aiPrompts.map((prompt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => navigate('/ai-assistant')}
-                    className="w-full text-left text-[11px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-purple-100 cursor-pointer transition-colors"
-                    title={prompt}
-                  >
-                    💬 {prompt.length > 55 ? prompt.slice(0, 55) + '…' : prompt}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate('/ai-assistant')}
-                className="w-full bg-white text-[#4A154B] font-bold text-xs py-2.5 rounded-xl hover:bg-pink-50 transition-colors mt-2 cursor-pointer"
-              >
-                Open Unified AI Copilot →
-              </button>
-            </div>
-
+          {/* Right col (5) - Verified Credentials & Qualifications */}
+          <div className="lg:col-span-5 space-y-6">
             {/* Education / Certifications summary (resume-driven) */}
             {(education.length > 0 || certifications.length > 0) && (
               <div className="bg-white p-5 rounded-3xl border border-purple-100 shadow-xs space-y-3">

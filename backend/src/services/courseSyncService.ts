@@ -2,11 +2,23 @@ import { CourseModel, ICourseDocument } from '../models/CourseModel.js';
 
 // Curated high-demand Australian national qualifications across high-growth domains
 export const AUSTRALIAN_QUALIFICATIONS_SEED = [
-  // IT & Technology
+  // IT & Technology (Computer Science, Software, Cloud, Cyber, AI)
+  { code: 'ICT60220', category: 'Information Technology', level: 'Advanced Diploma', duration: '18-24 Months' },
+  { code: 'ICT60120', category: 'Information Technology', level: 'Advanced Diploma', duration: '18-24 Months' },
   { code: 'ICT50220', category: 'Information Technology', level: 'Diploma', duration: '12-18 Months' },
+  { code: 'ICT50420', category: 'Information Technology', level: 'Diploma', duration: '12-18 Months' },
+  { code: 'ICT50320', category: 'Information Technology', level: 'Diploma', duration: '12-18 Months' },
   { code: 'ICT40120', category: 'Information Technology', level: 'Certificate IV', duration: '12 Months' },
   { code: 'ICT30120', category: 'Information Technology', level: 'Certificate III', duration: '6-12 Months' },
-  { code: 'ICT60220', category: 'Information Technology', level: 'Advanced Diploma', duration: '18-24 Months' },
+  // Engineering & Technical Systems
+  { code: 'MEM60122', category: 'Engineering & Trades', level: 'Advanced Diploma', duration: '18-24 Months' },
+  { code: 'UEE50520', category: 'Engineering & Trades', level: 'Diploma', duration: '18-24 Months' },
+  // Business, Leadership & Management
+  { code: 'BSB60420', category: 'Business & Management', level: 'Advanced Diploma', duration: '18 Months' },
+  { code: 'BSB50420', category: 'Business & Management', level: 'Diploma', duration: '12 Months' },
+  { code: 'BSB40520', category: 'Business & Management', level: 'Certificate IV', duration: '9-12 Months' },
+  { code: 'BSB50120', category: 'Business & Management', level: 'Diploma', duration: '12 Months' },
+  { code: 'BSB40120', category: 'Business & Management', level: 'Certificate IV', duration: '9-12 Months' },
   // Community & Healthcare
   { code: 'CHC33021', category: 'Community & Health', level: 'Certificate III', duration: '6-12 Months' },
   { code: 'CHC52021', category: 'Community & Health', level: 'Diploma', duration: '18-24 Months' },
@@ -14,15 +26,12 @@ export const AUSTRALIAN_QUALIFICATIONS_SEED = [
   { code: 'CHC50121', category: 'Community & Health', level: 'Diploma', duration: '18-24 Months' },
   { code: 'HLT54121', category: 'Community & Health', level: 'Diploma', duration: '18-24 Months' },
   { code: 'HLT43021', category: 'Community & Health', level: 'Certificate IV', duration: '12 Months' },
-  // Business, Leadership & Management
-  { code: 'BSB50420', category: 'Business & Management', level: 'Diploma', duration: '12 Months' },
-  { code: 'BSB40520', category: 'Business & Management', level: 'Certificate IV', duration: '9-12 Months' },
-  { code: 'BSB50120', category: 'Business & Management', level: 'Diploma', duration: '12 Months' },
-  { code: 'BSB40120', category: 'Business & Management', level: 'Certificate IV', duration: '9-12 Months' },
   // Finance & Accounting
+  { code: 'FNS60222', category: 'Finance & Accounting', level: 'Advanced Diploma', duration: '18 Months' },
   { code: 'FNS40222', category: 'Finance & Accounting', level: 'Certificate IV', duration: '12 Months' },
   { code: 'FNS50222', category: 'Finance & Accounting', level: 'Diploma', duration: '12-18 Months' },
   // Creative Arts & Design
+  { code: 'CUA60320', category: 'Creative Arts & Design', level: 'Advanced Diploma', duration: '18 Months' },
   { code: 'CUA50720', category: 'Creative Arts & Design', level: 'Diploma', duration: '12-18 Months' },
   { code: 'CUA40720', category: 'Creative Arts & Design', level: 'Certificate IV', duration: '12 Months' }
 ];
@@ -168,10 +177,16 @@ export async function syncAustralianQualifications(targetCodes?: string[]): Prom
 // Fallback metadata helpers to guarantee 100% data fidelity even if TGA endpoint encounters rate limits
 function getFallbackTitle(code: string): string {
   const map: Record<string, string> = {
+    ICT60220: 'Advanced Diploma of Information Technology',
+    ICT60120: 'Advanced Diploma of Information Technology (Cyber Security)',
     ICT50220: 'Diploma of Information Technology',
+    ICT50420: 'Diploma of Information Technology (Data Science)',
+    ICT50320: 'Diploma of Information Technology (Cloud Computing)',
     ICT40120: 'Certificate IV in Information Technology',
     ICT30120: 'Certificate III in Information Technology',
-    ICT60220: 'Advanced Diploma of Information Technology',
+    MEM60122: 'Advanced Diploma of Engineering (Automation)',
+    UEE50520: 'Diploma of Electronics and Communications Engineering',
+    BSB60420: 'Advanced Diploma of Program Management',
     BSB50420: 'Diploma of Leadership and Management',
     BSB40520: 'Certificate IV in Leadership and Management',
     BSB50120: 'Diploma of Business',
@@ -182,8 +197,10 @@ function getFallbackTitle(code: string): string {
     CHC50121: 'Diploma of Early Childhood Education and Care',
     HLT54121: 'Diploma of Nursing',
     HLT43021: 'Certificate IV in Allied Health Assistance',
+    FNS60222: 'Advanced Diploma of Accounting',
     FNS40222: 'Certificate IV in Accounting and Bookkeeping',
     FNS50222: 'Diploma of Accounting',
+    CUA60320: 'Advanced Diploma of Graphic Design',
     CUA50720: 'Diploma of Graphic Design',
     CUA40720: 'Certificate IV in Design'
   };

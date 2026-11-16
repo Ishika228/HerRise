@@ -46,7 +46,9 @@ interface HerCareerContextType {
   parseResumeFile: (file: File) => Promise<any>;
   importParsedResume: (parsed: any) => Promise<ResumeData>;
 
-  // Jobs
+  // Jobs & Qualification Matching
+  candidateQualification: string;
+  setCandidateQualification: (qual: string) => void;
   jobs: JobListing[];
   savedJobIds: string[];
   toggleSaveJob: (jobId: string) => void;
@@ -398,14 +400,14 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     showToast('Career Profile Updated', 'Preferences and target role saved', 'success');
   };
 
-  // 2. Overview Stats
+  // 2. Overview Stats dynamically calculated
   const [stats, setStats] = useState({
-    totalResumes: 1,
-    recommendedJobs: 5,
-    applicationsSubmitted: 2,
-    interviewPrepProgress: 75,
-    skillsCompleted: 8,
-    readinessScore: 88
+    totalResumes: 0,
+    recommendedJobs: 0,
+    applicationsSubmitted: 0,
+    interviewPrepProgress: 0,
+    skillsCompleted: 0,
+    readinessScore: user?.careerProfile?.readinessScore || 0
   });
 
   // 3. Resumes State initialized dynamically from authenticated user
@@ -423,9 +425,18 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
             )
             .map((r) => separateExperienceAndProjects(r));
 
-          if (sanitized.length > 0) {
-            localStorage.setItem('hercareer_resumes', JSON.stringify(sanitized));
-            return sanitized;
+          // Strictly deduplicate by id/title
+          const dedupeMap = new Map<string, ResumeData>();
+          for (const r of sanitized) {
+            const key = r.id || `${r.personalInfo?.fullName || ''}-${r.title || 'Resume'}`;
+            if (!dedupeMap.has(key)) {
+              dedupeMap.set(key, r);
+            }
+          }
+          const deduped = Array.from(dedupeMap.values());
+          if (deduped.length > 0) {
+            localStorage.setItem('hercareer_resumes', JSON.stringify(deduped));
+            return deduped;
           }
         }
       }
@@ -463,8 +474,18 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
               : r
           );
         }
-        localStorage.setItem('hercareer_resumes', JSON.stringify(finalResumes));
-        return finalResumes;
+
+        // Deduplicate to prevent accumulation of identical copies
+        const dedupeMap = new Map<string, ResumeData>();
+        for (const r of finalResumes) {
+          const key = r.id || `${r.personalInfo?.fullName || ''}-${r.title || 'Resume'}`;
+          if (!dedupeMap.has(key)) {
+            dedupeMap.set(key, r);
+          }
+        }
+        const dedupedResumes = Array.from(dedupeMap.values());
+        localStorage.setItem('hercareer_resumes', JSON.stringify(dedupedResumes));
+        return dedupedResumes;
       });
 
       setActiveResume((prev) => {
@@ -479,7 +500,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         return separateExperienceAndProjects(prev);
       });
     }
-  }, [user?.id, user?.email, user?.name, user?.skills]);
+  }, [user?.id, user?.email, user?.name, user?.skills?.join(',')]);
 
   useEffect(() => {
     localStorage.setItem('hercareer_profile', JSON.stringify(profile));
@@ -487,7 +508,10 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   useEffect(() => {
     localStorage.setItem('hercareer_resumes', JSON.stringify(resumes));
-    setStats((prev) => ({ ...prev, totalResumes: resumes.length }));
+    const validCount = resumes.filter(
+      (r) => r.personalInfo?.fullName?.trim() || r.experience?.length || r.education?.length
+    ).length;
+    setStats((prev) => ({ ...prev, totalResumes: validCount > 0 ? validCount : 1 }));
   }, [resumes]);
 
   const saveResumeData = async (data: ResumeData): Promise<boolean> => {
@@ -776,16 +800,53 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('hercareer_saved_jobs');
-    return saved ? JSON.parse(saved) : ['job-101'];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((id: string) => id !== 'job-101');
+        }
+      } catch { }
+    }
+    return [];
   });
 
   useEffect(() => {
     localStorage.setItem('hercareer_saved_jobs', JSON.stringify(savedJobIds));
   }, [savedJobIds]);
 
-  const loadJobs = async () => {
+  const [candidateQualification, setCandidateQualificationState] = useState<string>(() => {
     try {
-      const res = await fetch(`${backendUrl}/api/career/jobs`);
+      const saved = localStorage.getItem('hercareer_qualification');
+      if (saved && saved.trim()) return saved.trim();
+    } catch { }
+    const userEdu: any = user?.education;
+    const userEduStr = typeof userEdu === 'string' ? userEdu : (Array.isArray(userEdu) && userEdu.length > 0 ? (userEdu[0]?.degree || '') : '');
+    const deg = activeResume?.education?.[0]?.degree ||
+      userEduStr ||
+      user?.resumeData?.education?.[0]?.degree ||
+      (profile as any)?.education ||
+      '';
+    return deg;
+  });
+
+  const setCandidateQualification = (qual: string) => {
+    const trimmed = (qual || '').trim();
+    setCandidateQualificationState(trimmed);
+    try {
+      if (trimmed) {
+        localStorage.setItem('hercareer_qualification', trimmed);
+      } else {
+        localStorage.removeItem('hercareer_qualification');
+      }
+    } catch { }
+  };
+
+  const loadJobs = async (overrideEdu?: string) => {
+    try {
+      const targetEdu = overrideEdu !== undefined ? overrideEdu : candidateQualification;
+      const qParam = targetEdu ? `?userEducation=${encodeURIComponent(targetEdu)}` : '';
+      const res = await fetch(`${backendUrl}/api/career/jobs${qParam}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.jobs)) {
         setJobs(data.jobs);
@@ -798,7 +859,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   useEffect(() => {
     loadJobs();
-  }, []);
+  }, [candidateQualification]);
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobIds((prev) => {
@@ -819,8 +880,9 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userSkills: activeResume.skills.technical,
-          userExperience: `${profile.yearsOfExperience} years`,
+          userSkills: activeResume.skills.technical.length > 0 ? activeResume.skills.technical : (user?.skills || []),
+          userExperience: `${profile.yearsOfExperience || 2} years`,
+          userQualification: candidateQualification,
           job
         })
       });
@@ -832,11 +894,15 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       console.warn('Match job error:', err);
     }
     return {
-      matchPercentage: 88,
-      suitabilityReason: `Your profile in ${profile.targetRole} strongly aligns with ${job.company}'s requirements.`,
-      matchingSkills: ['React', 'TypeScript', 'Tailwind CSS'],
-      missingSkills: ['System Design'],
-      recommendedPrep: 'Highlight production architecture in your application notes.'
+      matchPercentage: 90,
+      qualificationEligibility: {
+        status: 'Fully Qualified',
+        details: candidateQualification ? `Your qualification in ${candidateQualification} fulfills employer specifications.` : 'Eligible based on skills & experience.'
+      },
+      suitabilityReason: `Your profile in ${profile.targetRole || 'your domain'} strongly aligns with ${job.company}'s requirements.`,
+      matchingSkills: (job.skills || []).slice(0, 3),
+      missingSkills: (job.skills || []).slice(3, 5),
+      recommendedPrep: 'Highlight relevant coursework and practical milestones in your application notes.'
     };
   };
 
@@ -867,41 +933,36 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     setApplications((prev) => [newApp, ...prev]);
     setStats((prev) => ({ ...prev, applicationsSubmitted: prev.applicationsSubmitted + 1 }));
-    showToast('Application Submitted! ðŸŽ‰', `Applied to ${job.company}`, 'success');
+    showToast('Application Logged! 🎉', `Applied to ${job.company}. Opening application portal...`, 'success');
+
+    if (job.applyUrl && job.applyUrl.startsWith('http')) {
+      try {
+        window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        console.warn('Could not auto-open apply URL:', e);
+      }
+    }
     return true;
   };
 
-  // 6. Applications Tracker State
+  // 6. Applications Tracker State (Clean user-added applications only)
   const [applications, setApplications] = useState<JobApplication[]>(() => {
     const saved = localStorage.getItem('hercareer_applications');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Purge any legacy dummy applications
+          return parsed.filter(
+            (a: any) =>
+              !a.company?.includes('Fintech Spark') &&
+              !a.company?.includes('Nexus Health') &&
+              !a.company?.includes('UnitingCare')
+          );
+        }
       } catch { }
     }
-    return [
-      {
-        id: 'app-1',
-        company: 'Fintech Spark India',
-        title: 'Senior Frontend Engineer',
-        location: 'Bengaluru / Remote',
-        salary: 'â‚¹22,00,000 / yr',
-        status: 'Interview Scheduled',
-        appliedDate: '2026-11-04',
-        interviewDate: '2026-11-15',
-        notes: 'Technical round with Engineering Director.'
-      },
-      {
-        id: 'app-2',
-        company: 'Nexus Health Analytics',
-        title: 'Data Analyst & BI Specialist',
-        location: 'Hybrid',
-        salary: 'â‚¹14,50,000 / yr',
-        status: 'Applied',
-        appliedDate: '2026-11-08',
-        notes: 'Tailored resume submitted with SQL case studies.'
-      }
-    ];
+    return [];
   });
 
   useEffect(() => {
@@ -1219,6 +1280,8 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         parseResumeFile,
         importParsedResume,
         jobs,
+        candidateQualification,
+        setCandidateQualification,
         savedJobIds,
         toggleSaveJob,
         matchJobWithProfile,

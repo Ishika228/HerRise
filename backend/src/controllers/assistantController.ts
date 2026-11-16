@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { config } from '../config/env.js';
 import { callGroqChat, GroqChatMessage } from '../services/groqService.js';
-import { generateSmartAssistantResponse } from '../services/aiKnowledgeEngine.js';
+import { generateSmartAssistantResponse, detectCrossDiscipline } from '../services/aiKnowledgeEngine.js';
 
 export const chatWithAssistant = async (req: Request, res: Response) => {
   try {
@@ -13,6 +13,29 @@ export const chatWithAssistant = async (req: Request, res: Response) => {
         success: false,
         error: 'Query or prompt is required.'
       });
+    }
+
+    // -----------------------------------------------------------------------
+    // CROSS-DISCIPLINE GUARD — runs BEFORE the LLM.
+    // If the user is in a specific specialist tab (not 'general') and their
+    // question belongs to a DIFFERENT specialist, return the referral
+    // immediately without ever calling the LLM.
+    // -----------------------------------------------------------------------
+    const activeTopic = (topic || 'general').toLowerCase();
+    if (activeTopic !== 'general') {
+      const crossMatch = detectCrossDiscipline(userQuery, activeTopic);
+      if (crossMatch) {
+        return res.status(200).json({
+          success: true,
+          source: 'knowledge-engine',
+          data: {
+            response: crossMatch.response,
+            title: crossMatch.title,
+            suggestedActions: crossMatch.suggestedActions,
+            topic
+          }
+        });
+      }
     }
 
     // Try calling Groq LLM if API Key is configured
@@ -29,15 +52,21 @@ export const chatWithAssistant = async (req: Request, res: Response) => {
           network: 'Act as a community and mentorship coordinator helping the user connect with experienced women leaders.'
         };
 
-        const systemContent = `You are the Unified HerRise AI Assistant, an elite, empowering, empathetic, and expert copilot for women professionals, entrepreneurs, students, and career relaunchers.
+        const systemContent = `You are the Unified HerRise AI Assistant, an elite, empowering, empathetic, and executive copilot for women professionals, entrepreneurs, students, and career relaunchers.
 Discipline Focus: ${topic.toUpperCase()} (${topicInstructions[topic] || topicInstructions.general})
 User Context: ${userProfile ? `Candidate: ${userProfile.name || 'Member'}, Target Role: ${userProfile.targetRole || 'Growth Professional'}` : 'HerRise Member'}
 
 Tone & Formatting Guidelines:
-- Provide structured, practical, inspiring, and actionable guidance with Markdown formatting (headers, bolding, numbered lists).
+- Provide structured, practical, inspiring, and executive guidance with clean Markdown formatting (headers '### ', bolding, bullet points, numbered lists).
 - If the question involves numbers (budgeting, pricing, margins), provide clear formulas and concrete examples.
 - Include actionable next steps referencing HerRise tools (HerCareer, HerFinance, HerBusiness, HerFund, HerMarket, HerLearn, HerNetwork) where relevant.
-- Keep responses concise yet deeply informative (aim for 250-450 words max).`;
+- DISCIPLINE BOUNDARY & SPECIALIST REFERRAL RULE:
+  The user is currently consulting with the ${topic.toUpperCase()} advisor (${topicInstructions[topic] || topicInstructions.general}).
+  If topic is NOT 'general' and the user asks a question that belongs to another discipline (e.g., asking about ATS resumes, job interviews, or career breaks while in FINANCE, or asking about mutual funds/SIPs while in CAREER, or asking about government loan schemes while in FINANCE):
+  1. Politely state that they have currently selected the ${topic.toUpperCase()} specialist, but their query is specifically handled by our dedicated specialist (HerCareer Coach, HerFinance Advisor, HerBusiness Strategist, HerFund Guide, or HerMarket Optimizer).
+  2. Instruct them politely to switch to that specialist's tab in the Focus Discipline bar above (or open that module) to get dedicated, domain-specific tools and guidance.
+  3. Do NOT provide off-topic or unsolicited advice from your own discipline. Keep the reassignment referral polite, concise, and professional.
+- Under NO circumstances mention backend vendor or model names (such as Groq, Gemini, OpenAI, LPU, or internal APIs). You are HerRise AI.`;
 
         const messages: GroqChatMessage[] = [{ role: 'system', content: systemContent }];
 

@@ -128,8 +128,34 @@ npm start
 | **HerBusiness** | `/api/business` | Automated business plan & projection generator |
 | **HerFund** | `/api/fund` | Subsidies, micro-grants, and women SIDBI eligibility check |
 | **HerMarket** | `/api/market` | Product marketplace catalog & seller dashboard |
+| **Digital Services** | `/api/digital-services` | Website packages, digital services, customer enquiries and admin quotations |
 | **HerLearn** | `/api/learn` | Courses, enrollments, and lessons |
 | **HerNetwork** | `/api/network` | Vetted mentors and 1-on-1 booking |
+
+---
+
+## HerMarket Digital Services
+
+The digital agency marketplace is integrated into the existing HerMarket module; it does not use a separate frontend or port.
+
+- Open `http://localhost:5173/market` and choose **Grow Your Business Online**.
+- Admin dashboard: `http://localhost:5173/market/admin`.
+- Website package and service defaults are inserted into MongoDB only when their catalog collections are empty. Admin edits are persisted in MongoDB.
+- Customer enquiries are validated and saved to MongoDB with a unique enquiry ID. If MongoDB is unavailable, the API reports an error instead of showing a false confirmation.
+- Quotations can be edited in the admin dashboard, saved against an enquiry, downloaded as a PDF, and prepared for email sharing. The email action opens the administrator's email app; attach the downloaded PDF before sending.
+- No payment processing is implemented. Dashboard estimates are not collected-payment records.
+- Domain, hosting, paid plugins and other third-party expenses are excluded unless separately listed in an approved quotation.
+
+Set these variables in `backend/.env` (see `backend/.env.example`) and restart the backend:
+
+```env
+DIGITAL_SERVICES_ADMIN_TOKEN=use-a-long-random-secret
+DIGITAL_SERVICES_WHATSAPP=919876543210
+```
+
+The admin token is a shared backend secret, submitted only when signing in and held in browser session storage. Never put it in a `VITE_*` variable or commit it. The WhatsApp number is optional and should use international format with digits only. Package and service prices, features, visibility, badges, billing periods and service imagery are managed from `/market/admin`.
+
+Run the frontend on its existing port (`5173`) with `npm run dev:frontend` and the API on `5000` with `npm run dev:backend`. Build and validate both with `npm run build`.
 
 ---
 

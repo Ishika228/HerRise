@@ -38,23 +38,12 @@ export const HerFinanceLayout: React.FC<HerFinanceLayoutProps> = ({
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1.5 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-bold text-emerald-200">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                <span>AI Financial Autopilot • Autonomous Mode Active</span>
-              </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                HerFinance • AI Automated Finance
+                HerFinance • Financial Hub
               </h1>
               <p className="text-xs sm:text-sm text-purple-100 leading-relaxed">
-                Zero manual bookkeeping. Just tell the AI what you earned, spent, or want to save — AI auto-categorizes, manages your 50/30/20 budget, and provides live guidance.
+                Log what you earned, spent, or saved — track your income, expenses, and budget with automated intelligence.
               </p>
-            </div>
-
-            {/* AI Status Badge */}
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-emerald-200 self-start md:self-center shrink-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <Bot className="w-4 h-4 text-emerald-300" />
-              <span>Groq AI Online</span>
             </div>
           </div>
         </div>

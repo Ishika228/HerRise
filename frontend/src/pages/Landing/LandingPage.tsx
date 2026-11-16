@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
   ArrowRight,
@@ -29,7 +29,14 @@ import { successStoriesData } from '../../data/mockData/networkData';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const [openFaq, setOpenFaq] = useState<string | null>('faq-1');
+
+  useEffect(() => {
+    if (hash) {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [hash]);
 
   const modulesList = [
     {

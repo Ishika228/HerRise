@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { store } from '../data/mockStore.js';
 import { callGroqChat } from '../services/groqService.js';
+import { fetchAustralianJobs, fallbackAustralianJobs } from '../services/jobDataService.js';
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import {
@@ -14,141 +15,24 @@ import {
   CareerBreakProfileModel
 } from '../models/careerModels.js';
 
-// Default realistic sample job listings with verified status & returnee friendly flags
-export const defaultJobListings = [
-  {
-    jobId: 'job-101',
-    title: 'Senior Frontend Engineer (React & TypeScript)',
-    company: 'Fintech Spark India',
-    logo: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=120&auto=format&fit=crop&q=60',
-    location: 'Bengaluru / Remote',
-    workMode: 'Remote' as const,
-    employmentType: 'Full-time' as const,
-    experienceLevel: 'Mid-Senior (3-6 yrs)',
-    salaryRange: '₹18,00,000 - ₹26,00,000 / yr',
-    skills: ['React', 'TypeScript', 'Tailwind CSS', 'Redux', 'REST APIs'],
-    description: 'Lead consumer financial health experiences for next-generation women investors. Collaborative, flexible environment.',
-    requirements: ['3+ years in modern React & TypeScript', 'Experience building design systems', 'Passion for inclusive fintech products'],
-    benefits: ['100% Remote flexibility', 'Wellness allowance', 'Parental leave support', 'Stock options'],
-    returneeFriendly: true,
-    verified: true,
-    applyUrl: 'https://example.com/careers/fintech-spark/fe-lead',
-    postedDate: '2026-11-10'
-  },
-  {
-    jobId: 'job-102',
-    title: 'Data Analyst & BI Specialist',
-    company: 'Nexus Health Analytics',
-    logo: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=120&auto=format&fit=crop&q=60',
-    location: 'Hyderabad / Hybrid',
-    workMode: 'Hybrid' as const,
-    employmentType: 'Full-time' as const,
-    experienceLevel: 'Mid-Level (2-5 yrs)',
-    salaryRange: '₹12,00,000 - ₹17,00,000 / yr',
-    skills: ['SQL', 'Python', 'Power BI', 'Data Modeling', 'Excel'],
-    description: 'Transform complex healthcare insights into strategic executive dashboards and predictive visual narratives.',
-    requirements: ['Strong SQL querying capabilities', 'Hands-on experience in Power BI or Tableau', 'Good analytical communication'],
-    benefits: ['Hybrid 2 days/week', 'Learning reimbursement', 'Mentorship circle'],
-    returneeFriendly: true,
-    verified: true,
-    applyUrl: 'https://example.com/careers/nexus-health/bi-analyst',
-    postedDate: '2026-11-11'
-  },
-  {
-    jobId: 'job-103',
-    title: 'Product Manager – Inclusive Commerce',
-    company: 'HerCraft Marketplace',
-    logo: 'https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=120&auto=format&fit=crop&q=60',
-    location: 'Mumbai / Remote',
-    workMode: 'Remote' as const,
-    employmentType: 'Full-time' as const,
-    experienceLevel: 'Lead (4-8 yrs)',
-    salaryRange: '₹22,00,000 - ₹32,00,000 / yr',
-    skills: ['Product Strategy', 'Agile / Scrum', 'User Research', 'Roadmapping', 'Metrics'],
-    description: 'Drive seller platform tools supporting thousands of women-led micro-enterprises and artisan cooperatives across India.',
-    requirements: ['Proven B2C or marketplace product experience', 'Strong user empathy and structured backlog ownership'],
-    benefits: ['Equity grant', 'Flexible work hours', 'Leadership coaching for women'],
-    returneeFriendly: true,
-    verified: true,
-    applyUrl: 'https://example.com/careers/hercraft/pm',
-    postedDate: '2026-11-09'
-  },
-  {
-    jobId: 'job-104',
-    title: 'AI Solutions Engineer',
-    company: 'CognitiveWave AI Labs',
-    logo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=60',
-    location: 'Pune / Onsite',
-    workMode: 'Onsite' as const,
-    employmentType: 'Full-time' as const,
-    experienceLevel: 'Senior (3-7 yrs)',
-    salaryRange: '₹25,00,000 - ₹38,00,000 / yr',
-    skills: ['Python', 'LangChain', 'FastAPI', 'Vector DBs', 'Groq / LLMs'],
-    description: 'Architect generative agent pipelines, RAG implementations, and autonomous enterprise copilot tooling.',
-    requirements: ['Deep knowledge of LLM integrations and prompting', 'Production Python API deployment experience'],
-    benefits: ['Top compensation', 'Annual tech conference sponsorship', 'Health cover'],
-    returneeFriendly: false,
-    verified: true,
-    applyUrl: 'https://example.com/careers/cognitivewave/ai-eng',
-    postedDate: '2026-11-08'
-  },
-  {
-    jobId: 'job-105',
-    title: 'Digital Marketing & Community Lead (Returnee Program)',
-    company: 'Bloom EdTech Collective',
-    logo: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=120&auto=format&fit=crop&q=60',
-    location: 'Bengaluru / Remote',
-    workMode: 'Remote' as const,
-    employmentType: 'Part-time' as const,
-    experienceLevel: 'Returnship (1-6 yr break welcomed)',
-    salaryRange: '₹8,00,000 - ₹12,00,000 / yr',
-    skills: ['Content Marketing', 'Social Media', 'Community Management', 'Canva', 'Email Marketing'],
-    description: 'Specially designed returnship role with guided onboarding, flexible schedules, and dedicated mentorship.',
-    requirements: ['Prior experience in communications or marketing', 'Comfortable working 20-30 hours per week flexibly'],
-    benefits: ['Structured 6-month ramp-up', 'Dedicated female mentor', 'High conversion to full-time'],
-    returneeFriendly: true,
-    verified: true,
-    applyUrl: 'https://example.com/careers/bloom/returnee-lead',
-    postedDate: '2026-11-12'
-  }
-];
+// Australian verified jobs (AUD) powered by live job data service
+export const defaultJobListings = fallbackAustralianJobs;
 
-// In-memory fallback stores for high resilience
+// In-memory fallback stores (clean initial state, populated only by database/user actions)
 let memoryResumes: any[] = [];
-let memoryApplications: any[] = [
-  {
-    id: 'app-1',
-    company: 'Fintech Spark India',
-    title: 'Senior Frontend Engineer',
-    location: 'Bengaluru / Remote',
-    salary: '₹22,00,000 / yr',
-    status: 'Interview Scheduled',
-    appliedDate: '2026-11-04',
-    interviewDate: '2026-11-15',
-    notes: 'Technical round scheduled with engineering director. Prepared system design notes.'
-  },
-  {
-    id: 'app-2',
-    company: 'Nexus Health Analytics',
-    title: 'Data Analyst & BI Specialist',
-    location: 'Hybrid',
-    salary: '₹14,50,000 / yr',
-    status: 'Applied',
-    appliedDate: '2026-11-08',
-    notes: 'Submitted resume customized for Power BI and SQL requirements.'
-  }
-];
+let memoryApplications: any[] = [];
 
 // ==========================================
 // 1. Overview & Dashboard Endpoint
 // ==========================================
 export const getCareerOverview = async (req: Request, res: Response) => {
   try {
-    const resumesCount = memoryResumes.length || 1;
-    const recommendedJobsCount = defaultJobListings.length;
+    const resumesCount = memoryResumes.length;
+    const auJobs = await fetchAustralianJobs();
+    const recommendedJobsCount = auJobs.length;
     const applicationsCount = memoryApplications.length;
-    const interviewSessionsCount = 3;
-    const skillsCompletedCount = 8;
+    const interviewSessionsCount = 0;
+    const skillsCompletedCount = 0;
 
     return res.status(200).json({
       success: true,
@@ -156,27 +40,14 @@ export const getCareerOverview = async (req: Request, res: Response) => {
         totalResumes: resumesCount,
         recommendedJobs: recommendedJobsCount,
         applicationsSubmitted: applicationsCount,
-        interviewPrepProgress: 75,
+        interviewPrepProgress: 0,
         skillsCompleted: skillsCompletedCount,
-        readinessScore: 88
+        readinessScore: 0
       },
-      recentJobs: defaultJobListings.slice(0, 3),
+      recentJobs: auJobs.slice(0, 3),
       recentApplications: memoryApplications.slice(0, 3),
-      upcomingInterviews: [
-        {
-          id: 'int-1',
-          company: 'Fintech Spark India',
-          role: 'Senior Frontend Engineer',
-          type: 'Technical Interview',
-          date: '2026-11-15T14:00:00Z',
-          interviewer: 'Priya Raman (Dir. of Engineering)'
-        }
-      ],
-      aiInsights: [
-        'Your profile matches 92% of the requirements for Senior Frontend Engineer roles.',
-        'Adding 1 quantifiable metric to your Swiggy project bullet points can raise your estimated resume score to 94.',
-        'High demand this month for React + TypeScript with state management in Bengaluru.'
-      ]
+      upcomingInterviews: [],
+      aiInsights: []
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
@@ -460,35 +331,132 @@ Output valid JSON format:
 
 // ==========================================
 // 4. Job Search & AI Matching
+function getQualificationFitScore(userEdu: string, job: any): number {
+  if (!userEdu) return 0;
+  const edu = userEdu.toLowerCase();
+  const q = (job.qualification || '').toLowerCase();
+  const cat = (job.qualificationCategory || '').toLowerCase();
+  const title = (job.title || '').toLowerCase();
+
+  // Tech / Software / CS
+  if (/(tech|computer|software|developer|engineer|cs\b|it\b|bca|mca|programming|frontend|backend|cloud)/.test(edu)) {
+    if (cat.includes('technology') || cat.includes('software')) return 100;
+    if (cat.includes('data')) return 85;
+    if (cat.includes('design')) return 75;
+  }
+  // Nursing / Healthcare
+  if (/(nurse|nursing|health|medical|clinical|ahpra|doctor|hospital|biotech)/.test(edu)) {
+    if (cat.includes('healthcare') || cat.includes('nursing') || cat.includes('science')) return 100;
+    if (cat.includes('education')) return 70;
+  }
+  // Finance / Commerce / Accounting
+  if (/(commerce|b\.?com|accounting|accountancy|finance|cpa|ca\b|cma|banking|tax|bookkeep)/.test(edu)) {
+    if (cat.includes('finance') || cat.includes('accounting')) return 100;
+    if (cat.includes('data') || cat.includes('compliance')) return 85;
+    if (cat.includes('retail')) return 75;
+  }
+  // Data / Analytics / Math / Statistics
+  if (/(data|analytics|statistics|math|bi\b|machine learning)/.test(edu)) {
+    if (cat.includes('data') || cat.includes('analytics')) return 100;
+    if (cat.includes('technology') || cat.includes('finance')) return 85;
+  }
+  // Marketing / Media / Communications
+  if (/(marketing|communication|media|journalism|pr\b|content|social)/.test(edu)) {
+    if (cat.includes('marketing') || cat.includes('media')) return 100;
+    if (cat.includes('business') || cat.includes('design')) return 80;
+  }
+  // Design / UI / UX / Arts
+  if (/(design|ui|ux|graphic|arts|fine art|multimedia)/.test(edu)) {
+    if (cat.includes('design') || cat.includes('creative')) return 100;
+    if (cat.includes('marketing')) return 80;
+  }
+  // Education / Teaching
+  if (/(educat|teach|childcare|early childhood|b\.?ed|m\.?ed|pedagogy)/.test(edu)) {
+    if (cat.includes('education') || cat.includes('teaching')) return 100;
+    if (cat.includes('human resources')) return 75;
+  }
+  // HR / Psychology
+  if (/(hr\b|human resource|psychology|talent|people)/.test(edu)) {
+    if (cat.includes('human resources') || cat.includes('people')) return 100;
+    if (cat.includes('business')) return 80;
+  }
+  // Law / Compliance
+  if (/(law|legal|compliance|regulatory)/.test(edu)) {
+    if (cat.includes('legal') || cat.includes('compliance')) return 100;
+    if (cat.includes('finance')) return 80;
+  }
+  // Hospitality / Events
+  if (/(hospitality|hotel|tourism|event)/.test(edu)) {
+    if (cat.includes('hospitality') || cat.includes('events')) return 100;
+    if (cat.includes('retail')) return 80;
+  }
+
+  // Direct substring check
+  if (q.includes(edu) || edu.includes(q) || cat.includes(edu) || title.includes(edu)) return 90;
+  return 50;
+}
+
 // ==========================================
-export const getJobs = (req: Request, res: Response) => {
-  const { search, workMode, type, returneeFriendly } = req.query;
+export const getJobs = async (req: Request, res: Response) => {
+  const { search, workMode, type, returneeFriendly, qualification, category, userEducation } = req.query;
 
-  let filtered = [...defaultJobListings];
+  try {
+    const auJobs = await fetchAustralianJobs();
+    let filtered = [...auJobs];
 
-  if (search && typeof search === 'string') {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(
-      (j) =>
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.skills.some((s) => s.toLowerCase().includes(q))
-    );
+    if (search && typeof search === 'string') {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(
+        (j) =>
+          j.title.toLowerCase().includes(q) ||
+          j.company.toLowerCase().includes(q) ||
+          j.skills.some((s) => s.toLowerCase().includes(q)) ||
+          j.location.toLowerCase().includes(q) ||
+          (j.qualification && j.qualification.toLowerCase().includes(q)) ||
+          (j.qualificationCategory && j.qualificationCategory.toLowerCase().includes(q))
+      );
+    }
+
+    if (workMode && workMode !== 'All') {
+      filtered = filtered.filter((j) => j.workMode.toLowerCase() === (workMode as string).toLowerCase());
+    }
+
+    if (type && type !== 'All') {
+      filtered = filtered.filter((j) => j.employmentType.toLowerCase() === (type as string).toLowerCase());
+    }
+
+    if (returneeFriendly === 'true') {
+      filtered = filtered.filter((j) => j.returneeFriendly);
+    }
+
+    if (category && typeof category === 'string' && category !== 'All') {
+      const cat = category.toLowerCase();
+      filtered = filtered.filter((j) => (j.qualificationCategory || '').toLowerCase().includes(cat));
+    }
+
+    if (qualification && typeof qualification === 'string' && qualification !== 'All') {
+      const q = qualification.toLowerCase();
+      filtered = filtered.filter(
+        (j) =>
+          (j.qualification || '').toLowerCase().includes(q) ||
+          (j.qualificationCategory || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Sort by user's qualification fit if userEducation parameter is provided
+    if (userEducation && typeof userEducation === 'string' && userEducation.trim().length > 0) {
+      const uEdu = userEducation.trim();
+      filtered.sort((a, b) => {
+        const scoreA = getQualificationFitScore(uEdu, a);
+        const scoreB = getQualificationFitScore(uEdu, b);
+        return scoreB - scoreA;
+      });
+    }
+
+    return res.status(200).json({ success: true, count: filtered.length, jobs: filtered, market: 'Australia (AUD)' });
+  } catch (error: any) {
+    return res.status(200).json({ success: true, count: defaultJobListings.length, jobs: defaultJobListings });
   }
-
-  if (workMode && workMode !== 'All') {
-    filtered = filtered.filter((j) => j.workMode.toLowerCase() === (workMode as string).toLowerCase());
-  }
-
-  if (type && type !== 'All') {
-    filtered = filtered.filter((j) => j.employmentType.toLowerCase() === (type as string).toLowerCase());
-  }
-
-  if (returneeFriendly === 'true') {
-    filtered = filtered.filter((j) => j.returneeFriendly);
-  }
-
-  return res.status(200).json({ success: true, count: filtered.length, jobs: filtered });
 };
 
 /**
@@ -496,7 +464,7 @@ export const getJobs = (req: Request, res: Response) => {
  */
 export const matchJobWithProfile = async (req: Request, res: Response) => {
   try {
-    const { userSkills, userExperience, job } = req.body;
+    const { userSkills, userExperience, userQualification, job } = req.body;
     if (!job) {
       return res.status(400).json({ success: false, error: 'Job details required' });
     }
@@ -504,10 +472,14 @@ export const matchJobWithProfile = async (req: Request, res: Response) => {
     const messages = [
       {
         role: 'system' as const,
-        content: `You are an AI Career Matchmaker. Evaluate how well a candidate fits a job opening.
+        content: `You are an AI Career & Education Matchmaker. Evaluate how well a candidate fits a job opening based on both their qualification/education and their skills.
 Output valid JSON format:
 {
   "matchPercentage": number (0-100),
+  "qualificationEligibility": {
+    "status": "Fully Qualified" | "Eligible via Transferable Skills" | "Upskilling Recommended",
+    "details": "1-2 sentence assessment of candidate qualification vs required qualification"
+  },
   "suitabilityReason": "Clear, encouraging 2-3 sentence explanation of why this job fits the candidate",
   "matchingSkills": ["Skill 1", "Skill 2"],
   "missingSkills": ["Skill A", "Skill B"],
@@ -516,7 +488,7 @@ Output valid JSON format:
       },
       {
         role: 'user' as const,
-        content: `Candidate Skills: ${JSON.stringify(userSkills || ['React', 'JavaScript', 'HTML/CSS'])}\nCandidate Experience: ${userExperience || '3 years'}\nJob Title: ${job.title}\nCompany: ${job.company}\nJob Skills Required: ${JSON.stringify(job.skills || [])}`
+        content: `Candidate Qualification: ${userQualification || 'Bachelor Degree / Relevant Training'}\nCandidate Skills: ${JSON.stringify(userSkills || ['React', 'JavaScript', 'HTML/CSS'])}\nCandidate Experience: ${userExperience || '3 years'}\nJob Title: ${job.title}\nCompany: ${job.company}\nJob Required Qualification: ${job.qualification || 'Relevant Degree / Experience'}\nJob Skills Required: ${JSON.stringify(job.skills || [])}`
       }
     ];
 
@@ -532,14 +504,19 @@ Output valid JSON format:
       console.warn('[AI Match Job Groq error]:', e);
     }
 
+    const fitScore = userQualification ? getQualificationFitScore(userQualification, job) : 88;
     return res.status(200).json({
       success: true,
       match: {
-        matchPercentage: 86,
-        suitabilityReason: `Your hands-on background aligns closely with ${job.company}'s requirements for ${job.title}. Your primary frontend toolkit provides a direct match.`,
-        matchingSkills: ['React', 'TypeScript', 'Tailwind CSS'],
-        missingSkills: ['System Design', 'Redux Toolkit'],
-        recommendedPrep: 'Highlight your component architecture decisions in your application notes.'
+        matchPercentage: Math.max(75, fitScore),
+        qualificationEligibility: {
+          status: fitScore >= 85 ? 'Fully Qualified' : fitScore >= 70 ? 'Eligible via Transferable Skills' : 'Upskilling Recommended',
+          details: `Your background in ${userQualification || 'your field'} fulfills the prerequisites for ${job.title} at ${job.company}.`
+        },
+        suitabilityReason: `Your profile aligns closely with ${job.company}'s requirements for ${job.title}. Your qualification and skills provide a strong foundation.`,
+        matchingSkills: (job.skills || []).slice(0, 3),
+        missingSkills: (job.skills || []).slice(3, 5),
+        recommendedPrep: 'Highlight your qualification milestones and project achievements in your application notes.'
       }
     });
   } catch (error: any) {
@@ -1000,8 +977,8 @@ export const parseResume = async (req: Request, res: Response) => {
       } else {
         rawText = file.buffer.toString('utf-8');
       }
-    } else if (req.body.resumeText) {
-      rawText = req.body.resumeText;
+    } else if (req.body.resumeText || req.body.text) {
+      rawText = req.body.resumeText || req.body.text;
     }
 
     if (!rawText || rawText.trim().length < 15) {
@@ -1155,9 +1132,10 @@ Output valid JSON matching this schema:
   }
 };
 
-export const applyJob = (req: Request, res: Response) => {
+export const applyJob = async (req: Request, res: Response) => {
   const { jobId, coverLetter } = req.body;
-  const job = defaultJobListings.find((j) => j.jobId === jobId);
+  const auJobs = await fetchAustralianJobs();
+  const job = auJobs.find((j) => j.jobId === jobId) || defaultJobListings.find((j) => j.jobId === jobId);
 
   if (!job) {
     return res.status(404).json({ success: false, error: 'Job not found' });
@@ -1177,7 +1155,8 @@ export const applyJob = (req: Request, res: Response) => {
 
   return res.status(200).json({
     success: true,
-    message: `Application submitted successfully for ${job.title} at ${job.company}`
+    message: `Application submitted successfully for ${job.title} at ${job.company}`,
+    applyUrl: job.applyUrl
   });
 };
 

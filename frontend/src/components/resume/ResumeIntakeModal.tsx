@@ -134,17 +134,29 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
   ];
 
   // -------------------------------------------------------------
-  // TAB 1: RESUME UPLOAD & AI PARSING
+  // TAB 1: RESUME UPLOAD & AI PARSING (INSTANT AUTO-START)
   // -------------------------------------------------------------
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      await handleParseResume(file);
     }
   };
 
-  const handleParseResume = async () => {
-    if (!selectedFile && !pastedText.trim()) {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
+      await handleParseResume(file);
+    }
+  };
+
+  const handleParseResume = async (fileOverride?: File) => {
+    const fileToUse = fileOverride || selectedFile;
+    if (!fileToUse && !pastedText.trim()) {
       showToast('Input Required', 'Please select a resume file or paste your resume text.', 'warning');
       return;
     }
@@ -155,16 +167,16 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
     try {
       let response: Response;
 
-      if (selectedFile) {
+      if (fileToUse) {
         const formData = new FormData();
-        formData.append('resume', selectedFile);
-        setParseProgress('Groq AI scanning resume & extracting ATS structure...');
+        formData.append('resume', fileToUse);
+        setParseProgress('HerRise AI scanning resume & extracting ATS structure...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           body: formData
         });
       } else {
-        setParseProgress('Groq AI parsing resume text...');
+        setParseProgress('HerRise AI parsing resume text...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -280,7 +292,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
         }
 
         setMissingFields(detectedMissing);
-        showToast('Resume Extracted! ✨', 'Groq AI successfully parsed your qualifications, experience & skills.', 'success');
+        showToast('Resume Extracted! ✨', 'HerRise AI successfully parsed your qualifications, experience & skills.', 'success');
       } else {
         throw new Error(json.error || 'Parsing failed.');
       }
@@ -556,7 +568,11 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
         {/* ======================================================= */}
         {activeTab === 'upload' && (
           <div className="space-y-6">
-            <div className="border-2 border-dashed border-purple-200 hover:border-[#4A154B] rounded-2xl p-6 sm:p-8 text-center bg-purple-50/30 transition-all">
+            <div
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDrop={handleDrop}
+              className="border-2 border-dashed border-purple-200 hover:border-[#4A154B] rounded-2xl p-6 sm:p-8 text-center bg-purple-50/30 transition-all space-y-4"
+            >
               <input
                 type="file"
                 id="resume-file-modal-input"
@@ -566,23 +582,47 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
               />
               <label htmlFor="resume-file-modal-input" className="cursor-pointer block space-y-3">
                 <div className="w-14 h-14 rounded-2xl bg-purple-100 text-[#4A154B] flex items-center justify-center mx-auto shadow-xs">
-                  <Upload className="w-7 h-7" />
+                  {isParsing ? (
+                    <RefreshCw className="w-7 h-7 animate-spin text-[#be185d]" />
+                  ) : (
+                    <Upload className="w-7 h-7" />
+                  )}
                 </div>
                 <div>
                   <h4 className="text-base font-bold text-gray-900">
-                    {selectedFile ? selectedFile.name : 'Upload Your Existing Resume File'}
+                    {isParsing
+                      ? 'Analyzing Resume with HerRise AI...'
+                      : selectedFile
+                      ? selectedFile.name
+                      : 'Upload Your Existing Resume File'}
                   </h4>
                   <p className="text-xs text-gray-500 mt-1">
-                    Supports <span className="font-semibold text-gray-700">Word (.docx), PDF (.pdf), and Plain Text (.txt)</span>
+                    {isParsing ? (
+                      <span className="text-purple-700 font-bold animate-pulse">
+                        {parseProgress || 'Extracting qualifications, experience & skills...'}
+                      </span>
+                    ) : (
+                      <>
+                        Supports <span className="font-semibold text-gray-700">Word (.docx), PDF (.pdf), and Plain Text (.txt)</span>
+                      </>
+                    )}
                   </p>
                 </div>
-                {selectedFile && (
+                {selectedFile && !isParsing && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>File Selected: {(selectedFile.size / 1024).toFixed(1)} KB</span>
                   </div>
                 )}
               </label>
+
+              {/* Instant Parsing Notice */}
+              {isParsing && (
+                <div className="p-3 bg-purple-100/80 border border-purple-200 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-[#4A154B]">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#be185d]" />
+                  <span>Instant analysis in progress... Please wait</span>
+                </div>
+              )}
 
               <div className="pt-3 border-t border-purple-100 flex flex-col items-center gap-2">
                 <button
@@ -595,35 +635,26 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                 </button>
 
                 {showPasteText && (
-                  <textarea
-                    rows={5}
-                    value={pastedText}
-                    onChange={(e) => setPastedText(e.target.value)}
-                    placeholder="Paste your complete resume text here (Education, Experience, Skills, Projects)..."
-                    className="w-full text-xs p-3 border border-purple-200 rounded-xl bg-white outline-none focus:border-[#4A154B] mt-2 font-mono"
-                  />
+                  <div className="w-full space-y-2">
+                    <textarea
+                      rows={5}
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      placeholder="Paste your complete resume text here (Education, Experience, Skills, Projects)..."
+                      className="w-full text-xs p-3 border border-purple-200 rounded-xl bg-white outline-none focus:border-[#4A154B] mt-2 font-mono"
+                    />
+                    {pastedText.trim() && !isParsing && (
+                      <button
+                        type="button"
+                        onClick={() => handleParseResume()}
+                        className="inline-flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-pink-300" />
+                        <span>Analyze Pasted Resume</span>
+                      </button>
+                    )}
+                  </div>
                 )}
-              </div>
-
-              <div className="mt-4 flex justify-center">
-                <button
-                  type="button"
-                  disabled={isParsing}
-                  onClick={handleParseResume}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-8 py-3 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isParsing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-pink-300" />
-                      <span>{parseProgress || 'Groq AI Extracting All Resume Sections...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 text-pink-300" />
-                      <span>Extract Qualifications, Experience & Skills</span>
-                    </>
-                  )}
-                </button>
               </div>
             </div>
 
@@ -1502,7 +1533,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     ) : (
                       <>
                         <Sparkles className="w-3.5 h-3.5 text-pink-300" />
-                        <span>Generate with Groq AI</span>
+                        <span>Generate with HerRise AI</span>
                       </>
                     )}
                   </button>
@@ -1554,7 +1585,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     rows={4}
                     value={resumeData.summary}
                     onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-                    placeholder="Click 'Generate with Groq AI' above or write your custom summary..."
+                    placeholder="Click 'Generate with HerRise AI' above or write your custom summary..."
                     className="w-full text-xs p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-[#4A154B] leading-relaxed font-sans"
                   />
                 </div>

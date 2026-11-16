@@ -15,7 +15,7 @@ export const createProduct = (req: Request, res: Response) => {
   const newProd = {
     id: `prod-${Date.now()}`,
     name,
-    seller: store.users[0].name,
+    seller: store.users[0]?.name || 'HerRise Artisan',
     price: Number(price),
     rating: 5.0,
     salesCount: 0,
@@ -33,12 +33,15 @@ export const createProduct = (req: Request, res: Response) => {
 };
 
 export const getSellerDashboard = (req: Request, res: Response) => {
+  const totalRev = store.products.reduce((acc, p) => acc + (p.price * (p.salesCount || 0)), 0);
+  const totalOrders = store.products.reduce((acc, p) => acc + (p.salesCount || 0), 0);
+
   return res.status(200).json({
     success: true,
     data: {
-      totalSalesRevenue: '₹84,500',
-      ordersDelivered: 42,
-      storeRating: 4.9,
+      totalSalesRevenue: `₹${totalRev.toLocaleString()}`,
+      ordersDelivered: totalOrders,
+      storeRating: store.products.length > 0 ? 5.0 : 0,
       activeListings: store.products.length
     }
   });

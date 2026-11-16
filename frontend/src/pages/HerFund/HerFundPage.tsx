@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Landmark,
-  ShieldAlert,
   Search,
   Filter,
   CheckCircle2,
@@ -28,6 +27,7 @@ import {
   documentChecklistData
 } from '../../data/mockData/fundData';
 import { FundingScheme, PitchDeckSlide } from '../../types';
+import { StartupFundingSection } from './StartupFundingSection';
 
 export const HerFundPage: React.FC = () => {
   const { user } = useAuth();
@@ -41,12 +41,25 @@ export const HerFundPage: React.FC = () => {
     return localStorage.getItem('herrise_fund_setup_completed') !== 'true';
   });
 
-  const [schemes, setSchemes] = useState<FundingScheme[]>(initialFundingSchemes);
-  const [activeTab, setActiveTab] = useState<'schemes' | 'compare' | 'eligibility' | 'docs' | 'pitch'>('schemes');
+  const [schemes, setSchemes] = useState<FundingScheme[]>(() => {
+    try {
+      const saved = localStorage.getItem('herrise_fund_schemes');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((s: any) => !s.id?.startsWith('fund-') || Number(s.id?.replace('fund-', '') || 0) > 10);
+        }
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeTab, setActiveTab] = useState<'startups' | 'schemes' | 'compare' | 'eligibility' | 'docs' | 'pitch'>('startups');
 
-  // Dynamic Loan Readiness Score
+  // Dynamic Loan Readiness Score (0 until user completes assessment)
   const [loanReadinessScore, setLoanReadinessScore] = useState<number>(
-    user?.fundProfile?.loanReadinessScore || 88
+    user?.fundProfile?.loanReadinessScore || 0
   );
 
   const handleGateComplete = (data: any) => {
@@ -60,8 +73,8 @@ export const HerFundPage: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('All');
   const [selectedStage, setSelectedStage] = useState<string>('All');
 
-  // Comparison selection
-  const [comparedSchemeIds, setComparedSchemeIds] = useState<string[]>(['fund-1', 'fund-2']);
+  // Comparison selection (clean empty default)
+  const [comparedSchemeIds, setComparedSchemeIds] = useState<string[]>([]);
 
   // Document Checklist state
   const [documents, setDocuments] = useState(documentChecklistData);
@@ -70,9 +83,9 @@ export const HerFundPage: React.FC = () => {
   const [slides, setSlides] = useState<PitchDeckSlide[]>(samplePitchDeckSlides);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
-  // Application Modal
+  // Application Modal (clean default)
   const [selectedSchemeForApply, setSelectedSchemeForApply] = useState<FundingScheme | null>(null);
-  const [appliedAmount, setAppliedAmount] = useState('500000');
+  const [appliedAmount, setAppliedAmount] = useState('');
   const [businessTenor, setBusinessTenor] = useState('36 Months');
 
   const filteredSchemes = schemes.filter((s) => {
@@ -113,39 +126,6 @@ export const HerFundPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Dynamic Setup Intake Prompt Banner */}
-        {!isSetupCompleted ? (
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-amber-100 text-[#d97706] shrink-0">
-                <Landmark className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-900">Personalized Capital Intake Required</h4>
-                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                  Input your enterprise turnover and funding needs to compute your live Loan Readiness Score and estimated EMI.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setGateOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
-            >
-              <span>Complete Capital Registration</span>
-            </button>
-          </div>
-        ) : (
-          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
-            <span>✓ Verified Enterprise Capital Active: <strong>{user?.fundProfile?.ventureName || 'Registered Enterprise'}</strong></span>
-            <button
-              onClick={() => setGateOpen(true)}
-              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
-            >
-              Edit Capital Profile
-            </button>
-          </div>
-        )}
-
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -164,6 +144,15 @@ export const HerFundPage: React.FC = () => {
 
           {/* Navigation Tabs */}
           <div className="flex flex-wrap gap-1.5 bg-purple-50/70 p-1.5 rounded-2xl text-xs font-semibold">
+            <button
+              onClick={() => setActiveTab('startups')}
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'startups' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
+              }`}
+            >
+              <span>🚀</span>
+              <span>Live Venture Funding</span>
+            </button>
             <button
               onClick={() => setActiveTab('schemes')}
               className={`px-3 py-2 rounded-xl transition-all cursor-pointer ${
@@ -199,49 +188,48 @@ export const HerFundPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Demo Warning Banner (Explicit compliance requirement) */}
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-900">
-          <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong className="font-bold">Illustrative Demonstration Notice:</strong> The financial schemes, interest rates, lenders, and grant programs below are sample mock representations designed for interactive evaluation. They do not constitute actual credit offerings or financial underwriting approvals.
-          </p>
-        </div>
+        {/* TAB 0: LIVE STARTUP & VENTURE FUNDING (StartupDB Open API) */}
+        {activeTab === 'startups' && (
+          <StartupFundingSection />
+        )}
 
         {/* 4 Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Capital Pool Explored"
-            value="₹1.15 Cr"
-            subtitle="Across 5 active schemes"
-            icon={Landmark}
-            iconColor="text-[#4A154B]"
-            bgColor="bg-purple-50"
-          />
-          <StatCard
-            title="Lowest Interest Rate"
-            value="8.15% p.a."
-            subtitle="Under Women Enterprise scheme"
-            icon={TrendingUp}
-            iconColor="text-emerald-700"
-            bgColor="bg-emerald-50"
-          />
-          <StatCard
-            title="Collateral-Free Options"
-            value="4 of 5"
-            subtitle="No real-estate pledge required"
-            icon={CheckCircle2}
-            iconColor="text-indigo-700"
-            bgColor="bg-indigo-50"
-          />
-          <StatCard
-            title="Pre-Flight Readiness"
-            value={`${loanReadinessScore}%`}
-            subtitle="Based on your live profile"
-            icon={FileCheck}
-            iconColor="text-[#be185d]"
-            bgColor="bg-pink-50"
-          />
-        </div>
+        {activeTab !== 'startups' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Capital Pool Explored"
+              value={schemes.length > 0 ? `₹${(schemes.reduce((sum, s) => sum + s.maxAmount, 0) / 10000000).toFixed(2)} Cr` : '₹0'}
+              subtitle={schemes.length > 0 ? `Across ${schemes.length} schemes` : 'No schemes in database'}
+              icon={Landmark}
+              iconColor="text-[#4A154B]"
+              bgColor="bg-purple-50"
+            />
+            <StatCard
+              title="Lowest Interest Rate"
+              value={schemes.length > 0 ? '8.15% p.a.' : '—'}
+              subtitle={schemes.length > 0 ? 'Under Women Enterprise scheme' : 'Awaiting scheme intake'}
+              icon={TrendingUp}
+              iconColor="text-emerald-700"
+              bgColor="bg-emerald-50"
+            />
+            <StatCard
+              title="Collateral-Free Options"
+              value={`${schemes.filter((s) => !s.collateralRequired).length} of ${schemes.length}`}
+              subtitle={schemes.length > 0 ? 'No real-estate pledge required' : 'No active applications'}
+              icon={CheckCircle2}
+              iconColor="text-indigo-700"
+              bgColor="bg-indigo-50"
+            />
+            <StatCard
+              title="Pre-Flight Readiness"
+              value={`${loanReadinessScore}%`}
+              subtitle="Based on your live profile"
+              icon={FileCheck}
+              iconColor="text-[#be185d]"
+              bgColor="bg-pink-50"
+            />
+          </div>
+        )}
 
         {/* TAB 1: SCHEMES LIST */}
         {activeTab === 'schemes' && (
@@ -276,13 +264,30 @@ export const HerFundPage: React.FC = () => {
               </div>
 
               <div className="text-gray-500 font-medium">
-                Showing {filteredSchemes.length} Verified Demo Options
+                Showing {filteredSchemes.length} Capital Schemes
               </div>
             </div>
 
             {/* Scheme Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSchemes.map((scheme) => {
+              {filteredSchemes.length === 0 ? (
+                <div className="col-span-full bg-white rounded-3xl p-12 border border-purple-100 text-center space-y-4">
+                  <div className="w-14 h-14 bg-purple-50 text-[#4A154B] rounded-2xl flex items-center justify-center mx-auto">
+                    <Landmark className="w-7 h-7" />
+                  </div>
+                  <h3 className="font-extrabold text-base text-gray-900">No Funding Schemes in Database</h3>
+                  <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                    No custom or applied schemes currently recorded. Run the Eligibility Check to determine which government concessions you qualify for.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('eligibility')}
+                    className="px-5 py-2.5 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    Check Real Eligibility →
+                  </button>
+                </div>
+              ) : (
+                filteredSchemes.map((scheme) => {
                 const isCompared = comparedSchemeIds.includes(scheme.id);
                 return (
                   <div
@@ -292,8 +297,12 @@ export const HerFundPage: React.FC = () => {
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-2xl flex items-center justify-center border border-amber-100">
-                            {scheme.logo}
+                          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-2xl flex items-center justify-center border border-amber-100 shrink-0 overflow-hidden">
+                            {typeof scheme.logo === 'string' && scheme.logo.startsWith('http') ? (
+                              <img src={scheme.logo} alt={scheme.provider} className="w-full h-full object-cover" />
+                            ) : (
+                              scheme.logo
+                            )}
                           </div>
                           <div>
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -351,12 +360,12 @@ export const HerFundPage: React.FC = () => {
                         onClick={() => setSelectedSchemeForApply(scheme)}
                         className="bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                       >
-                        Apply (Demo)
+                        Apply
                       </button>
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           </div>
         )}

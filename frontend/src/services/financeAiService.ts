@@ -123,6 +123,23 @@ export function generateHerFinanceAIResponse(
     };
   }
 
+  // 7. Career, Resume, or Job Questions inside HerFinance
+  if (
+    query.includes('resume') ||
+    query.includes('cv') ||
+    query.includes('ats') ||
+    query.includes('interview') ||
+    query.includes('career break') ||
+    query.includes('sabbatical') ||
+    query.includes('job search') ||
+    query.includes('hiring')
+  ) {
+    return {
+      text: `### 💰 Financial Strategy for Career Moves & Job Searches\n\nYou are currently consulting with the **HerFinance Copilot**.\n\n> **Looking for ATS Resume Builders or Mock Interviews?**\n> Visit the **[HerCareer Portal](/career)** to generate ATS-compliant single-column resume templates and simulate interview questions!\n\n---\n\n#### 💼 Financial Strategy for Your Career Moves:\n1. **Calculate Your True Compensation Floor:**\n   - Factor in your monthly 50/30/20 baseline needs (₹${(Math.round(totalIncome * 0.5)).toLocaleString()} for essentials) plus mandatory savings before negotiating a new offer.\n2. **Build a 3 to 6-Month Transition Runway:**\n   - Ensure you have **₹${(Math.round(totalIncome * 3)).toLocaleString()} to ₹${(Math.round(totalIncome * 6)).toLocaleString()}** secured in liquid savings before giving notice or taking a career break.\n3. **Structure Your Offer for Maximum Net Pay:**\n   - Negotiate tax-free allowances (HRA, NPS under 80CCD, internet/remote allowances) to minimize tax bracket impact.`,
+      actionSuggestion: { label: 'Go to HerCareer', tab: 'career' }
+    };
+  }
+
   // Default intelligent contextual summary
   return {
     text: `### 🌸 HerFinance Personal Assistant Guidance\n\nHere is a quick snapshot of your active financial status:\n- **Verified Income:** ₹${totalIncome.toLocaleString()}\n- **Current Outflows:** ₹${totalExpenses.toLocaleString()}\n- **Net Surplus Balance:** ₹${netBalance.toLocaleString()}\n- **Total Accumulated Savings:** ₹${currentSavingsTotal.toLocaleString()} across ${goals.length} goals\n\n**How can I assist you right now?** You can ask:\n• *"Where am I spending the most money?"*\n• *"How should I allocate my 50/30/20 budget?"*\n• *"Is my Emergency Fund target achievable?"*\n• *"Explain compound interest in simple terms"*`,

@@ -101,25 +101,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick })
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Return to Website Button */}
-        <Link
-          to="/"
-          className="flex items-center gap-1.5 bg-white hover:bg-purple-50 text-[#4A154B] border border-purple-200 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-          title="Return to Main Marketing Website"
-        >
-          <Globe className="w-3.5 h-3.5 text-[#4A154B]" />
-          <span className="hidden sm:inline">Main Website</span>
-        </Link>
-
-        {/* Quick AI Assistant Launch Pill */}
-        <button
-          onClick={() => navigate('/ai-assistant')}
-          className="flex items-center gap-1.5 bg-gradient-to-r from-[#4A154B] to-[#701a75] hover:to-[#581c87] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs hover:shadow-md transition-all cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-pink-300" />
-          <span className="hidden md:inline">Ask</span> HerRise AI
-        </button>
-
         {/* Language selector */}
         <div className="flex items-center bg-purple-50/70 border border-purple-100 rounded-lg p-0.5 text-xs font-semibold text-gray-600">
           <Globe className="w-3.5 h-3.5 text-[#4A154B] ml-1 mr-0.5" />
@@ -132,59 +113,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick })
             <option value="hi">हिन्दी</option>
             <option value="mr">मराठी</option>
           </select>
-        </div>
-
-        {/* Notifications */}
-        <div className="relative">
-          <button
-            onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="relative p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-purple-50 transition-colors cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#fb7185] rounded-full ring-2 ring-white" />
-          </button>
-
-          {/* Notifications Dropdown */}
-          {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-purple-100 py-3 z-50 animate-in fade-in zoom-in-95">
-              <div className="px-4 pb-2 border-b border-purple-50 flex items-center justify-between">
-                <span className="font-bold text-xs text-gray-900">Notifications (Demo)</span>
-                <span className="text-[10px] bg-purple-100 text-[#4A154B] font-bold px-2 py-0.5 rounded-full">
-                  2 New
-                </span>
-              </div>
-              <div className="divide-y divide-purple-50 max-h-72 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => {
-                      setNotificationsOpen(false);
-                      navigate(n.path);
-                    }}
-                    className={`px-4 py-3 hover:bg-purple-50/70 transition-colors cursor-pointer text-xs ${
-                      n.unread ? 'bg-purple-50/30' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-gray-900 font-semibold mb-0.5">
-                      <span>{n.title}</span>
-                      <span className="text-[10px] text-gray-400 font-normal">{n.time}</span>
-                    </div>
-                    <p className="text-gray-600 text-[11px] leading-relaxed">{n.desc}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="px-4 pt-2 border-t border-purple-50 text-center">
-                <Link
-                  to="/settings"
-                  onClick={() => setNotificationsOpen(false)}
-                  className="text-[11px] text-[#4A154B] font-semibold hover:underline"
-                >
-                  Notification Preferences →
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* User Avatar & Name Link */}

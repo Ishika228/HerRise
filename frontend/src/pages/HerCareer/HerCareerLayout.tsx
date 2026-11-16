@@ -45,8 +45,7 @@ export const HerCareerLayout: React.FC<HerCareerLayoutProps> = ({
     { id: 'jobs', label: 'Job Matching', icon: Search },
     { id: 'tracker', label: 'Applications', icon: CheckCircle2 },
     { id: 'interview', label: 'Interview Prep', icon: Mic },
-    { id: 'restart', label: 'Career Restart', icon: RotateCcw },
-    { id: 'assistant', label: 'AI Copilot', icon: Bot }
+    { id: 'restart', label: 'Career Restart', icon: RotateCcw }
   ];
 
   return (
@@ -59,31 +58,12 @@ export const HerCareerLayout: React.FC<HerCareerLayoutProps> = ({
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="space-y-1.5 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold text-teal-300 border border-teal-500/20">
-                <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-                <span>HerCareer • AI-Powered Career Platform</span>
-              </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                 Empowering Your Professional Journey
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Discover curated opportunities, craft ATS-optimized resumes, simulate interviews with AI, and navigate your career path with confidence.
+                Discover curated opportunities, craft ATS-optimized resumes, simulate interviews, and navigate your career path with confidence.
               </p>
-            </div>
-
-            {/* User Readiness Card */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl flex items-center gap-4 shrink-0">
-              <div className="w-12 h-12 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 font-black text-lg">
-                {stats.readinessScore}%
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-teal-300 uppercase tracking-wider">
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>Profile Readiness</span>
-                </div>
-                <h4 className="text-sm font-bold text-white truncate max-w-[160px]">{profile.targetRole}</h4>
-                <p className="text-[11px] text-slate-300">{stats.applicationsSubmitted} active applications</p>
-              </div>
             </div>
           </div>
         </div>

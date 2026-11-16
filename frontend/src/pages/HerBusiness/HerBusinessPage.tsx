@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Rocket,
   Lightbulb,
   Calculator,
   FileText,
-  Calendar,
   Sparkles,
   TrendingUp,
   Download,
@@ -33,10 +32,9 @@ import { useAuth } from '../../context/AuthContext';
 import { ModuleRegistrationGate } from '../../components/common/ModuleRegistrationGate';
 import {
   curatedBusinessIdeas,
-  sampleBusinessPlan,
-  launchRoadmap
+  sampleBusinessPlan
 } from '../../data/mockData/businessData';
-import { BusinessPlan, RoadmapMilestone } from '../../types';
+import { BusinessPlan } from '../../types';
 import { BusinessIdeaGenerator } from './components/BusinessIdeaGenerator';
 import { downloadBusinessPlanPdf } from '../../services/businessPlanPdfService';
 
@@ -46,24 +44,40 @@ export const HerBusinessPage: React.FC = () => {
 
   // Registration Gate at Starting
   const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
-    return localStorage.getItem('herrise_business_setup_completed') === 'true';
+    return localStorage.getItem('herrise_business_setup_completed') === 'true' || Boolean(user?.businessProfile?.ventureName);
   });
-  const [gateOpen, setGateOpen] = useState<boolean>(() => {
-    return localStorage.getItem('herrise_business_setup_completed') !== 'true';
+  const [gateOpen, setGateOpen] = useState<boolean>(false);
+
+  // Tabs: Generator, Ideas, Feasibility, Pricing, Plan Builder
+  const [activeTab, setActiveTab] = useState<'generator' | 'ideas' | 'pricing' | 'plan' | 'feasibility'>('generator');
+
+  // Business plan state (clean initial state for user's own venture)
+  const [businessPlan, setBusinessPlan] = useState<BusinessPlan>(() => {
+    const saved = localStorage.getItem('herrise_business_plan');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.businessName && !parsed.businessName.includes('AuraBotanics') && !parsed.businessName.includes('HerRise Venture Project')) {
+          return parsed;
+        }
+      } catch {}
+    }
+    return {
+      businessName: user?.businessProfile?.ventureName || '',
+      tagline: '',
+      category: user?.businessProfile?.industry || 'Business & E-Commerce',
+      problemStatement: '',
+      solution: '',
+      targetAudience: '',
+      marketOpportunity: '',
+      competitorAnalysis: '',
+      revenueModel: '',
+      pricingStrategy: '',
+      marketingStrategy: '',
+      startupCosts: [],
+      projectedRevenueYear1: 0
+    };
   });
-
-  // Tabs: Generator, Ideas, Feasibility, Pricing, Plan Builder, Roadmap
-  const [activeTab, setActiveTab] = useState<'generator' | 'ideas' | 'pricing' | 'plan' | 'roadmap' | 'feasibility'>('generator');
-
-  // Business plan state dynamically personalized
-  const [businessPlan, setBusinessPlan] = useState<BusinessPlan>(() => ({
-    ...sampleBusinessPlan,
-    businessName: user?.businessProfile?.ventureName || sampleBusinessPlan.businessName,
-    category: user?.businessProfile?.industry || sampleBusinessPlan.category
-  }));
-
-  // Roadmap milestones state
-  const [milestones, setMilestones] = useState<RoadmapMilestone[]>(launchRoadmap);
 
   // Pricing calculator state dynamically derived
   const [pricingCalc, setPricingCalc] = useState({
@@ -74,6 +88,12 @@ export const HerBusinessPage: React.FC = () => {
     targetGrossMargin: 55, // 55%
     monthlyFixedCost: user?.businessProfile?.monthlyFixedCosts || 25000
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('herrise_business_plan', JSON.stringify(businessPlan));
+    } catch {}
+  }, [businessPlan]);
 
   const handleGateComplete = (data: any) => {
     setIsSetupCompleted(true);
@@ -122,14 +142,6 @@ export const HerBusinessPage: React.FC = () => {
   const profitPerUnit = recommendedSellingPrice - totalUnitCOGS;
   const breakevenUnitsPerMonth = Math.ceil(pricingCalc.monthlyFixedCost / (profitPerUnit || 1));
 
-  // Toggle milestone completion
-  const toggleMilestone = (day: number) => {
-    setMilestones((prev) =>
-      prev.map((m) => (m.day === day ? { ...m, completed: !m.completed } : m))
-    );
-    showToast('Milestone Updated', 'Progress saved to your 30-day roadmap', 'info');
-  };
-
   const calculateFeasibility = () => {
     let score = 60;
     if (feasibilityAnswers.marketDemand === 'high') score += 15;
@@ -171,45 +183,9 @@ export const HerBusinessPage: React.FC = () => {
     );
   };
 
-  const completedMilestones = milestones.filter((m) => m.completed).length;
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Dynamic Setup Intake Prompt Banner */}
-        {!isSetupCompleted ? (
-          <div className="bg-rose-50 border border-rose-200 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-rose-100 text-[#e11d48] shrink-0">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-900">Personalized Business Intake Required</h4>
-                <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                  Register your venture name, capital needs, and production costs to compute live break-even metrics and profit margins.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setGateOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white font-bold text-xs rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 text-pink-300" />
-              <span>Complete Business Registration</span>
-            </button>
-          </div>
-        ) : (
-          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
-            <span>✓ Verified Venture Active: <strong>{businessPlan.businessName}</strong> ({businessPlan.category})</span>
-            <button
-              onClick={() => setGateOpen(true)}
-              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
-            >
-              Edit Venture Profile
-            </button>
-          </div>
-        )}
-
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -269,19 +245,11 @@ export const HerBusinessPage: React.FC = () => {
             >
               10-Section Plan
             </button>
-            <button
-              onClick={() => setActiveTab('roadmap')}
-              className={`px-3 py-2 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'roadmap' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
-              }`}
-            >
-              30-Day Roadmap
-            </button>
           </div>
         </div>
 
-        {/* 4 Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
             title="Readiness Score"
             value="89 / 100"
@@ -306,14 +274,6 @@ export const HerBusinessPage: React.FC = () => {
             icon={Calculator}
             iconColor="text-[#be185d]"
             bgColor="bg-pink-50"
-          />
-          <StatCard
-            title="30-Day Launch Progress"
-            value={`${completedMilestones} of ${milestones.length}`}
-            subtitle="Week 2 Completed"
-            icon={Calendar}
-            iconColor="text-amber-700"
-            bgColor="bg-amber-50"
           />
         </div>
 
@@ -578,19 +538,6 @@ export const HerBusinessPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-purple-100 shadow-xs flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-xs text-gray-900">HerMarket Listing Integration</h4>
-                  <p className="text-[11px] text-gray-500">Apply this price directly to your marketplace storefront.</p>
-                </div>
-                <button
-                  onClick={() => (window.location.href = '/market')}
-                  className="bg-[#4A154B] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#350c36] cursor-pointer"
-                >
-                  List on Market →
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -766,58 +713,7 @@ export const HerBusinessPage: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 4: 30-DAY LAUNCH ROADMAP */}
-        {activeTab === 'roadmap' && (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-gray-900">30-Day Launch Roadmap</h3>
-                <p className="text-xs text-gray-500">
-                  Click milestones as you complete them to track your launch readiness.
-                </p>
-              </div>
-              <span className="text-xs font-bold text-[#4A154B] bg-purple-100 px-3 py-1.5 rounded-full">
-                {completedMilestones} / {milestones.length} Completed
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {milestones.map((m) => (
-                <div
-                  key={m.day}
-                  onClick={() => toggleMilestone(m.day)}
-                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-4 ${
-                    m.completed
-                      ? 'border-emerald-300 bg-emerald-50/40'
-                      : 'border-purple-100 bg-white hover:border-purple-200'
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
-                      m.completed ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {m.completed ? '✓' : `D${m.day}`}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        {m.phase}
-                      </span>
-                    </div>
-                    <h4 className={`text-xs sm:text-sm font-bold ${m.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                      {m.title}
-                    </h4>
-                    <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{m.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: FEASIBILITY ASSESSMENT */}
+        {/* TAB 4: FEASIBILITY ASSESSMENT */}
         {activeTab === 'feasibility' && (
           <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-purple-100 shadow-xs space-y-6">
             <div className="text-center space-y-1">

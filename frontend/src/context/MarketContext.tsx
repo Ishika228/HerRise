@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem, Order } from '../types';
-import { initialProducts, initialOrders } from '../data/mockData/marketData';
 
 interface MarketContextType {
   products: Product[];
@@ -26,9 +25,16 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const stored = localStorage.getItem('herrise_market_products');
-      return stored ? JSON.parse(stored) : initialProducts;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Keep only user-created products, filter out mock initial catalog
+          return parsed.filter((p: any) => !p.id?.startsWith('prod-') || Number(p.id?.replace('prod-', '') || 0) > 100);
+        }
+      }
+      return [];
     } catch {
-      return initialProducts;
+      return [];
     }
   });
 

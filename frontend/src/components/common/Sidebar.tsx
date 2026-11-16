@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { name: 'HerMarket', path: '/market', icon: ShoppingBag, badge: cartCount > 0 ? `${cartCount}` : undefined },
     { name: 'HerLearn', path: '/learn', icon: GraduationCap, highlight: 'Skills' },
     { name: 'HerNetwork', path: '/network', icon: Users2, highlight: 'Mentors' },
-    { name: 'AI Assistant', path: '/ai-assistant', icon: Sparkles, badge: 'Copilot', special: true }
+    { name: 'AI Assistant', path: '/ai-assistant', icon: Sparkles, special: true }
   ];
 
   const secondaryNavItems = [

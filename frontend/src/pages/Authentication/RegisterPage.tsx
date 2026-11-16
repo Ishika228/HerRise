@@ -132,16 +132,30 @@ export const RegisterPage: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // Handle file select
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file select & instantly start AI analysis
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      await handleAnalyzeResume(file);
     }
   };
 
-  // Analyze Resume with Groq AI
-  const handleAnalyzeResume = async () => {
-    if (!selectedFile && !pastedText.trim()) {
+  // Drag and drop instant handler
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
+      await handleAnalyzeResume(file);
+    }
+  };
+
+  // Analyze Resume with HerRise AI
+  const handleAnalyzeResume = async (fileOverride?: File) => {
+    const fileToUse = fileOverride || selectedFile;
+    if (!fileToUse && !pastedText.trim()) {
       showToast('Resume Required', 'Please select a resume file (.docx, .pdf) or paste resume text.', 'warning');
       return;
     }
@@ -152,16 +166,16 @@ export const RegisterPage: React.FC = () => {
     try {
       let response: Response;
 
-      if (selectedFile) {
+      if (fileToUse) {
         const formData = new FormData();
-        formData.append('resume', selectedFile);
-        setParseProgress('Groq AI extracting candidate identity, skills, experience & education...');
+        formData.append('resume', fileToUse);
+        setParseProgress('HerRise AI extracting candidate identity, skills, experience & education...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           body: formData
         });
       } else {
-        setParseProgress('Groq AI analyzing resume text...');
+        setParseProgress('HerRise AI analyzing resume text...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -233,7 +247,7 @@ export const RegisterPage: React.FC = () => {
         }
 
         setMissingFields(detectedMissing);
-        showToast('Resume Analyzed!', `Welcome ${atsData.fullName}. Details extracted with Groq AI.`, 'success');
+        showToast('Resume Analyzed!', `Welcome ${atsData.fullName}. Details extracted with HerRise AI.`, 'success');
       } else {
         throw new Error(json.error || 'Failed to parse resume.');
       }
@@ -258,7 +272,7 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
 
     if (!extractedData) {
-      showToast('Resume Required', 'Please upload or paste your resume first so Groq AI can extract your profile.', 'warning');
+      showToast('Resume Required', 'Please upload or paste your resume first so HerRise AI can extract your profile.', 'warning');
       return;
     }
 
@@ -439,7 +453,7 @@ export const RegisterPage: React.FC = () => {
           Create Your HerRise Account
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-gray-600 max-w-lg mx-auto">
-          Upload your resume for instant Groq AI extraction — no need to re-type your details. Just pick what you want and launch your personalized dashboard!
+          Upload your resume for instant HerRise AI extraction — no need to re-type your details. Just pick what you want and launch your personalized dashboard!
         </p>
       </div>
 
@@ -486,9 +500,13 @@ export const RegisterPage: React.FC = () => {
             {/* ========================================================= */}
             {activeTab === 'fast-ai' && (
               <form onSubmit={handleFastAiSubmit} className="space-y-6">
-                {/* STEP 1: UPLOAD & GROQ AI EXTRACTION */}
+                {/* STEP 1: UPLOAD & HERRISE AI EXTRACTION */}
                 {!extractedData ? (
-                  <div className="border-2 border-dashed border-purple-200 hover:border-[#4A154B] rounded-2xl p-6 sm:p-8 text-center bg-purple-50/30 transition-all space-y-4">
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={handleDrop}
+                    className="border-2 border-dashed border-purple-200 hover:border-[#4A154B] rounded-2xl p-6 sm:p-8 text-center bg-purple-50/30 transition-all space-y-4"
+                  >
                     <input
                       type="file"
                       id="reg-resume-file"
@@ -498,23 +516,47 @@ export const RegisterPage: React.FC = () => {
                     />
                     <label htmlFor="reg-resume-file" className="cursor-pointer block space-y-3">
                       <div className="w-14 h-14 rounded-2xl bg-purple-100 text-[#4A154B] flex items-center justify-center mx-auto shadow-xs">
-                        <Upload className="w-7 h-7" />
+                        {isParsing ? (
+                          <RefreshCw className="w-7 h-7 animate-spin text-[#be185d]" />
+                        ) : (
+                          <Upload className="w-7 h-7" />
+                        )}
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-gray-900">
-                          {selectedFile ? selectedFile.name : 'Upload Your Resume File'}
+                          {isParsing
+                            ? 'Analyzing Resume with HerRise AI...'
+                            : selectedFile
+                            ? selectedFile.name
+                            : 'Upload Your Resume File'}
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
-                          Supports <span className="font-semibold text-gray-700">Word (.docx), PDF (.pdf), or Text (.txt)</span> (Max 10MB)
+                          {isParsing ? (
+                            <span className="text-purple-700 font-bold animate-pulse">
+                              {parseProgress || 'HerRise AI extracting candidate identity, skills, experience & education...'}
+                            </span>
+                          ) : (
+                            <>
+                              Supports <span className="font-semibold text-gray-700">Word (.docx), PDF (.pdf), or Text (.txt)</span> (Max 10MB)
+                            </>
+                          )}
                         </p>
                       </div>
-                      {selectedFile && (
+                      {selectedFile && !isParsing && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>File Selected: {(selectedFile.size / 1024).toFixed(1)} KB</span>
                         </div>
                       )}
                     </label>
+
+                    {/* Instant AI Parsing Banner */}
+                    {isParsing && (
+                      <div className="p-4 bg-purple-100/80 border border-purple-200 rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold text-[#4A154B]">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#be185d]" />
+                        <span>Instant AI Analysis in progress... Extracting all resume details</span>
+                      </div>
+                    )}
 
                     {/* Paste text toggle */}
                     <div className="pt-2 border-t border-purple-100 flex flex-col items-center gap-2">
@@ -528,39 +570,27 @@ export const RegisterPage: React.FC = () => {
                       </button>
 
                       {showPasteText && (
-                        <textarea
-                          rows={5}
-                          value={pastedText}
-                          onChange={(e) => setPastedText(e.target.value)}
-                          placeholder="Paste the raw text of your resume here..."
-                          className="w-full text-xs p-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4A154B] leading-relaxed"
-                        />
+                        <div className="w-full space-y-2">
+                          <textarea
+                            rows={5}
+                            value={pastedText}
+                            onChange={(e) => setPastedText(e.target.value)}
+                            placeholder="Paste the raw text of your resume here..."
+                            className="w-full text-xs p-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4A154B] leading-relaxed"
+                          />
+                          {pastedText.trim() && !isParsing && (
+                            <button
+                              type="button"
+                              onClick={() => handleAnalyzeResume()}
+                              className="inline-flex items-center gap-1.5 bg-[#4A154B] hover:bg-[#350c36] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-pink-300" />
+                              <span>Analyze Pasted Resume</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
-
-                    {/* Trigger Parse Button */}
-                    {(selectedFile || pastedText.trim()) && (
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          disabled={isParsing}
-                          onClick={handleAnalyzeResume}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#4A154B] hover:bg-[#350c36] text-white px-8 py-3.5 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
-                        >
-                          {isParsing ? (
-                            <>
-                              <RefreshCw className="w-4 h-4 animate-spin text-pink-300" />
-                              <span>{parseProgress || 'Groq AI Extracting All Resume Details...'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-4 h-4 text-pink-300" />
-                              <span>Analyze Resume with Groq AI</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   /* AI ANALYZED CONFIRMATION CARD */
@@ -569,7 +599,7 @@ export const RegisterPage: React.FC = () => {
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Groq AI Analyzed Your Resume Successfully</span>
+                          <span>HerRise AI Analyzed Your Resume Successfully</span>
                         </div>
                         <h2 className="text-lg font-black text-gray-900">{extractedData.fullName}</h2>
                         <p className="text-xs font-bold text-[#4A154B]">{extractedData.headline}</p>
@@ -647,8 +677,8 @@ export const RegisterPage: React.FC = () => {
                                   missing.field === 'education'
                                     ? extractedData.education?.[0]?.degree || ''
                                     : missing.field === 'experience'
-                                    ? extractedData.experience?.[0]?.role || ''
-                                    : (extractedData as any)[missing.field] || ''
+                                      ? extractedData.experience?.[0]?.role || ''
+                                      : (extractedData as any)[missing.field] || ''
                                 }
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -966,11 +996,10 @@ export const RegisterPage: React.FC = () => {
                                 key={stage}
                                 type="button"
                                 onClick={() => setManualForm({ ...manualForm, experienceLevel: stage })}
-                                className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
-                                  manualForm.experienceLevel === stage
-                                    ? 'bg-[#4A154B] text-white border-[#4A154B] shadow-2xs'
-                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                                }`}
+                                className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${manualForm.experienceLevel === stage
+                                  ? 'bg-[#4A154B] text-white border-[#4A154B] shadow-2xs'
+                                  : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
                               >
                                 {stage === 'Fresher' && '🎓 '}
                                 {stage === 'Career Returnee' && '🌸 '}

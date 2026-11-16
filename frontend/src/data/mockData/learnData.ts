@@ -16,14 +16,14 @@ export const initialCourses: Course[] = [
     description: 'Break free from money intimidation. Master personal budgeting, tax strategies, equity mutual funds, sovereign gold bonds, and retirement independence.',
     rating: 4.9,
     enrolledStudents: 3420,
-    isEnrolled: true,
-    progressPercent: 72,
+    isEnrolled: false,
+    progressPercent: 0,
     modules: [
       {
         id: 'm1',
         title: '1. Mindset Shift: Dismantling Cultural Money Taboos',
         duration: '18 mins',
-        completed: true,
+        completed: false,
         videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/9aiyFyjriG4',
         summary: 'Psychological strategies to overcome cultural taboos, claim financial agency, and establish clear investment goals.'
       },
@@ -31,7 +31,7 @@ export const initialCourses: Course[] = [
         id: 'm2',
         title: '2. The Bulletproof 50/30/20 Budgeting Blueprint',
         duration: '24 mins',
-        completed: true,
+        completed: false,
         videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/HQzoZfc3GwQ',
         summary: 'Step-by-step breakdown of the 50/30/20 framework to allocate income between essentials, discretionary spending, and savings.'
       },
@@ -39,7 +39,7 @@ export const initialCourses: Course[] = [
         id: 'm3',
         title: '3. Emergency Funds & High-Yield Safety Cushions',
         duration: '20 mins',
-        completed: true,
+        completed: false,
         videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/ss_1720sbf4',
         summary: 'How to calculate your 6-month runway and shelter it in liquid, high-yield, low-risk instruments.'
       },
@@ -47,7 +47,7 @@ export const initialCourses: Course[] = [
         id: 'm4',
         title: '4. Demystifying Mutual Funds, ETFs & Index Investing',
         duration: '32 mins',
-        completed: true,
+        completed: false,
         videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/WEDIj9JBTC8',
         summary: 'Practical guide to investing in low-cost index funds, large-cap mutual funds, and automated SIP allocations.'
       },
@@ -84,14 +84,14 @@ export const initialCourses: Course[] = [
     description: 'A step-by-step masterclass on sourcing raw materials, packaging design, FSSAI/trademark compliance, HerMarket storefront setup, and organic customer acquisition.',
     rating: 4.9,
     enrolledStudents: 2850,
-    isEnrolled: true,
-    progressPercent: 40,
+    isEnrolled: false,
+    progressPercent: 0,
     modules: [
       {
         id: 'm1',
         title: '1. Validating Product-Market Fit with Zero Inventory',
         duration: '22 mins',
-        completed: true,
+        completed: false,
         videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/vVJrxszq38M',
         summary: 'Techniques for conducting customer discovery interviews, pre-sales landing pages, and rapid MVP testing.'
       },
@@ -99,7 +99,7 @@ export const initialCourses: Course[] = [
         id: 'm2',
         title: '2. Costing, COGS & Protecting 50%+ Gross Margins',
         duration: '30 mins',
-        completed: true,
+        completed: false,
         videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/eQVadp8fmQ0',
         summary: 'Calculations for unit economics, shipping costs, payment gateway fees, and healthy retail margin buffers.'
       },
@@ -311,40 +311,8 @@ export const sampleQuizQuestions: QuizQuestion[] = [
   }
 ];
 
-export const userCertificates: Certificate[] = [
-  {
-    id: 'cert-1',
-    courseTitle: 'Financial Independence & Wealth Architecture',
-    issuedTo: 'Verified HerRise Scholar',
-    issueDate: 'October 28, 2026',
-    credentialId: 'HR-FIN-883492',
-    instructorName: 'Rhea Shenoy, CA',
-    instructorTitle: 'Chartered Accountant & Lead Wealth Strategist',
-    directorName: 'Dr. Arundhati Roy',
-    directorTitle: 'Academic Dean, HerRise Institute',
-    skillsCovered: ['Personal Wealth Blueprinting', 'Asset Allocation & Risk', 'Tax-Efficient Investing', 'Portfolio Hedging'],
-    grade: 'Distinction with Honours (98%)',
-    hoursCompleted: 24,
-    credentialType: 'Executive Masterclass Credential',
-    issuer: 'HerRise Institute of Leadership & Financial Excellence'
-  },
-  {
-    id: 'cert-2',
-    courseTitle: 'Digital Marketing & Community Commerce',
-    issuedTo: 'Verified HerRise Scholar',
-    issueDate: 'August 14, 2026',
-    credentialId: 'HR-MKT-419082',
-    instructorName: 'Divya Nair',
-    instructorTitle: 'VP of Growth & E-Commerce Strategist',
-    directorName: 'Dr. Arundhati Roy',
-    directorTitle: 'Academic Dean, HerRise Institute',
-    skillsCovered: ['Conversion Funnel Architecture', 'Omnichannel Brand Growth', 'Social Commerce Strategy', 'Retention Analytics'],
-    grade: 'High Distinction (95%)',
-    hoursCompleted: 18,
-    credentialType: 'Professional Accreditation',
-    issuer: 'HerRise Institute of Leadership & Digital Commerce'
-  }
-];
+// Verified certificates start empty and populate when the user completes courses or quizzes
+export const userCertificates: Certificate[] = [];
 
 export const personalized30DayPlan = [
   { week: 'Week 1', focus: 'Financial Foundations', task: 'Complete the 50/30/20 audit and set up automated SIP deposit' },

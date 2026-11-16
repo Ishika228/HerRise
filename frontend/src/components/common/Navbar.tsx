@@ -13,6 +13,19 @@ export const Navbar: React.FC = () => {
     setLanguage(lang);
   };
 
+  const handleSectionNavigation = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: string
+  ) => {
+    event.preventDefault();
+    setMobileMenuOpen(false);
+    if (window.location.pathname === '/') {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate(`/#${sectionId}`);
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-purple-100 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,22 +52,22 @@ export const Navbar: React.FC = () => {
             <Link to="/" className="hover:text-[#4A154B] transition-colors">
               Home
             </Link>
-            <a href="#about" className="hover:text-[#4A154B] transition-colors">
+            <a href="/#about" onClick={(event) => handleSectionNavigation(event, 'about')} className="hover:text-[#4A154B] transition-colors">
               About Us
             </a>
-            <a href="#modules" className="hover:text-[#4A154B] transition-colors">
+            <a href="/#modules" onClick={(event) => handleSectionNavigation(event, 'modules')} className="hover:text-[#4A154B] transition-colors">
               Explore Modules
             </a>
-            <a href="#how-it-works" className="hover:text-[#4A154B] transition-colors">
+            <a href="/#how-it-works" onClick={(event) => handleSectionNavigation(event, 'how-it-works')} className="hover:text-[#4A154B] transition-colors">
               How It Works
             </a>
-            <a href="#success-stories" className="hover:text-[#4A154B] transition-colors">
+            <a href="/#success-stories" onClick={(event) => handleSectionNavigation(event, 'success-stories')} className="hover:text-[#4A154B] transition-colors">
               Success Stories
             </a>
           </div>
 
           {/* Right Action Buttons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             {/* Language Switcher */}
             <div className="flex items-center bg-purple-50/80 border border-purple-100 rounded-lg p-1 text-xs font-semibold text-gray-600">
               <Globe className="w-3.5 h-3.5 text-[#4A154B] mr-1 ml-1" />
@@ -112,7 +125,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Hamburger Button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-gray-700 hover:bg-purple-50 transition-colors focus:outline-none"
@@ -126,7 +139,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-purple-100 px-4 pt-3 pb-6 space-y-4 shadow-xl animate-in slide-in-from-top-4">
+        <div className="lg:hidden bg-white border-b border-purple-100 px-4 pt-3 pb-6 space-y-4 shadow-xl animate-in slide-in-from-top-4">
           <div className="flex flex-col space-y-3 font-medium text-gray-800 text-base">
             <Link
               to="/"
@@ -136,29 +149,29 @@ export const Navbar: React.FC = () => {
               Home
             </Link>
             <a
-              href="#about"
-              onClick={() => setMobileMenuOpen(false)}
+              href="/#about"
+              onClick={(event) => handleSectionNavigation(event, 'about')}
               className="py-2 px-3 rounded-lg hover:bg-purple-50"
             >
               About Us
             </a>
             <a
-              href="#modules"
-              onClick={() => setMobileMenuOpen(false)}
+              href="/#modules"
+              onClick={(event) => handleSectionNavigation(event, 'modules')}
               className="py-2 px-3 rounded-lg hover:bg-purple-50"
             >
               Explore Modules
             </a>
             <a
-              href="#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
+              href="/#how-it-works"
+              onClick={(event) => handleSectionNavigation(event, 'how-it-works')}
               className="py-2 px-3 rounded-lg hover:bg-purple-50"
             >
               How It Works
             </a>
             <a
-              href="#success-stories"
-              onClick={() => setMobileMenuOpen(false)}
+              href="/#success-stories"
+              onClick={(event) => handleSectionNavigation(event, 'success-stories')}
               className="py-2 px-3 rounded-lg hover:bg-purple-50"
             >
               Success Stories

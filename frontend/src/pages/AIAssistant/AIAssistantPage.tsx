@@ -36,19 +36,24 @@ const FormattedMarkdown: React.FC<{ content: string }> = ({ content }) => {
   const lines = content.split('\n');
 
   return (
-    <div className="space-y-2 text-xs sm:text-sm leading-relaxed font-sans text-gray-800">
+    <div className="space-y-3 text-sm sm:text-base leading-relaxed font-sans text-gray-800">
       {lines.map((line, idx) => {
         const trimmed = line.trim();
 
         // Empty line
         if (!trimmed) {
-          return <div key={idx} className="h-1.5" />;
+          return <div key={idx} className="h-2" />;
+        }
+
+        // Horizontal Divider (--- or ***)
+        if (trimmed === '---' || trimmed === '***') {
+          return <hr key={idx} className="border-t border-purple-200/80 my-3.5" />;
         }
 
         // H3 Header (### Header)
         if (trimmed.startsWith('### ')) {
           return (
-            <h3 key={idx} className="text-sm sm:text-base font-black text-gray-900 mt-2 mb-1 text-[#4A154B] flex items-center gap-1.5">
+            <h3 key={idx} className="text-base sm:text-lg font-black text-[#4A154B] mt-4 mb-2 flex items-center gap-2 tracking-tight">
               <span>{trimmed.replace('### ', '')}</span>
             </h3>
           );
@@ -57,7 +62,7 @@ const FormattedMarkdown: React.FC<{ content: string }> = ({ content }) => {
         // H4 Header (#### Header)
         if (trimmed.startsWith('#### ')) {
           return (
-            <h4 key={idx} className="text-xs sm:text-sm font-extrabold text-gray-900 mt-1.5 mb-0.5">
+            <h4 key={idx} className="text-sm sm:text-base font-extrabold text-gray-900 mt-3 mb-1.5">
               {trimmed.replace('#### ', '')}
             </h4>
           );
@@ -66,21 +71,21 @@ const FormattedMarkdown: React.FC<{ content: string }> = ({ content }) => {
         // Blockquote (> text)
         if (trimmed.startsWith('> ')) {
           return (
-            <blockquote
+            <div
               key={idx}
-              className="border-l-3 border-[#4A154B] bg-purple-50/70 px-3 py-2 rounded-r-xl text-gray-700 italic my-1.5 text-xs"
+              className="border-l-4 border-[#4A154B] bg-gradient-to-r from-purple-50 via-purple-50/50 to-transparent px-4 py-3 rounded-r-2xl text-gray-800 font-medium my-3 text-sm sm:text-base shadow-2xs leading-relaxed"
             >
               {renderInlineStyles(trimmed.replace('> ', ''))}
-            </blockquote>
+            </div>
           );
         }
 
         // Bullet point (- or * )
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
-            <div key={idx} className="flex items-start gap-2 pl-2">
-              <span className="text-[#4A154B] font-bold text-xs mt-0.5">•</span>
-              <div className="flex-1">{renderInlineStyles(trimmed.slice(2))}</div>
+            <div key={idx} className="flex items-start gap-2.5 pl-2 my-1">
+              <span className="text-[#4A154B] font-black text-sm mt-0.5">•</span>
+              <div className="flex-1 text-sm sm:text-base leading-relaxed text-gray-800">{renderInlineStyles(trimmed.slice(2))}</div>
             </div>
           );
         }
@@ -89,16 +94,16 @@ const FormattedMarkdown: React.FC<{ content: string }> = ({ content }) => {
         const matchNumbered = trimmed.match(/^(\d+)\.\s+(.*)$/);
         if (matchNumbered) {
           return (
-            <div key={idx} className="flex items-start gap-2 pl-2">
-              <span className="text-[#4A154B] font-bold text-xs min-w-4 mt-0.5">{matchNumbered[1]}.</span>
-              <div className="flex-1">{renderInlineStyles(matchNumbered[2])}</div>
+            <div key={idx} className="flex items-start gap-2.5 pl-2 my-1.5">
+              <span className="text-[#4A154B] font-black text-sm min-w-5 mt-0.5">{matchNumbered[1]}.</span>
+              <div className="flex-1 text-sm sm:text-base leading-relaxed text-gray-800">{renderInlineStyles(matchNumbered[2])}</div>
             </div>
           );
         }
 
         // Standard paragraph
         return (
-          <p key={idx} className="text-gray-800">
+          <p key={idx} className="text-sm sm:text-base text-gray-800 leading-relaxed">
             {renderInlineStyles(line)}
           </p>
         );
@@ -107,78 +112,179 @@ const FormattedMarkdown: React.FC<{ content: string }> = ({ content }) => {
   );
 };
 
-// Simple inline parser for bold **text**, links [label](url), and inline code `code`
+// Robust inline parser for bold links **[label](url)**, links [label](url), **bold**, *italic*, and `code`
 function renderInlineStyles(text: string): React.ReactNode {
-  // Regex to match markdown links: [label](url)
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  // Tokenize all markdown inline patterns in a single regex:
+  // 1. **[label](url)** -> Bold link
+  // 2. [label](url) -> Standard link
+  // 3. **bold** -> Bold text
+  // 4. `code` -> Inline code
+  // 5. *italic* -> Italic text
+  const tokenRegex = /(\*\*\[([^\]]+)\]\(([^)]+)\)\*\*|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = linkRegex.exec(text)) !== null) {
+  while ((match = tokenRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(renderBoldAndCode(text.substring(lastIndex, match.index)));
+      parts.push(text.substring(lastIndex, match.index));
     }
-    const label = match[1];
-    const url = match[2];
-    parts.push(
-      <Link
-        key={match.index}
-        to={url}
-        className="font-bold text-[#4A154B] hover:text-[#3b0764] underline underline-offset-2 inline-flex items-center gap-0.5 mx-0.5"
-      >
-        <span>{label}</span>
-        <ExternalLink className="w-3 h-3 inline-block" />
-      </Link>
-    );
-    lastIndex = linkRegex.lastIndex;
+
+    // Case 1: **[label](url)** -> Bold styled badge link
+    if (match[2] && match[3]) {
+      const label = match[2];
+      const url = match[3];
+      parts.push(
+        <Link
+          key={match.index}
+          to={url}
+          className="font-black text-[#4A154B] hover:text-[#3b0764] underline underline-offset-4 decoration-[#4A154B]/50 inline-flex items-center gap-1 mx-1 bg-purple-100/70 hover:bg-purple-200/70 px-2 py-0.5 rounded-md transition-colors"
+        >
+          <span>{label}</span>
+          <ExternalLink className="w-3 h-3 inline-block" />
+        </Link>
+      );
+    }
+    // Case 2: [label](url) -> Standard link
+    else if (match[4] && match[5]) {
+      const label = match[4];
+      const url = match[5];
+      parts.push(
+        <Link
+          key={match.index}
+          to={url}
+          className="font-bold text-[#4A154B] hover:text-[#3b0764] underline underline-offset-2 inline-flex items-center gap-0.5 mx-0.5"
+        >
+          <span>{label}</span>
+          <ExternalLink className="w-3 h-3 inline-block" />
+        </Link>
+      );
+    }
+    // Case 3: **bold**
+    else if (match[6]) {
+      parts.push(
+        <strong key={match.index} className="font-extrabold text-gray-900">
+          {match[6]}
+        </strong>
+      );
+    }
+    // Case 4: `code`
+    else if (match[7]) {
+      parts.push(
+        <code key={match.index} className="px-1.5 py-0.5 bg-purple-100/80 text-[#4A154B] rounded-md font-mono text-[11px] font-semibold border border-purple-200/60">
+          {match[7]}
+        </code>
+      );
+    }
+    // Case 5: *italic*
+    else if (match[8]) {
+      parts.push(
+        <em key={match.index} className="italic text-gray-700">
+          {match[8]}
+        </em>
+      );
+    }
+
+    lastIndex = tokenRegex.lastIndex;
   }
 
   if (lastIndex < text.length) {
-    parts.push(renderBoldAndCode(text.substring(lastIndex)));
+    parts.push(text.substring(lastIndex));
   }
 
   return parts.length > 0 ? parts : text;
 }
 
-function renderBoldAndCode(text: string): React.ReactNode {
-  // Bold pattern: **bold**
-  const boldParts = text.split(/(\*\*[^*]+\*\*)/g);
-  return boldParts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      const boldText = part.slice(2, -2);
-      return <strong key={i} className="font-extrabold text-gray-900">{boldText}</strong>;
+const getInitialMessagesForTopic = (topicId: string): ChatMessage[] => {
+  const meta: Record<string, { welcome: string; actions: Array<{ label: string; actionPath: string }> }> = {
+    general: {
+      welcome: `👋 **Welcome to HerRise All-in-One Advisor!**\n\nI am your unified copilot across personal finance, career growth, business ventures, funding, and marketing.\n\n**What would you like to explore today?** Pick a suggested prompt below or type your question!`,
+      actions: [
+        { label: 'Optimize My Budget', actionPath: '/finance' },
+        { label: 'Explore Career Opportunities', actionPath: '/career' },
+        { label: 'Draft Business Plan', actionPath: '/business' }
+      ]
+    },
+    finance: {
+      welcome: `💰 **Welcome to HerFinance Advisor!**\n\nI specialize in your personal financial independence: 50/30/20 budgeting, building emergency reserves, automated SIP investments, and expense auditing.\n\n**How can I assist your financial goals today?**`,
+      actions: [
+        { label: 'Calculate 50/30/20 Budget', actionPath: '/finance' },
+        { label: 'Set Emergency Fund Goal', actionPath: '/finance' },
+        { label: 'SIP vs FD Comparison', actionPath: '/finance' }
+      ]
+    },
+    career: {
+      welcome: `💼 **Welcome to HerCareer Coach!**\n\nI am your dedicated career growth strategist: ATS resume building, explaining career gaps with confidence, behavioral interview prep, and salary negotiation.\n\n**What career milestone can we tackle today?**`,
+      actions: [
+        { label: 'Open ATS Resume Builder', actionPath: '/career' },
+        { label: 'Explain Career Break', actionPath: '/career' },
+        { label: 'Practice Interview Simulation', actionPath: '/career' }
+      ]
+    },
+    business: {
+      welcome: `🚀 **Welcome to HerBusiness Strategist!**\n\nI guide you in launching and scaling profitable ventures: validating high-margin ideas, calculating 55%+ gross margins, unit economics, and client acquisition.\n\n**What business concept would you like to build?**`,
+      actions: [
+        { label: 'Launch Idea Generator', actionPath: '/business' },
+        { label: 'Pricing & Margin Calculator', actionPath: '/business' },
+        { label: 'First 20 Customers Playbook', actionPath: '/business' }
+      ]
+    },
+    fund: {
+      welcome: `🏛️ **Welcome to HerFund Guide!**\n\nI specialize in capital acquisition for women: Pradhan Mantri Mudra Yojana, Stand-Up India, SIDBI schemes, collateral-free credit, and 6-slide investor pitch decks.\n\n**How can I help you secure funding today?**`,
+      actions: [
+        { label: 'Explore Mudra & Stand-Up Schemes', actionPath: '/fund' },
+        { label: 'Build 6-Slide Pitch Deck', actionPath: '/fund' },
+        { label: 'Check Loan Eligibility', actionPath: '/fund' }
+      ]
+    },
+    market: {
+      welcome: `🛍️ **Welcome to HerMarket Optimizer!**\n\nI specialize in digital marketplace success: storefront listing optimization, compelling product copywriting, fragile item packaging, and repeat order retention.\n\n**What storefront or product are we optimizing today?**`,
+      actions: [
+        { label: 'Product Description Formula', actionPath: '/market' },
+        { label: 'Sustainable Packaging Guide', actionPath: '/market' },
+        { label: 'Double Repeat Orders Playbook', actionPath: '/market' }
+      ]
     }
-    // Inline code `code`
-    const codeParts = part.split(/(`[^`]+`)/g);
-    return codeParts.map((sub, j) => {
-      if (sub.startsWith('`') && sub.endsWith('`')) {
-        return (
-          <code key={j} className="px-1.5 py-0.5 bg-purple-100 text-[#4A154B] rounded-md font-mono text-[11px]">
-            {sub.slice(1, -1)}
-          </code>
-        );
-      }
-      return sub;
-    });
-  });
-}
+  };
+
+  const item = meta[topicId] || meta.general;
+  return [
+    {
+      id: `welcome-${topicId}-${Date.now()}`,
+      sender: 'assistant',
+      content: item.welcome,
+      timestamp: 'Just now',
+      category: topicId,
+      suggestedActions: item.actions
+    }
+  ];
+};
 
 export const AIAssistantPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const stored = localStorage.getItem('herrise_ai_chat');
-      return stored ? JSON.parse(stored) : initialAssistantMessages;
-    } catch {
-      return initialAssistantMessages;
-    }
+  const [selectedTopic, setSelectedTopic] = useState('general');
+
+  // Separate, independent chat histories per agent discipline
+  const [chatsByTopic, setChatsByTopic] = useState<Record<string, ChatMessage[]>>(() => {
+    const initial: Record<string, ChatMessage[]> = {};
+    const topicIds = ['general', 'finance', 'career', 'business', 'fund', 'market'];
+    topicIds.forEach((tId) => {
+      try {
+        const stored = localStorage.getItem(`herrise_ai_chat_${tId}`);
+        initial[tId] = stored ? JSON.parse(stored) : getInitialMessagesForTopic(tId);
+      } catch {
+        initial[tId] = getInitialMessagesForTopic(tId);
+      }
+    });
+    return initial;
   });
 
+  // Current active agent's messages (completely isolated per agent)
+  const currentMessages = chatsByTopic[selectedTopic] || getInitialMessagesForTopic(selectedTopic);
+
   const [inputValue, setInputValue] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState('general');
   const [isListening, setIsListening] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -186,9 +292,17 @@ export const AIAssistantPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    localStorage.setItem('herrise_ai_chat', JSON.stringify(messages));
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+    scrollToBottom();
+    const timer1 = setTimeout(scrollToBottom, 100);
+    const timer2 = setTimeout(scrollToBottom, 300);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [currentMessages, isTyping, selectedTopic]);
 
   const currentTopic = assistantTopics.find((t) => t.id === selectedTopic) || assistantTopics[0];
 
@@ -203,7 +317,20 @@ export const AIAssistantPage: React.FC = () => {
       timestamp: 'Just now'
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const topicKey = selectedTopic;
+    const priorHistory = currentMessages;
+
+    // Immediately update this agent's chat history only
+    setChatsByTopic((prev) => {
+      const activeMsgs = prev[topicKey] || getInitialMessagesForTopic(topicKey);
+      const updated = {
+        ...prev,
+        [topicKey]: [...activeMsgs, userMessage]
+      };
+      localStorage.setItem(`herrise_ai_chat_${topicKey}`, JSON.stringify(updated[topicKey]));
+      return updated;
+    });
+
     setInputValue('');
     setIsTyping(true);
 
@@ -217,8 +344,8 @@ export const AIAssistantPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
-          topic: selectedTopic,
-          history: messages.slice(-6).map((m) => ({
+          topic: topicKey,
+          history: priorHistory.slice(-6).map((m) => ({
             role: m.sender === 'user' ? 'user' : 'assistant',
             content: m.content
           })),
@@ -243,7 +370,7 @@ export const AIAssistantPage: React.FC = () => {
 
     // High-fidelity fallback client reasoning if backend was unreachable or returned empty
     if (!reply) {
-      const localResult = getClientAssistantAnswer(query, selectedTopic, user?.name);
+      const localResult = getClientAssistantAnswer(query, topicKey, user?.name);
       reply = localResult.response;
       suggestedActions = localResult.suggestedActions;
     }
@@ -257,7 +384,17 @@ export const AIAssistantPage: React.FC = () => {
     };
 
     setIsTyping(false);
-    setMessages((prev) => [...prev, assistantMessage]);
+
+    // Save assistant reply only to this agent's chat history
+    setChatsByTopic((prev) => {
+      const activeMsgs = prev[topicKey] || [];
+      const updated = {
+        ...prev,
+        [topicKey]: [...activeMsgs, assistantMessage]
+      };
+      localStorage.setItem(`herrise_ai_chat_${topicKey}`, JSON.stringify(updated[topicKey]));
+      return updated;
+    });
   };
 
   const toggleMic = () => {
@@ -270,10 +407,12 @@ export const AIAssistantPage: React.FC = () => {
           selectedTopic === 'career'
             ? 'How do I explain a 3-year career break in my resume and interviews?'
             : selectedTopic === 'business'
-            ? 'What are 5 low-investment business ideas I can start from home?'
-            : selectedTopic === 'fund'
-            ? 'What documents do public sector banks ask for women business loans?'
-            : 'How should I allocate my 50/30/20 budget on a ₹60,000 monthly income?';
+              ? 'What are 5 low-investment business ideas I can start from home?'
+              : selectedTopic === 'fund'
+                ? 'What documents do public sector banks ask for women business loans?'
+                : selectedTopic === 'market'
+                  ? 'How should I package fragile glass items sustainably?'
+                  : 'How should I allocate my 50/30/20 budget on a ₹60,000 monthly income?';
         setInputValue(sampleQuery);
         showToast('Voice Transcribed', 'Simulated speech converted to text', 'success');
       }, 1500);
@@ -283,9 +422,13 @@ export const AIAssistantPage: React.FC = () => {
   };
 
   const handleClearChat = () => {
-    setMessages(initialAssistantMessages);
-    localStorage.removeItem('herrise_ai_chat');
-    showToast('Chat History Cleared', 'Conversation reset to default', 'info');
+    const fresh = getInitialMessagesForTopic(selectedTopic);
+    setChatsByTopic((prev) => ({
+      ...prev,
+      [selectedTopic]: fresh
+    }));
+    localStorage.setItem(`herrise_ai_chat_${selectedTopic}`, JSON.stringify(fresh));
+    showToast('Chat History Cleared', `${currentTopic.label} conversation reset`, 'info');
   };
 
   const handleCopy = (content: string, id: string) => {
@@ -297,21 +440,21 @@ export const AIAssistantPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-8.5rem)] flex flex-col bg-white rounded-3xl border border-purple-100 shadow-xs overflow-hidden">
+      <div className="h-[calc(100vh-5.5rem)] min-h-[700px] flex flex-col bg-white rounded-3xl border border-purple-100 shadow-md overflow-hidden">
         {/* Top Header */}
         <div className="px-6 py-4 border-b border-purple-100 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-purple-50/60 to-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#fb7185] flex items-center justify-center text-white shadow-md">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#fb7185] flex items-center justify-center text-white shadow-md">
               <Sparkles className="w-5 h-5 text-pink-200" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-base text-gray-900">Unified HerRise AI Assistant</h1>
-                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                <h1 className="font-extrabold text-base sm:text-lg text-gray-900">Unified HerRise AI Assistant</h1>
+                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
                   Ready • Multi-Discipline AI
                 </span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 Autonomous Copilot for Finance, Careers, Ventures, Capital & Mentorship
               </p>
             </div>
@@ -320,77 +463,116 @@ export const AIAssistantPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleClearChat}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-rose-600 p-2 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-rose-600 px-3 py-2 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
               title="Clear conversation"
             >
               <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Reset Chat</span>
+              <span>Reset Chat</span>
             </button>
           </div>
         </div>
 
         {/* Module Category Selector Pills */}
-        <div className="px-6 py-2.5 border-b border-purple-50 bg-[#faf9fd] flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px] shrink-0 mr-1">
+        <div className="px-6 py-3 border-b border-purple-50 bg-[#faf9fd] flex items-center gap-2.5 overflow-x-auto text-xs">
+          <span className="text-gray-400 font-extrabold uppercase tracking-wider text-[10px] shrink-0 mr-1">
             Focus Discipline:
           </span>
           {assistantTopics.map((topic) => (
             <button
               key={topic.id}
               onClick={() => setSelectedTopic(topic.id)}
-              className={`px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${selectedTopic === topic.id
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-200'
+              className={`px-3.5 py-1.5 rounded-xl font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${selectedTopic === topic.id
+                ? 'bg-[#4A154B] text-white shadow-sm'
+                : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
                 }`}
             >
-              <span>{topic.icon}</span>
+              <span className="text-sm">{topic.icon}</span>
               <span>{topic.label}</span>
             </button>
           ))}
         </div>
 
         {/* Chat Message Scroll Window */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((msg) => (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 bg-slate-50/20">
+          {currentMessages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'
+              className={`flex items-start gap-3.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'
                 }`}
             >
               {msg.sender === 'assistant' && (
-                <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-[#4A154B] shrink-0 shadow-2xs mt-1">
-                  <Bot className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-2xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-[#4A154B] shrink-0 shadow-xs mt-1">
+                  <Bot className="w-5 h-5" />
                 </div>
               )}
 
               <div
-                className={`max-w-2xl rounded-3xl p-5 text-xs sm:text-sm leading-relaxed relative group ${msg.sender === 'user'
-                  ? 'bg-[#4A154B] text-white rounded-tr-xs shadow-md'
-                  : 'bg-[#faf9fd] text-gray-800 rounded-tl-xs border border-purple-100 shadow-2xs'
+                className={`w-full rounded-3xl p-6 sm:p-8 leading-relaxed relative group transition-all ${msg.sender === 'user'
+                  ? 'max-w-xl bg-gradient-to-r from-[#4A154B] to-[#5c1c5e] text-white rounded-tr-xs shadow-md'
+                  : 'max-w-4xl xl:max-w-5xl bg-white text-gray-800 rounded-tl-xs border border-purple-100 shadow-sm'
                   }`}
               >
-                {/* Formatted Content */}
-                <FormattedMarkdown content={msg.content} />
+                {/* Message Content: Clean White for User, Formatted Markdown for Assistant */}
+                {msg.sender === 'user' ? (
+                  <p className="text-white text-sm sm:text-base font-semibold leading-relaxed whitespace-pre-wrap">
+                    {msg.content}
+                  </p>
+                ) : (
+                  <FormattedMarkdown content={msg.content} />
+                )}
 
                 {/* Suggested Navigation Actions */}
                 {msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                  <div className="pt-3 mt-3 border-t border-purple-100/60 flex flex-wrap gap-2">
-                    {msg.suggestedActions.map((action, idx) => (
-                      <Link
-                        key={idx}
-                        to={action.actionPath ?? '/'}
-                        className="bg-white hover:bg-purple-100/80 text-[#4A154B] border border-purple-200 px-3 py-1 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-                      >
-                        <span>{action.label}</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </Link>
-                    ))}
+                  <div className="pt-4 mt-4 border-t border-purple-100 flex flex-wrap gap-2.5">
+                    {msg.suggestedActions.map((action, idx) => {
+                      const isTopicSwitch = Boolean(action.actionPath?.startsWith('#topic-'));
+                      const targetTopicId = isTopicSwitch ? (action.actionPath?.replace('#topic-', '') ?? null) : null;
+
+                      if (isTopicSwitch && targetTopicId) {
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setSelectedTopic(targetTopicId);
+                              showToast(
+                                'Specialist Switched ✨',
+                                `Now chatting with ${assistantTopics.find((t) => t.id === targetTopicId)?.label || targetTopicId}`,
+                                'info'
+                              );
+                            }}
+                            className="bg-purple-100 hover:bg-[#4A154B] text-[#4A154B] hover:text-white border border-purple-300 hover:border-[#4A154B] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer inline-flex items-center gap-2 shadow-xs hover:shadow-md"
+                          >
+                            <span>{action.label}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <Link
+                          key={idx}
+                          to={action.actionPath ?? '/'}
+                          className="bg-purple-50 hover:bg-[#4A154B] text-[#4A154B] hover:text-white border border-purple-200 hover:border-[#4A154B] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer inline-flex items-center gap-2 shadow-2xs hover:shadow-xs"
+                        >
+                          <span>{action.label}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* Footer time & copy */}
-                <div className="mt-2.5 pt-1.5 flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-100/50">
-                  <span>{msg.timestamp}</span>
+                <div
+                  className={`mt-2.5 pt-1.5 flex items-center justify-between text-[10px] ${
+                    msg.sender === 'user'
+                      ? 'text-purple-200 border-t border-white/20'
+                      : 'text-gray-400 border-t border-gray-100/50'
+                  }`}
+                >
+                  <span className={msg.sender === 'user' ? 'text-purple-200 font-medium' : 'text-gray-400'}>
+                    {msg.timestamp}
+                  </span>
                   {msg.sender === 'assistant' && (
                     <button
                       onClick={() => handleCopy(msg.content, msg.id)}

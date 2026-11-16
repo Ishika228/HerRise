@@ -65,44 +65,83 @@ export const HerNetworkPage: React.FC = () => {
     return localStorage.getItem('herrise_network_setup_completed') !== 'true';
   });
 
-  // Mentors state (persisted in localStorage or fallback)
-  const [mentorsList, setMentorsList] = useState<Mentor[]>(initialMentors);
+  // Mentors state (persisted in localStorage or empty clean state)
+  const [mentorsList, setMentorsList] = useState<Mentor[]>(() => {
+    try {
+      const saved = localStorage.getItem('herrise_mentors_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((m: any) => !m.id?.startsWith('mentor-') || Number(m.id?.replace('mentor-', '') || 0) > 10);
+        }
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
   const [connectedMentorIds, setConnectedMentorIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('herrise_connected_mentor_ids');
-      return saved ? JSON.parse(saved) : ['mentor-1', 'mentor-3'];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((id) => id !== 'mentor-1' && id !== 'mentor-3');
+        }
+      }
+      return [];
     } catch {
-      return ['mentor-1', 'mentor-3'];
+      return [];
     }
   });
 
-  // Workshops state
+  // Workshops state (clean empty default until scheduled)
   const [workshops, setWorkshops] = useState<Workshop[]>(() => {
     try {
       const saved = localStorage.getItem('herrise_workshops_data');
-      return saved ? JSON.parse(saved) : initialWorkshops;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((w: any) => !w.id?.startsWith('ws-') || Number(w.id?.replace('ws-', '') || 0) > 10);
+        }
+      }
+      return [];
     } catch {
-      return initialWorkshops;
+      return [];
     }
   });
 
-  // Community Feed state
+  // Community Feed state (clean empty default - shows user created posts)
   const [posts, setPosts] = useState<CommunityPost[]>(() => {
     try {
       const saved = localStorage.getItem('herrise_community_posts_data');
-      return saved ? JSON.parse(saved) : initialCommunityPosts;
+      if (saved) {
+        if (saved.includes('post-1') || saved.includes('Tanvi Deshmukh') || saved.includes('Mitti Handmade')) {
+          localStorage.removeItem('herrise_community_posts_data');
+          return [];
+        }
+        return JSON.parse(saved);
+      }
+      return [];
     } catch {
-      return initialCommunityPosts;
+      return [];
     }
   });
 
-  // Connections state
+  // Connections state (clean empty default - shows user initiated connections)
   const [connections, setConnections] = useState<Connection[]>(() => {
     try {
       const saved = localStorage.getItem('herrise_connections_data');
-      return saved ? JSON.parse(saved) : initialConnections;
+      if (saved) {
+        if (saved.includes('conn-1') || saved.includes('Dr. Radhika Sen') || saved.includes('Anjali Sharma')) {
+          localStorage.removeItem('herrise_connections_data');
+          return [];
+        }
+        return JSON.parse(saved);
+      }
+      return [];
     } catch {
-      return initialConnections;
+      return [];
     }
   });
 
@@ -112,10 +151,10 @@ export const HerNetworkPage: React.FC = () => {
   const [selectedConnectionForProfile, setSelectedConnectionForProfile] = useState<Connection | null>(null);
 
   // Booking Form State
-  const [bookingDate, setBookingDate] = useState('2026-11-25');
-  const [bookingSlot, setBookingSlot] = useState('4:00 PM - 4:30 PM IST');
-  const [bookingTopic, setBookingTopic] = useState('Career Transition Strategy & Portfolio Guidance');
-  const [bookedSessionsCount, setBookedSessionsCount] = useState(2);
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingSlot, setBookingSlot] = useState('');
+  const [bookingTopic, setBookingTopic] = useState('');
+  const [bookedSessionsCount, setBookedSessionsCount] = useState(0);
 
   // Sync state to localStorage
   useEffect(() => {

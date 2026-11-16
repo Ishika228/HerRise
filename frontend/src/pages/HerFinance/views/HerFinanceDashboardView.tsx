@@ -48,16 +48,6 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
     category?: string;
   } | null>(null);
 
-  // Quick prompt suggestions
-  const quickPrompts = [
-    { label: '+ 💼 Log ₹25,000 Salary', text: 'Got 25000 salary credited to bank account' },
-    { label: '- 🛒 Spent ₹650 Groceries', text: 'Spent 650 on groceries via UPI' },
-    { label: '- ⚡ Paid ₹1,200 Electricity', text: 'Paid 1200 electricity bill via UPI' },
-    { label: '- ☕ Spent ₹180 Coffee', text: 'Spent 180 on coffee and snacks' },
-    { label: '🎯 Save ₹5,000 Emergency', text: 'Save 5000 for emergency fund' },
-    { label: '💡 Can I afford dinner out?', text: 'Can I afford to spend 1500 on dinner tonight?' }
-  ];
-
   // Handle AI Command Submission
   const handleExecuteAi = async (textToRun?: string) => {
     const promptToSubmit = (textToRun || aiPrompt).trim();
@@ -204,7 +194,7 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
                 AI Financial Command Bar
               </h2>
               <p className="text-xs text-slate-500">
-                Just type what you spent, earned, or want to save — Groq AI does the rest.
+                Just type what you spent, earned, or want to save — HerRise AI does the rest.
               </p>
             </div>
           </div>
@@ -250,26 +240,6 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
           </button>
         </form>
 
-        {/* 1-Tap Quick Action Chips */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            <span>1-Tap Quick Actions:</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {quickPrompts.map((q, idx) => (
-              <button
-                key={idx}
-                type="button"
-                disabled={isProcessing}
-                onClick={() => handleExecuteAi(q.text)}
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-purple-100/70 border border-purple-100 text-slate-700 text-xs font-semibold transition-all shadow-2xs hover:border-purple-300 cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-              >
-                <span>{q.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* AI Response Banner */}
         {lastAiResponse && (
           <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-2 animate-in fade-in slide-in-from-top-1">
@@ -309,9 +279,6 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
               </p>
             </div>
           </div>
-          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-full self-start sm:self-auto">
-            ⚡ 100% Auto-Managed by AI
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
@@ -381,7 +348,7 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
           <div>
             <h3 className="font-extrabold text-sm text-slate-900">Live AI Activity Feed</h3>
             <p className="text-xs text-slate-500">
-              Transactions parsed and recorded automatically by Groq AI
+              Transactions parsed and recorded automatically by HerRise AI
             </p>
           </div>
           <button
@@ -398,7 +365,7 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
             <div className="py-8 text-center space-y-2">
               <p className="text-xs text-slate-400">No activity yet.</p>
               <p className="text-xs text-slate-500">
-                Try clicking one of the <strong>1-Tap Quick Actions</strong> above or type your first expense.
+                Type your earnings or expenses above to log your first transaction.
               </p>
             </div>
           ) : (

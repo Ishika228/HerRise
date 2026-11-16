@@ -215,7 +215,7 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
                 <h3 className="text-sm font-bold text-slate-900">HerFinance AI Copilot</h3>
                 <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
                   <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-                  Groq LPU™ Cloud AI
+                  HerRise Intelligent Advisory
                 </span>
                 <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
                   Grounded In User Ledger
@@ -259,55 +259,55 @@ export const HerFinanceAIAssistantView: React.FC<HerFinanceAIAssistantViewProps>
                       : 'bg-[#0f172a] text-white'
                   }`}
                 >
-                  <div className="space-y-2 prose prose-sm max-w-none text-slate-700">
-                    {msg.text.split('\n\n').map((paragraph, idx) => {
-                      if (paragraph.startsWith('### ')) {
-                        return (
-                          <h4
-                            key={idx}
-                            className={`font-bold text-sm sm:text-base mb-1 ${
-                              isAi ? 'text-[#0f172a]' : 'text-teal-300'
-                            }`}
-                          >
-                            {paragraph.replace('### ', '')}
-                          </h4>
-                        );
-                      }
-                      if (paragraph.startsWith('#### ')) {
-                        return (
-                          <h5
-                            key={idx}
-                            className={`font-bold text-xs sm:text-sm mb-1 ${
-                              isAi ? 'text-teal-800' : 'text-teal-200'
-                            }`}
-                          >
-                            {paragraph.replace('#### ', '')}
-                          </h5>
-                        );
-                      }
-                      if (paragraph.startsWith('> ')) {
-                        return (
-                          <div
-                            key={idx}
-                            className="bg-teal-50 border-l-4 border-teal-600 p-2.5 rounded-r-xl text-xs text-teal-900 font-medium"
-                          >
-                            {paragraph.replace('> ', '')}
-                          </div>
-                        );
-                      }
+                  {!isAi ? (
+                    <p className="text-white font-semibold text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
+                      {msg.text}
+                    </p>
+                  ) : (
+                    <div className="space-y-2 prose prose-sm max-w-none text-slate-700">
+                      {msg.text.split('\n\n').map((paragraph, idx) => {
+                        if (paragraph.startsWith('### ')) {
+                          return (
+                            <h4
+                              key={idx}
+                              className="font-bold text-sm sm:text-base mb-1 text-[#0f172a]"
+                            >
+                              {paragraph.replace('### ', '')}
+                            </h4>
+                          );
+                        }
+                        if (paragraph.startsWith('#### ')) {
+                          return (
+                            <h5
+                              key={idx}
+                              className="font-bold text-xs sm:text-sm mb-1 text-teal-800"
+                            >
+                              {paragraph.replace('#### ', '')}
+                            </h5>
+                          );
+                        }
+                        if (paragraph.startsWith('> ')) {
+                          return (
+                            <div
+                              key={idx}
+                              className="bg-teal-50 border-l-4 border-teal-600 p-2.5 rounded-r-xl text-xs text-teal-900 font-medium"
+                            >
+                              {paragraph.replace('> ', '')}
+                            </div>
+                          );
+                        }
 
-                      return (
-                        <p
-                          key={idx}
-                          className={`${
-                            isAi ? 'text-slate-700' : 'text-slate-100'
-                          } whitespace-pre-line`}
-                        >
-                          {paragraph}
-                        </p>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <p
+                            key={idx}
+                            className="text-slate-700 whitespace-pre-line"
+                          >
+                            {paragraph}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {msg.actionSuggestion && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">

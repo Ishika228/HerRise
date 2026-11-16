@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserProfile, Language } from '../types';
 import { API_BASE } from '../config/api';
+import { observeLocalization } from '../localization';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -37,11 +38,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [language, setLanguageState] = useState<Language>(() => {
     try {
       const savedLang = localStorage.getItem('herrise_user_lang') as Language;
-      return savedLang || 'en';
+      return savedLang === 'hi' || savedLang === 'mr' ? savedLang : 'en';
     } catch {
       return 'en';
     }
   });
+
+  useEffect(() => observeLocalization(language), [language]);
 
   useEffect(() => {
     if (user) {

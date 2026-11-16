@@ -20,7 +20,9 @@ import learnRoutes from './routes/learnRoutes.js';
 import networkRoutes from './routes/networkRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
+import digitalServicesRoutes from './routes/digitalServicesRoutes.js';
 import { syncAustralianQualifications } from './services/courseSyncService.js';
+import { seedDigitalServicesIfEmpty } from './services/digitalServicesSeed.js';
 
 const app = express();
 
@@ -72,7 +74,7 @@ app.get('/api/health', (req: Request, res: Response) => {
       dbName: config.mongoDbName
     },
     ai: {
-      groqConnected: !!config.groqApiKey
+      aiEngineReady: !!config.groqApiKey
     }
   });
 });
@@ -88,6 +90,7 @@ app.use('/api/learn', learnRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/network', networkRoutes);
 app.use('/api/assistant', assistantRoutes);
+app.use('/api/digital-services', digitalServicesRoutes);
 
 // Serve compiled React frontend in production if dist exists
 const frontendDist = path.resolve(process.cwd(), 'frontend/dist');
@@ -128,6 +131,7 @@ if (process.env.NODE_ENV !== 'test') {
     const connected = await connectDatabase();
     if (connected) {
       await seedMongoIfEmpty();
+      await seedDigitalServicesIfEmpty();
       try {
         const { CourseModel } = await import('./models/CourseModel.js');
         const count = await CourseModel.countDocuments();
