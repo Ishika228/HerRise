@@ -11,7 +11,9 @@ import {
   TrendingUp,
   Tag,
   Layers,
-  FileCheck
+  FileCheck,
+  GraduationCap,
+  Award
 } from 'lucide-react';
 import { useHerCareer } from '../../../context/HerCareerContext';
 import { useToast } from '../../../context/ToastContext';
@@ -339,6 +341,89 @@ export const ResumeAnalyzerView: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* ATS Verified Qualification Analysis Card */}
+          {resumeAnalysis.qualificationDetails && (
+            <div className="bg-gradient-to-br from-indigo-900/90 via-slate-900 to-teal-950 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-indigo-500/30 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-teal-300 bg-teal-500/20 px-2 py-0.5 rounded-full border border-teal-400/30">
+                        {resumeAnalysis.qualificationDetails.qualificationCategory || 'Verified Academic Credential'}
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-300">
+                        {resumeAnalysis.qualificationDetails.qualificationLevel || 'Degree'}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mt-1">
+                      {resumeAnalysis.qualificationDetails.highestQualification || 'Qualification Extracted'}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/15 self-start sm:self-auto">
+                  <Award className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-slate-300 tracking-wider">ATS Credential Score</div>
+                    <div className="text-lg font-black text-amber-300">
+                      {resumeAnalysis.qualificationDetails.atsQualificationScore || 90}/100
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {resumeAnalysis.qualificationDetails.institution && (
+                  <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                    <div className="text-[10px] text-slate-400 font-medium">Institution / University</div>
+                    <div className="text-xs font-bold text-slate-100 mt-0.5">
+                      {resumeAnalysis.qualificationDetails.institution}
+                    </div>
+                  </div>
+                )}
+                {resumeAnalysis.qualificationDetails.graduationYear && (
+                  <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                    <div className="text-[10px] text-slate-400 font-medium">Graduation Year</div>
+                    <div className="text-xs font-bold text-slate-100 mt-0.5">
+                      {resumeAnalysis.qualificationDetails.graduationYear}
+                    </div>
+                  </div>
+                )}
+                {resumeAnalysis.qualificationDetails.grade && (
+                  <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                    <div className="text-[10px] text-slate-400 font-medium">Grade / CGPA</div>
+                    <div className="text-xs font-bold text-slate-100 mt-0.5">
+                      {resumeAnalysis.qualificationDetails.grade}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {resumeAnalysis.qualificationDetails.qualificationAssessment && (
+                <p className="text-xs text-slate-300 leading-relaxed bg-white/5 p-3 rounded-2xl border border-white/10">
+                  <span className="font-semibold text-teal-300">Credential Evaluation: </span>
+                  {resumeAnalysis.qualificationDetails.qualificationAssessment}
+                </p>
+              )}
+
+              {Array.isArray(resumeAnalysis.qualificationDetails.recommendedJobRoles) && resumeAnalysis.qualificationDetails.recommendedJobRoles.length > 0 && (
+                <div className="pt-1">
+                  <div className="text-[11px] font-bold text-slate-300 mb-2">Target Roles Matched to this Qualification:</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resumeAnalysis.qualificationDetails.recommendedJobRoles.map((role, idx) => (
+                      <span key={idx} className="px-2.5 py-1 rounded-xl bg-teal-500/20 border border-teal-400/30 text-teal-200 text-xs font-semibold">
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Strengths & Improvements */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -316,20 +316,9 @@ export const AustralianCoursesSection: React.FC = () => {
       {/* Personalized Learning Hero Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-teal-800/40">
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold backdrop-blur-md border border-teal-400/20">
-            <span className="text-sm">🇦🇺</span>
-            <span>Personalized Australian Qualifications Matcher (AQF)</span>
-          </div>
-
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
             Tailored Courses for {user?.name || 'Your Career Pathway'}
           </h2>
-
-          <p className="text-xs sm:text-sm text-teal-100 leading-relaxed font-normal">
-            Courses recommended based on your current qualification (
-            <span className="font-bold text-teal-300 underline">{selectedQualification}</span>
-            ) and career aspirations in <span className="font-bold text-teal-300">{selectedDomain}</span>. Explore over <strong className="text-white">{totalCatalogCount.toLocaleString()}</strong> official qualifications synced from the Australian Government National Training Register.
-          </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
             {/* View Mode Toggle: Recommended vs All 1078 */}
@@ -389,9 +378,6 @@ export const AustralianCoursesSection: React.FC = () => {
               </p>
             </div>
           </div>
-          <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-xl">
-            {viewMode === 'recommended' ? 'Active: Personalized Matcher' : 'Active: Full Catalog'}
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -198,11 +198,6 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
               </p>
             </div>
           </div>
-
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold self-start sm:self-auto">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Fully AI-Automated
-          </span>
         </div>
 
         {/* Input box */}

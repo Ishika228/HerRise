@@ -253,14 +253,9 @@ export const HerMarketPage: React.FC = () => {
                 <Sparkles className="w-5 h-5 text-pink-300" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-black text-gray-900 tracking-tight">
-                    HerMarket
-                  </h1>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#4A154B] px-2 py-0.5 rounded-full">
-                    Digital Growth
-                  </span>
-                </div>
+                <h1 className="text-xl font-black text-gray-900 tracking-tight">
+                  HerMarket
+                </h1>
                 <p className="text-xs text-gray-500">
                   Affordable digital services, websites, and marketing for growing businesses.
                 </p>

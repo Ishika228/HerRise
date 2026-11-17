@@ -169,10 +169,6 @@ export const StartupFundingSection: React.FC = () => {
       {/* Overview Stat Callout */}
       <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-md relative overflow-hidden">
         <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-pink-200">
-            <Sparkles className="w-3.5 h-3.5 text-pink-300" />
-            <span>Official StartupDB Open Data Integration</span>
-          </div>
           <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">
             Live Venture & Startup Funding Feed
           </h2>

@@ -301,10 +301,6 @@ export const HerMarketHome: React.FC<HerMarketHomeProps> = ({
             />
           ))}
         </div>
-
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-950 leading-relaxed">
-          <strong>Transparent Package Policy:</strong> Package inclusions are strictly defined above. Third-party expenses including domain renewal fees, server cloud hosting, paid ad budgets for Google/Meta, and applicable GST are separate. We do not promise artificial guaranteed traffic or sales numbers; we build professional digital assets that convert.
-        </div>
       </section>
 
       {/* CTA BANNER */}

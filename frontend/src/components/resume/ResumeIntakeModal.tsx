@@ -238,12 +238,17 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
           ],
           education: Array.isArray(p.education) && p.education.length > 0
             ? p.education.map((edu: any) => ({
-              degree: edu.degree || 'Degree',
+              degree: edu.degree || p.highestQualification || 'Degree',
               institution: edu.institution || 'University',
               year: edu.year || '',
               grade: edu.grade || ''
             }))
-            : resumeData.education,
+            : (p.highestQualification ? [{
+                degree: p.highestQualification,
+                institution: 'University / Institute',
+                year: '',
+                grade: ''
+              }] : resumeData.education),
           certifications: Array.isArray(p.certifications)
             ? p.certifications.map((c: any) => (typeof c === 'string' ? c : c.name || 'Certification'))
             : [],
@@ -269,7 +274,8 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
             reason: 'Helps match location-based and remote job filters.'
           });
         }
-        if (!updated.education || updated.education.length === 0 || !updated.education[0]?.degree) {
+        const hasValidEducation = updated.education && updated.education.length > 0 && updated.education[0]?.degree && updated.education[0]?.degree !== 'Degree';
+        if (!hasValidEducation && !p.highestQualification) {
           detectedMissing.push({
             field: 'education',
             label: 'Highest Qualification / Degree',

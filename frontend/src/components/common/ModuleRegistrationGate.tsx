@@ -293,10 +293,6 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
               <Icon className="w-6 h-6" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full mb-1">
-                <Sparkles className="w-3 h-3 text-pink-500" />
-                <span>Personalized Module Intake</span>
-              </div>
               <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
                 {currentMeta.title}
               </h2>

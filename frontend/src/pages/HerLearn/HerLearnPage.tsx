@@ -61,7 +61,7 @@ export const HerLearnPage: React.FC = () => {
         const parsed = JSON.parse(rawResume);
         if (parsed?.personalInfo?.fullName) return parsed.personalInfo.fullName;
       }
-    } catch {}
+    } catch { }
     return 'Verified HerRise Scholar';
   }, [user]);
 
@@ -93,7 +93,7 @@ export const HerLearnPage: React.FC = () => {
           return parsed.education[0].degree;
         }
       }
-    } catch {}
+    } catch { }
     return user?.education || user?.resumeData?.education?.[0]?.degree || '';
   })();
 
@@ -136,11 +136,11 @@ export const HerLearnPage: React.FC = () => {
                 const progressPercent = isAllCompleted
                   ? 100
                   : Math.max(
-                      matched.progressPercent ?? 0,
-                      Math.round(
-                        (updatedModules.filter((m) => m.completed).length / updatedModules.length) * 100
-                      )
-                    );
+                    matched.progressPercent ?? 0,
+                    Math.round(
+                      (updatedModules.filter((m) => m.completed).length / updatedModules.length) * 100
+                    )
+                  );
 
                 return {
                   ...c,
@@ -280,17 +280,7 @@ export const HerLearnPage: React.FC = () => {
               <span>Complete Academy Registration</span>
             </button>
           </div>
-        ) : (
-          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
-            <span>✓ Active Learning Track: <strong>{user?.learnProfile?.targetDomain || 'FinTech & AI Leadership'}</strong></span>
-            <button
-              onClick={() => setGateOpen(true)}
-              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
-            >
-              Edit Study Plan
-            </button>
-          </div>
-        )}
+        ) : null}
 
         {/* Header Bar */}
         <div className="bg-white p-6 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -319,8 +309,8 @@ export const HerLearnPage: React.FC = () => {
             <button
               onClick={() => setActiveTab('australian')}
               className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'australian'
-                  ? 'bg-teal-800 text-white shadow-xs'
-                  : 'text-teal-900 bg-teal-50/70 hover:bg-teal-100/70 border border-teal-200/50'
+                ? 'bg-teal-800 text-white shadow-xs'
+                : 'text-teal-900 bg-teal-50/70 hover:bg-teal-100/70 border border-teal-200/50'
                 }`}
             >
               <span className="text-sm">🇦🇺</span>
@@ -451,8 +441,8 @@ export const HerLearnPage: React.FC = () => {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedCategory === cat
-                        ? 'bg-[#4A154B] text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-700 hover:bg-purple-50'
+                      ? 'bg-[#4A154B] text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-700 hover:bg-purple-50'
                       }`}
                   >
                     {cat}
@@ -645,8 +635,8 @@ export const HerLearnPage: React.FC = () => {
                           key={optIdx}
                           onClick={() => handleQuizAnswer(q.id, optIdx)}
                           className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${selectedOpt === optIdx
-                              ? 'border-[#4A154B] bg-purple-50 font-bold text-purple-900'
-                              : 'border-gray-200 bg-white hover:border-purple-200 text-gray-700'
+                            ? 'border-[#4A154B] bg-purple-50 font-bold text-purple-900'
+                            : 'border-gray-200 bg-white hover:border-purple-200 text-gray-700'
                             }`}
                         >
                           <span>{opt}</span>

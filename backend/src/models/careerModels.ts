@@ -232,19 +232,37 @@ export const JobListingModel = mongoose.model<IJobListing>('JobListing', JobList
 // ==========================================
 // 4. Job Application Tracker Model
 // ==========================================
+export interface ICandidateDetails {
+  fullName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  headline?: string;
+  qualification?: string;
+  yearsOfExperience?: number | string;
+  skills?: string[];
+  resumeTitle?: string;
+  resumeUrl?: string;
+  portfolioUrl?: string;
+  coverLetter?: string;
+  reviewedAndConfirmed?: boolean;
+}
+
 export interface IJobApplication extends Document {
   userId: string;
+  userEmail?: string;
   jobId?: string;
   company: string;
   title: string;
   location?: string;
   salary?: string;
-  status: 'Saved' | 'Applied' | 'Interview Scheduled' | 'Interview Completed' | 'Selected' | 'Rejected';
+  status: 'Application Sent' | 'Applied' | 'Saved' | 'Interview Scheduled' | 'Interview Completed' | 'Selected' | 'Rejected';
   appliedDate: string;
   interviewDate?: string;
   contactPerson?: string;
   notes?: string;
   applicationUrl?: string;
+  candidateDetails?: ICandidateDetails;
   followUpGenerated?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -253,6 +271,7 @@ export interface IJobApplication extends Document {
 const JobApplicationSchema = new Schema<IJobApplication>(
   {
     userId: { type: String, required: true, index: true },
+    userEmail: { type: String, index: true },
     jobId: { type: String },
     company: { type: String, required: true },
     title: { type: String, required: true },
@@ -260,14 +279,29 @@ const JobApplicationSchema = new Schema<IJobApplication>(
     salary: { type: String },
     status: {
       type: String,
-      enum: ['Saved', 'Applied', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected'],
-      default: 'Applied'
+      enum: ['Application Sent', 'Applied', 'Saved', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected'],
+      default: 'Application Sent'
     },
     appliedDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
     interviewDate: { type: String },
     contactPerson: { type: String },
     notes: { type: String },
     applicationUrl: { type: String },
+    candidateDetails: {
+      fullName: { type: String },
+      email: { type: String },
+      phone: { type: String },
+      location: { type: String },
+      headline: { type: String },
+      qualification: { type: String },
+      yearsOfExperience: { type: Schema.Types.Mixed },
+      skills: { type: [String], default: [] },
+      resumeTitle: { type: String },
+      resumeUrl: { type: String },
+      portfolioUrl: { type: String },
+      coverLetter: { type: String },
+      reviewedAndConfirmed: { type: Boolean, default: true }
+    },
     followUpGenerated: { type: String }
   },
   { timestamps: true }

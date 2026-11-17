@@ -106,19 +106,50 @@ export interface JobListing {
   };
 }
 
+export interface CandidateApplicationDetails {
+  fullName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  headline?: string;
+  qualification?: string;
+  yearsOfExperience?: string | number;
+  skills?: string[];
+  resumeTitle?: string;
+  resumeUrl?: string;
+  portfolioUrl?: string;
+  coverLetter?: string;
+  reviewedAndConfirmed?: boolean;
+}
+
 export interface JobApplication {
   id: string;
   jobId?: string;
+  userId?: string;
+  userEmail?: string;
   company: string;
   title: string;
   location?: string;
   salary?: string;
-  status: 'Saved' | 'Applied' | 'Interview Scheduled' | 'Interview Completed' | 'Selected' | 'Rejected';
+  status: 'Application Sent' | 'Applied' | 'Saved' | 'Interview Scheduled' | 'Interview Completed' | 'Selected' | 'Rejected';
   appliedDate: string;
   interviewDate?: string;
   contactPerson?: string;
   notes?: string;
   applicationUrl?: string;
+  candidateDetails?: CandidateApplicationDetails;
+}
+
+export interface ExtractedQualificationInfo {
+  highestQualification: string;
+  qualificationLevel: string;
+  institution?: string;
+  graduationYear?: string;
+  grade?: string;
+  qualificationCategory: string;
+  atsQualificationScore?: number;
+  qualificationAssessment?: string;
+  recommendedJobRoles?: string[];
 }
 
 export interface ResumeAnalysisResult {
@@ -137,6 +168,7 @@ export interface ResumeAnalysisResult {
     original: string;
     improved: string;
   }[];
+  qualificationDetails?: ExtractedQualificationInfo;
 }
 
 export interface InterviewQuestionItem {

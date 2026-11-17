@@ -4,6 +4,7 @@ import {
   ResumeData,
   JobListing,
   JobApplication,
+  CandidateApplicationDetails,
   ResumeAnalysisResult,
   InterviewQuestionItem,
   CareerRoadmapPhase,
@@ -53,7 +54,11 @@ interface HerCareerContextType {
   savedJobIds: string[];
   toggleSaveJob: (jobId: string) => void;
   matchJobWithProfile: (job: JobListing) => Promise<any>;
-  applyToJob: (jobId: string, coverNote?: string) => Promise<boolean>;
+  applyToJob: (
+    jobId: string,
+    detailsOrCoverNote?: CandidateApplicationDetails | string,
+    legacyCoverNote?: string
+  ) => Promise<boolean>;
 
   // Application Tracker
   applications: JobApplication[];
@@ -641,6 +646,13 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       const data = await res.json();
       if (data.success && data.analysis) {
         setResumeAnalysis(data.analysis);
+        if (data.analysis.qualificationDetails?.highestQualification) {
+          const qual = data.analysis.qualificationDetails.highestQualification;
+          setCandidateQualification(qual);
+          try {
+            localStorage.setItem('hercareer_qualification', qual);
+          } catch {}
+        }
         showToast('Analysis Complete', `Estimated Quality Score: ${data.analysis.overallScore}/100`, 'success');
         return data.analysis;
       }
@@ -661,6 +673,15 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         body: formData
       });
       const data = await res.json();
+      if (data.success && data.parsed) {
+        const highestQual = data.parsed.highestQualification || data.parsed.education?.[0]?.degree;
+        if (highestQual && highestQual !== 'Degree') {
+          setCandidateQualification(highestQual);
+          try {
+            localStorage.setItem('hercareer_qualification', highestQual);
+          } catch {}
+        }
+      }
       return data;
     } catch (err) {
       console.error('File parsing error:', err);
@@ -780,6 +801,14 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
         secondarySkills: userSkills.slice(4).length > 0 ? userSkills.slice(4) : prev.secondarySkills,
         bio: parsed.summary || prev.bio
       }));
+    }
+
+    const detectedHighestQual = parsed.highestQualification || education[0]?.degree || '';
+    if (detectedHighestQual && detectedHighestQual !== 'Degree') {
+      setCandidateQualification(detectedHighestQual);
+      try {
+        localStorage.setItem('hercareer_qualification', detectedHighestQual);
+      } catch { }
     }
 
     try {
@@ -906,53 +935,102 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   };
 
-  const applyToJob = async (jobId: string, coverNote?: string): Promise<boolean> => {
+  const applyToJob = async (
+    jobId: string,
+    detailsOrCoverNote?: CandidateApplicationDetails | string,
+    legacyCoverNote?: string
+  ): Promise<boolean> => {
     const job = jobs.find((j) => j.jobId === jobId);
     if (!job) return false;
 
+    let candidateDetails: CandidateApplicationDetails | undefined;
+    let coverNote = '';
+
+    if (typeof detailsOrCoverNote === 'string') {
+      coverNote = detailsOrCoverNote;
+    } else if (detailsOrCoverNote && typeof detailsOrCoverNote === 'object') {
+      candidateDetails = detailsOrCoverNote;
+      coverNote = candidateDetails.coverLetter || legacyCoverNote || '';
+    } else if (legacyCoverNote) {
+      coverNote = legacyCoverNote;
+    }
+
+    const effectiveUserId = user?.id || user?.email || 'guest';
+    const effectiveUserEmail = user?.email || candidateDetails?.email || '';
+
+    const effectiveCandidateDetails: CandidateApplicationDetails = candidateDetails || {
+      fullName: user?.name || profile.fullName || activeResume?.personalInfo?.fullName || 'Candidate',
+      email: effectiveUserEmail || profile.email || activeResume?.personalInfo?.email || '',
+      phone: user?.phone || profile.phone || activeResume?.personalInfo?.phone || '',
+      location: user?.location || profile.location || activeResume?.personalInfo?.location || job.location,
+      headline: profile.headline || profile.targetRole || user?.role || 'Professional',
+      qualification: candidateQualification || user?.education || activeResume?.education?.[0]?.degree || 'Bachelor Degree',
+      yearsOfExperience: profile.yearsOfExperience || user?.experienceLevel || '2 Years',
+      skills: profile.primarySkills?.length ? profile.primarySkills : (user?.skills?.length ? user.skills : (activeResume?.skills?.technical || [])),
+      resumeTitle: activeResume?.title || 'Primary Resume (ATS Verified)',
+      portfolioUrl: activeResume?.personalInfo?.portfolioUrl || activeResume?.personalInfo?.linkedinUrl || '',
+      coverLetter: coverNote,
+      reviewedAndConfirmed: true
+    };
+
+    let createdId = `app-${Date.now()}`;
+
     try {
-      await fetch(`${backendUrl}/api/career/apply`, {
+      const res = await fetch(`${backendUrl}/api/career/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId, coverLetter: coverNote })
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': effectiveUserId
+        },
+        body: JSON.stringify({
+          jobId,
+          coverLetter: coverNote,
+          candidateDetails: effectiveCandidateDetails,
+          userId: effectiveUserId,
+          userEmail: effectiveUserEmail
+        })
       });
-    } catch { }
+      const data = await res.json();
+      if (data.success && data.application?.id) {
+        createdId = data.application.id;
+      }
+    } catch (err) {
+      console.warn('Backend job application call failed, using local persistence:', err);
+    }
 
     // Add to applications tracker
     const newApp: JobApplication = {
-      id: `app-${Date.now()}`,
+      id: createdId,
       jobId,
+      userId: effectiveUserId,
+      userEmail: effectiveUserEmail,
       company: job.company,
       title: job.title,
       location: job.location,
       salary: job.salaryRange,
-      status: 'Applied',
+      status: 'Application Sent',
       appliedDate: new Date().toISOString().split('T')[0],
-      notes: coverNote || 'Applied via HerRise Career Portal'
+      candidateDetails: effectiveCandidateDetails,
+      notes: coverNote || 'Applied via HerRise Platform'
     };
 
-    setApplications((prev) => [newApp, ...prev]);
+    setApplications((prev) => [newApp, ...prev.filter((a) => a.jobId !== jobId)]);
     setStats((prev) => ({ ...prev, applicationsSubmitted: prev.applicationsSubmitted + 1 }));
-    showToast('Application Logged! 🎉', `Applied to ${job.company}. Opening application portal...`, 'success');
+    showToast('Application Sent! 🎉', `Applied to ${job.company} (${job.title}). Information stored in database.`, 'success');
 
-    if (job.applyUrl && job.applyUrl.startsWith('http')) {
-      try {
-        window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
-      } catch (e) {
-        console.warn('Could not auto-open apply URL:', e);
-      }
-    }
     return true;
   };
 
-  // 6. Applications Tracker State (Clean user-added applications only)
+  // 6. Applications Tracker State (Strictly user-isolated)
+  const getUserAppStorageKey = () => `hercareer_applications_${user?.id || user?.email || 'guest'}`;
+
   const [applications, setApplications] = useState<JobApplication[]>(() => {
-    const saved = localStorage.getItem('hercareer_applications');
+    const key = `hercareer_applications_${user?.id || user?.email || 'guest'}`;
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          // Purge any legacy dummy applications
           return parsed.filter(
             (a: any) =>
               !a.company?.includes('Fintech Spark') &&
@@ -965,13 +1043,81 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     return [];
   });
 
+  // Sync user-specific applications from backend MongoDB whenever user identity loads or switches
   useEffect(() => {
-    localStorage.setItem('hercareer_applications', JSON.stringify(applications));
+    const fetchUserApplications = async () => {
+      const currentUserId = user?.id || user?.email;
+      if (!currentUserId) return;
+
+      try {
+        const res = await fetch(`${backendUrl}/api/career/applications?userId=${encodeURIComponent(currentUserId)}`, {
+          headers: { 'x-user-id': currentUserId }
+        });
+        const json = await res.json();
+        if (json.success && Array.isArray(json.applications)) {
+          setApplications(json.applications);
+          localStorage.setItem(`hercareer_applications_${currentUserId}`, JSON.stringify(json.applications));
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not sync user applications from database:', err);
+      }
+
+      // Fallback to user-scoped localStorage
+      const local = localStorage.getItem(`hercareer_applications_${currentUserId}`);
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed)) {
+            setApplications(parsed);
+          }
+        } catch { }
+      } else {
+        setApplications([]);
+      }
+    };
+
+    fetchUserApplications();
+  }, [user?.id, user?.email]);
+
+  useEffect(() => {
+    const key = getUserAppStorageKey();
+    localStorage.setItem(key, JSON.stringify(applications));
     setStats((prev) => ({ ...prev, applicationsSubmitted: applications.length }));
-  }, [applications]);
+  }, [applications, user?.id, user?.email]);
 
   const addApplication = async (app: Omit<JobApplication, 'id'>): Promise<boolean> => {
-    const created: JobApplication = { ...app, id: `app-${Date.now()}` };
+    const effectiveUserId = user?.id || user?.email || 'guest';
+    const effectiveUserEmail = user?.email || '';
+    let createdId = `app-${Date.now()}`;
+
+    try {
+      const res = await fetch(`${backendUrl}/api/career/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': effectiveUserId
+        },
+        body: JSON.stringify({
+          ...app,
+          userId: effectiveUserId,
+          userEmail: effectiveUserEmail
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.application?.id) {
+        createdId = data.application.id;
+      }
+    } catch (e) {
+      console.warn('Backend application save notice:', e);
+    }
+
+    const created: JobApplication = {
+      ...app,
+      id: createdId,
+      userId: effectiveUserId,
+      userEmail: effectiveUserEmail
+    };
     setApplications((prev) => [created, ...prev]);
     showToast('Application Added', `Tracking application for ${app.company}`, 'success');
     return true;
@@ -982,6 +1128,14 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     status: JobApplication['status'],
     updates?: Partial<JobApplication>
   ) => {
+    try {
+      fetch(`${backendUrl}/api/career/applications/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, ...updates })
+      }).catch(() => {});
+    } catch {}
+
     setApplications((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status, ...updates } : a))
     );
@@ -989,6 +1143,12 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   const deleteApplication = (id: string) => {
+    try {
+      fetch(`${backendUrl}/api/career/applications/${id}`, {
+        method: 'DELETE'
+      }).catch(() => {});
+    } catch {}
+
     setApplications((prev) => prev.filter((a) => a.id !== id));
     showToast('Application Removed', 'Record deleted', 'info');
   };

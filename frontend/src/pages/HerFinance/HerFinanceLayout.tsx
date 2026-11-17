@@ -71,19 +71,6 @@ export const HerFinanceLayout: React.FC<HerFinanceLayoutProps> = ({
               );
             })}
           </div>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('settings')}
-            className={`p-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'settings'
-                ? 'bg-[#1e1b4b] text-white'
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            title="Finance Settings"
-          >
-            <SettingsIcon className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Main Content Area */}

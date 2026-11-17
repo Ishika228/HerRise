@@ -10,7 +10,14 @@ import {
   ExternalLink,
   MessageSquare,
   Clock,
-  Briefcase
+  Briefcase,
+  User,
+  MapPin,
+  Mail,
+  Phone,
+  GraduationCap,
+  FileText,
+  Globe
 } from 'lucide-react';
 import { useHerCareer } from '../../../context/HerCareerContext';
 import { useToast } from '../../../context/ToastContext';
@@ -24,6 +31,7 @@ export const ApplicationTrackerView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedAppForFollowUp, setSelectedAppForFollowUp] = useState<JobApplication | null>(null);
+  const [viewCandidateDetailsApp, setViewCandidateDetailsApp] = useState<JobApplication | null>(null);
 
   // New Application Form State
   const [form, setForm] = useState({
@@ -31,15 +39,16 @@ export const ApplicationTrackerView: React.FC = () => {
     title: '',
     location: 'Remote',
     salary: '',
-    status: 'Applied' as JobApplication['status'],
+    status: 'Application Sent' as JobApplication['status'],
     appliedDate: new Date().toISOString().split('T')[0],
     interviewDate: '',
     notes: ''
   });
 
   const statuses: JobApplication['status'][] = [
-    'Saved',
+    'Application Sent',
     'Applied',
+    'Saved',
     'Interview Scheduled',
     'Interview Completed',
     'Selected',
@@ -160,7 +169,9 @@ ${profile.fullName || 'Candidate'}`;
                   <h3 className="font-extrabold text-sm sm:text-base text-slate-900">{app.title}</h3>
                   <span
                     className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                      app.status === 'Interview Scheduled'
+                      app.status === 'Application Sent'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : app.status === 'Interview Scheduled'
                         ? 'bg-indigo-100 text-indigo-800'
                         : app.status === 'Applied'
                         ? 'bg-blue-100 text-blue-800'
@@ -213,6 +224,18 @@ ${profile.fullName || 'Candidate'}`;
                     </option>
                   ))}
                 </select>
+
+                {app.candidateDetails && (
+                  <button
+                    type="button"
+                    onClick={() => setViewCandidateDetailsApp(app)}
+                    className="px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    title="View candidate details submitted for this job"
+                  >
+                    <User className="w-3.5 h-3.5 text-pink-600" />
+                    <span>Candidate Profile</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -377,6 +400,104 @@ ${profile.fullName || 'Candidate'}`;
                 className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Submitted Candidate Details Modal */}
+      {viewCandidateDetailsApp && (
+        <Modal
+          isOpen={!!viewCandidateDetailsApp}
+          onClose={() => setViewCandidateDetailsApp(null)}
+          title="Candidate Application Details"
+          subtitle={`${viewCandidateDetailsApp.title} • ${viewCandidateDetailsApp.company}`}
+          maxWidth="2xl"
+        >
+          <div className="space-y-4 text-xs text-slate-700">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-teal-50 to-indigo-50 border border-teal-200/80 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider block">Submission Status</span>
+                <span className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  {viewCandidateDetailsApp.status}
+                </span>
+              </div>
+              <div className="text-right text-[11px] text-slate-500">
+                <span className="block font-medium">Applied Date</span>
+                <span className="font-bold text-slate-800">{viewCandidateDetailsApp.appliedDate}</span>
+              </div>
+            </div>
+
+            {viewCandidateDetailsApp.candidateDetails && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Applicant Name</span>
+                    <span className="font-bold text-slate-900 text-xs">{viewCandidateDetailsApp.candidateDetails.fullName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Email Address</span>
+                    <span className="font-bold text-slate-900 text-xs">{viewCandidateDetailsApp.candidateDetails.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Phone</span>
+                    <span className="font-semibold text-slate-800 text-xs">{viewCandidateDetailsApp.candidateDetails.phone || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Location</span>
+                    <span className="font-semibold text-slate-800 text-xs">{viewCandidateDetailsApp.candidateDetails.location || viewCandidateDetailsApp.location || 'Australia'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Headline / Role</span>
+                    <span className="font-semibold text-slate-800 text-xs">{viewCandidateDetailsApp.candidateDetails.headline || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Qualification</span>
+                    <span className="font-semibold text-slate-800 text-xs">{viewCandidateDetailsApp.candidateDetails.qualification || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Experience</span>
+                    <span className="font-semibold text-slate-800 text-xs">{viewCandidateDetailsApp.candidateDetails.yearsOfExperience || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Attached Resume</span>
+                    <span className="font-semibold text-slate-800 text-xs">{viewCandidateDetailsApp.candidateDetails.resumeTitle || 'ATS Resume'}</span>
+                  </div>
+                </div>
+
+                {viewCandidateDetailsApp.candidateDetails.skills && viewCandidateDetailsApp.candidateDetails.skills.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Core Skills Submitted</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {viewCandidateDetailsApp.candidateDetails.skills.map((sk, idx) => (
+                        <span key={idx} className="px-2 py-0.5 rounded-lg bg-teal-50 text-teal-800 text-[10px] font-bold border border-teal-200">
+                          {sk}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {viewCandidateDetailsApp.candidateDetails.coverLetter && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cover Note / Pitch</span>
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-normal whitespace-pre-wrap leading-relaxed">
+                      {viewCandidateDetailsApp.candidateDetails.coverLetter}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setViewCandidateDetailsApp(null)}
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>

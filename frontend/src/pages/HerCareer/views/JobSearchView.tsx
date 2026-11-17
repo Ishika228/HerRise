@@ -23,6 +23,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { JobListing } from '../../../types/career';
 import { Modal } from '../../../components/common/Modal';
+import { JobApplicationModal } from '../../../components/career/JobApplicationModal';
 import {
   QUALIFICATION_CATEGORIES,
   calculateQualificationFit,
@@ -36,6 +37,7 @@ export const JobSearchView: React.FC = () => {
     toggleSaveJob,
     matchJobWithProfile,
     applyToJob,
+    applications,
     activeResume,
     profile,
     candidateQualification,
@@ -69,10 +71,13 @@ export const JobSearchView: React.FC = () => {
 
   // Active Selected Job Modal for AI Match Breakdown & Quick Apply
   const [activeJobModal, setActiveJobModal] = useState<JobListing | null>(null);
+  const [applicationModalJob, setApplicationModalJob] = useState<JobListing | null>(null);
   const [jobMatchResult, setJobMatchResult] = useState<any | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [coverNote, setCoverNote] = useState('');
   const [isApplying, setIsApplying] = useState(false);
+
+  const isJobApplied = (jobId: string) => applications.some((a) => a.jobId === jobId);
 
   // Compute matched jobs with scores & sort by qualification match
   const processedJobs = useMemo(() => {
@@ -464,14 +469,23 @@ export const JobSearchView: React.FC = () => {
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                 <span className="text-[11px] text-slate-400">Posted {job.postedDate}</span>
                 <div className="flex items-center gap-2">
-                  {job.applyUrl && (
+                  {isJobApplied(job.jobId) ? (
                     <button
                       type="button"
-                      onClick={() => applyToJob(job.jobId)}
-                      className="px-3 py-1.5 rounded-xl border border-teal-300 text-teal-800 hover:bg-teal-50 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-                      title="Apply on company's verified hiring portal"
+                      disabled
+                      className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 font-bold text-xs flex items-center gap-1.5 cursor-default shadow-xs"
                     >
-                      <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Application Sent</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setApplicationModalJob(job)}
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-700 hover:to-indigo-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      title="Review auto-filled application details & submit"
+                    >
+                      <Send className="w-3.5 h-3.5" />
                       <span>Apply</span>
                     </button>
                   )}
@@ -602,27 +616,6 @@ export const JobSearchView: React.FC = () => {
               />
             </div>
 
-            {/* External link notice & direct button */}
-            {activeJobModal.applyUrl && (
-              <div className="p-3 rounded-xl bg-teal-50 border border-teal-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-bold text-teal-900">Direct Employer Application Link</p>
-                  <p className="text-[11px] text-teal-700">
-                    Apply directly on the employer's official ATS / portal or submit via HerRise to auto-track.
-                  </p>
-                </div>
-                <a
-                  href={activeJobModal.applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
-                >
-                  <span>Open ATS Portal</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            )}
-
             {/* Footer Buttons */}
             <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
               <button
@@ -632,28 +625,41 @@ export const JobSearchView: React.FC = () => {
               >
                 Close
               </button>
-              <button
-                type="button"
-                onClick={handleApply}
-                disabled={isApplying}
-                className="px-5 py-2 rounded-xl bg-[#0f172a] hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isApplying ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Submitting Application...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5 text-teal-300" />
-                    <span>Log & Submit Application</span>
-                  </>
-                )}
-              </button>
+              {isJobApplied(activeJobModal.jobId) ? (
+                <button
+                  type="button"
+                  disabled
+                  className="px-5 py-2 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold shadow-xs flex items-center gap-2 cursor-default"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Application Sent</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setApplicationModalJob(activeJobModal)}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-700 hover:to-indigo-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Review Details &amp; Apply</span>
+                </button>
+              )}
             </div>
           </div>
         </Modal>
       )}
+
+      {/* ── 5. Review & Auto-Filled Application Submission Modal ── */}
+      <JobApplicationModal
+        isOpen={!!applicationModalJob}
+        onClose={() => setApplicationModalJob(null)}
+        job={applicationModalJob}
+        onSuccess={() => {
+          if (activeJobModal && applicationModalJob && activeJobModal.jobId === applicationModalJob.jobId) {
+            setActiveJobModal(null);
+          }
+        }}
+      />
     </div>
   );
 };

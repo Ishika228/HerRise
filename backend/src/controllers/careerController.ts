@@ -28,10 +28,46 @@ let memoryApplications: any[] = [];
 // ==========================================
 export const getCareerOverview = async (req: Request, res: Response) => {
   try {
+    const queryUserId = (req.query.userId as string) || (req.headers['x-user-id'] as string) || (req.query.email as string);
     const resumesCount = memoryResumes.length;
     const auJobs = await fetchAustralianJobs();
     const recommendedJobsCount = auJobs.length;
-    const applicationsCount = memoryApplications.length;
+
+    let applicationsCount = 0;
+    let recentApps: any[] = [];
+
+    if (mongoose.connection.readyState === 1 && queryUserId) {
+      applicationsCount = await JobApplicationModel.countDocuments({
+        $or: [{ userId: queryUserId }, { userEmail: queryUserId }]
+      });
+      const dbRecent = await JobApplicationModel.find({
+        $or: [{ userId: queryUserId }, { userEmail: queryUserId }]
+      }).sort({ createdAt: -1 }).limit(3);
+
+      recentApps = dbRecent.map((doc) => ({
+        id: doc._id.toString(),
+        jobId: doc.jobId,
+        company: doc.company,
+        title: doc.title,
+        location: doc.location,
+        salary: doc.salary,
+        status: doc.status,
+        appliedDate: doc.appliedDate,
+        interviewDate: doc.interviewDate,
+        contactPerson: doc.contactPerson,
+        notes: doc.notes,
+        applicationUrl: doc.applicationUrl,
+        candidateDetails: (doc as any).candidateDetails,
+        createdAt: doc.createdAt
+      }));
+    } else {
+      const filtered = queryUserId
+        ? memoryApplications.filter((a) => a.userId === queryUserId || a.userEmail === queryUserId)
+        : memoryApplications;
+      applicationsCount = filtered.length;
+      recentApps = filtered.slice(0, 3);
+    }
+
     const interviewSessionsCount = 0;
     const skillsCompletedCount = 0;
 
@@ -46,7 +82,7 @@ export const getCareerOverview = async (req: Request, res: Response) => {
         readinessScore: 0
       },
       recentJobs: auJobs.slice(0, 3),
-      recentApplications: memoryApplications.slice(0, 3),
+      recentApplications: recentApps,
       upcomingInterviews: [],
       aiInsights: []
     });
@@ -280,9 +316,15 @@ export const analyzeResumeDetailed = async (req: Request, res: Response) => {
     const messages = [
       {
         role: 'system' as const,
-        content: `You are an AI Resume Evaluator and Senior Technical Talent Director.
-Analyze the candidate's resume text thoroughly. Provide an estimated quality assessment score (0 to 100), detailed feedback on structure, weak points, spelling/grammar check, skills analysis, and missing high-impact keywords.
+        content: `You are an expert AI Resume Evaluator, Senior Technical Talent Director, and Academic Qualification Specialist.
+Analyze the candidate's resume text thoroughly. Provide an estimated quality assessment score (0 to 100), detailed feedback on structure, weak points, spelling/grammar check, skills analysis, missing high-impact keywords, and EXTRACT PRECISE QUALIFICATION INFORMATION.
 Important: Always present the score as an estimated quality assessment on a 0 to 100 integer scale.
+
+CRITICAL INSTRUCTIONS FOR QUALIFICATIONS:
+1. Extract the exact highest completed or pursued qualification, degree title, major/specialization, institution name, year, and grade.
+2. Accurately expand and normalize degrees: "B.Tech" -> "Bachelor of Technology (B.Tech) in [Field]", "MCA" -> "Master of Computer Applications (MCA)", "B.Com" -> "Bachelor of Commerce (B.Com)", "B.Sc" -> "Bachelor of Science (B.Sc) in [Field]", "MBA" -> "Master of Business Administration (MBA)", etc.
+3. Classify into "qualificationCategory": "Technology & Software" | "Data & Analytics" | "Finance & Accounting" | "Healthcare & Nursing" | "Design & Creative" | "Marketing & Media" | "Education & Teaching" | "Human Resources & People" | "Legal & Compliance" | "Business & Operations".
+4. Evaluate candidate's academic eligibility in "qualificationAssessment" and provide 3 tailored "recommendedJobRoles".
 
 Output valid JSON format matching this exact schema:
 {
@@ -293,6 +335,17 @@ Output valid JSON format matching this exact schema:
     "skillsAlignment": number (between 50 and 95),
     "formattingAndClarity": number (between 50 and 95),
     "experienceDepth": number (between 50 and 95)
+  },
+  "qualificationDetails": {
+    "highestQualification": "Full title of candidate's highest degree (e.g. Bachelor of Technology in Computer Science & Engineering)",
+    "qualificationLevel": "Bachelor's Degree | Master's Degree | Doctorate | Diploma | Certificate | High School",
+    "institution": "University / College / Institution name",
+    "graduationYear": "Year or date range (e.g. 2024)",
+    "grade": "GPA, CGPA or percentage if mentioned, else empty string",
+    "qualificationCategory": "Technology & Software | Data & Analytics | Finance & Accounting | Healthcare & Nursing | Design & Creative | Marketing & Media | Education & Teaching | Human Resources & People | Legal & Compliance | Business & Operations",
+    "atsQualificationScore": number (between 75 and 98),
+    "qualificationAssessment": "2-3 sentences evaluating the candidate's academic credentials and eligibility for industry roles",
+    "recommendedJobRoles": ["Role 1", "Role 2", "Role 3"]
   },
   "strengths": [
     "Specific strength from candidate background...",
@@ -315,7 +368,7 @@ Output valid JSON format matching this exact schema:
       },
       {
         role: 'user' as const,
-        content: `Resume Content:\n${textToAnalyze.slice(0, 4000)}\n\nTarget Job Description (Optional):\n${(targetJobDescription || 'Standard Industry Professional').slice(0, 1000)}`
+        content: `Resume Content:\n${textToAnalyze.slice(0, 4500)}\n\nTarget Job Description (Optional):\n${(targetJobDescription || 'Standard Industry Professional').slice(0, 1000)}`
       }
     ];
 
@@ -627,47 +680,126 @@ Output valid JSON format:
 // ==========================================
 // 5. Job Application Tracker
 // ==========================================
-export const getApplications = (req: Request, res: Response) => {
-  return res.status(200).json({ success: true, count: memoryApplications.length, applications: memoryApplications });
-};
+export const getApplications = async (req: Request, res: Response) => {
+  try {
+    const queryUserId = (req.query.userId as string) || (req.headers['x-user-id'] as string) || (req.query.email as string);
 
-export const createApplication = (req: Request, res: Response) => {
-  const { company, title, location, salary, status, appliedDate, interviewDate, notes } = req.body;
-  if (!company || !title) {
-    return res.status(400).json({ success: false, error: 'Company and Title are required.' });
+    if (mongoose.connection.readyState === 1 && queryUserId) {
+      const dbApps = await JobApplicationModel.find({
+        $or: [{ userId: queryUserId }, { userEmail: queryUserId }]
+      }).sort({ createdAt: -1 });
+
+      const mappedApps = dbApps.map((doc) => ({
+        id: doc._id.toString(),
+        jobId: doc.jobId,
+        userId: doc.userId,
+        userEmail: doc.userEmail,
+        company: doc.company,
+        title: doc.title,
+        location: doc.location,
+        salary: doc.salary,
+        status: doc.status,
+        appliedDate: doc.appliedDate,
+        interviewDate: doc.interviewDate,
+        contactPerson: doc.contactPerson,
+        notes: doc.notes,
+        applicationUrl: doc.applicationUrl,
+        candidateDetails: (doc as any).candidateDetails,
+        createdAt: doc.createdAt
+      }));
+
+      return res.status(200).json({
+        success: true,
+        count: mappedApps.length,
+        applications: mappedApps
+      });
+    }
+
+    const filtered = queryUserId
+      ? memoryApplications.filter((a) => a.userId === queryUserId || a.userEmail === queryUserId)
+      : memoryApplications;
+
+    return res.status(200).json({
+      success: true,
+      count: filtered.length,
+      applications: filtered
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
   }
-
-  const newApp = {
-    id: `app-${Date.now()}`,
-    company,
-    title,
-    location: location || 'Remote',
-    salary: salary || '',
-    status: status || 'Applied',
-    appliedDate: appliedDate || new Date().toISOString().split('T')[0],
-    interviewDate,
-    notes: notes || ''
-  };
-
-  memoryApplications.unshift(newApp);
-  return res.status(201).json({ success: true, application: newApp });
 };
 
-export const updateApplication = (req: Request, res: Response) => {
-  const { id } = req.params;
+export const createApplication = async (req: Request, res: Response) => {
+  try {
+    const { company, title, location, salary, status, appliedDate, interviewDate, notes, userId, userEmail, candidateDetails } = req.body;
+    if (!company || !title) {
+      return res.status(400).json({ success: false, error: 'Company and Title are required.' });
+    }
+
+    const appData = {
+      userId: userId || userEmail || 'anonymous',
+      userEmail: userEmail || '',
+      company,
+      title,
+      location: location || 'Remote',
+      salary: salary || '',
+      status: status || 'Application Sent',
+      appliedDate: appliedDate || new Date().toISOString().split('T')[0],
+      interviewDate,
+      notes: notes || '',
+      candidateDetails: candidateDetails || null
+    };
+
+    let createdId = `app-${Date.now()}`;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const savedDoc = await JobApplicationModel.create(appData);
+        createdId = savedDoc._id.toString();
+      } catch (err) {
+        console.error('Failed to create JobApplication in DB:', err);
+      }
+    }
+
+    const newApp = { ...appData, id: createdId };
+    memoryApplications.unshift(newApp);
+    return res.status(201).json({ success: true, application: newApp });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const updateApplication = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
   const updates = req.body;
 
-  const idx = memoryApplications.findIndex((a) => a.id === id);
-  if (idx === -1) {
-    return res.status(404).json({ success: false, error: 'Application not found' });
+  if (mongoose.connection.readyState === 1) {
+    try {
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        await JobApplicationModel.findByIdAndUpdate(id, updates, { new: true });
+      }
+    } catch (err) {
+      console.error('Error updating DB application:', err);
+    }
   }
 
-  memoryApplications[idx] = { ...memoryApplications[idx], ...updates };
-  return res.status(200).json({ success: true, application: memoryApplications[idx] });
+  const idx = memoryApplications.findIndex((a) => a.id === id);
+  if (idx !== -1) {
+    memoryApplications[idx] = { ...memoryApplications[idx], ...updates };
+  }
+  return res.status(200).json({ success: true, application: idx !== -1 ? memoryApplications[idx] : updates });
 };
 
-export const deleteApplication = (req: Request, res: Response) => {
-  const { id } = req.params;
+export const deleteApplication = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  if (mongoose.connection.readyState === 1) {
+    try {
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        await JobApplicationModel.findByIdAndDelete(id);
+      }
+    } catch (err) {
+      console.error('Error deleting DB application:', err);
+    }
+  }
   memoryApplications = memoryApplications.filter((a) => a.id !== id);
   return res.status(200).json({ success: true, message: 'Application removed' });
 };
@@ -1106,7 +1238,7 @@ export const parseResume = async (req: Request, res: Response) => {
     const messages = [
       {
         role: 'system' as const,
-        content: `You are an expert ATS Resume Parsing Engine. Extract comprehensive, structured resume information accurately from the raw text provided. Extract the actual candidate details without fabricating data.
+        content: `You are an expert ATS Resume Parsing & Qualification Analysis Engine. Extract comprehensive, structured resume information accurately from the raw text provided. Extract the actual candidate details without fabricating data.
 
 CRITICAL INSTRUCTIONS:
 1. STRICT DIVISION BETWEEN WORK EXPERIENCE AND PROJECTS:
@@ -1116,7 +1248,16 @@ CRITICAL INSTRUCTIONS:
    - If the candidate has NO formal corporate employment, leave "experience" as an empty array [] - NEVER fabricate companies or inject placeholders.
 2. EXTRACT ALL PROJECTS CAREFULLY:
    - For every project, extract its name in "title", tech stack in "technologies" (array of strings), summary in "description", and key features/accomplishments in "highlights".
-3. INTERNSHIPS, CERTIFICATIONS & ACHIEVEMENTS:
+3. ULTRA-ACCURATE QUALIFICATION & EDUCATION EXTRACTION:
+   - Identify ALL degrees, diplomas, high school/secondary education, certifications, and academic qualifications.
+   - Look under headers like "EDUCATION", "QUALIFICATIONS", "ACADEMIC DETAILS", "SCHOLASTIC RECORD", "CREDENTIALS", or inline degree mentions.
+   - EXTRACT FULL, PRECISE DEGREE NAMES: Accurately normalize and expand acronyms (e.g. "B.Tech" -> "Bachelor of Technology (B.Tech) in [Field/Specialization]", "MCA" -> "Master of Computer Applications (MCA)", "B.Sc" -> "Bachelor of Science (B.Sc) in [Field]", "B.Com" -> "Bachelor of Commerce (B.Com)", "MBA" -> "Master of Business Administration (MBA)", "Diploma" -> "Diploma in [Specialization]").
+   - ALWAYS capture the major, branch, or field of study in "fieldOfStudy" and include it in the "degree" string (e.g. "Bachelor of Technology in Computer Science & Engineering").
+   - Extract the educational institution / university name in "institution", graduation year or date range in "year", and GPA, CGPA, percentage or grade in "grade".
+   - Set "highestQualification" to the candidate's highest completed or pursuing academic credential title.
+   - Set "qualificationLevel" to one of: "Bachelor's Degree", "Master's Degree", "Doctorate", "Diploma", "Certificate", "High School".
+   - Set "qualificationCategory" to one of: "Technology & Software", "Data & Analytics", "Finance & Accounting", "Healthcare & Nursing", "Design & Creative", "Marketing & Media", "Education & Teaching", "Human Resources & People", "Legal & Compliance", "Business & Operations".
+4. INTERNSHIPS, CERTIFICATIONS & ACHIEVEMENTS:
    - Put training, micro-internships, and certifications in "certifications".
    - Put research papers, conference presentations, and leadership roles in "achievements".
 
@@ -1128,7 +1269,20 @@ Output valid JSON matching this schema:
   "location": "City, State / Country or empty string",
   "headline": "Target role or professional title extracted from resume",
   "summary": "Professional summary extracted from resume or concise synthesis of background",
-  "skills": ["Skill 1", "Skill 2", ...],
+  "highestQualification": "Full title of candidate's highest degree (e.g. Bachelor of Technology in Computer Science & Engineering)",
+  "qualificationLevel": "Bachelor's Degree | Master's Degree | Doctorate | Diploma | Certificate | High School",
+  "qualificationCategory": "Technology & Software | Data & Analytics | Finance & Accounting | Healthcare & Nursing | Design & Creative | Marketing & Media | Education & Teaching | Human Resources & People | Legal & Compliance | Business & Operations",
+  "skills": ["Skill 1", "Skill 2"],
+  "education": [
+    {
+      "degree": "Full Degree or Qualification Name with Specialization",
+      "institution": "University / College / School Name",
+      "year": "Graduation Year or Date Range (e.g. 2024)",
+      "grade": "GPA, CGPA, Percentage, or Honors if present",
+      "level": "Bachelor's Degree | Master's Degree | Diploma | Certificate",
+      "fieldOfStudy": "Major or Specialization (e.g. Computer Science & Engineering)"
+    }
+  ],
   "experience": [
     {
       "title": "Job Title",
@@ -1146,14 +1300,6 @@ Output valid JSON matching this schema:
       "link": "URL or repository if present, else empty string",
       "description": "Short project overview",
       "highlights": ["Feature or achievement 1"]
-    }
-  ],
-  "education": [
-    {
-      "degree": "Degree or Qualification Name",
-      "institution": "University / College / School Name",
-      "year": "Graduation Year or Date Range",
-      "grade": "GPA, Percentage or Grade if present, else empty string"
     }
   ],
   "certifications": [
@@ -1220,6 +1366,27 @@ Output valid JSON matching this schema:
         parsed.projects = [...parsed.projects, ...extraProjects];
       }
 
+      // Ensure qualification details are prioritized
+      if (!parsed.highestQualification && Array.isArray(parsed.education) && parsed.education.length > 0) {
+        parsed.highestQualification = parsed.education[0]?.degree || '';
+      }
+      if (!parsed.qualificationCategory && parsed.highestQualification) {
+        const q = parsed.highestQualification.toLowerCase();
+        if (/(tech|computer|software|developer|engineer|cs\b|it\b|bca|mca|programming)/.test(q)) {
+          parsed.qualificationCategory = 'Technology & Software';
+        } else if (/(data|analytics|statistics|math|ai\b|machine learning)/.test(q)) {
+          parsed.qualificationCategory = 'Data & Analytics';
+        } else if (/(commerce|b\.?com|accounting|finance|ca\b|banking)/.test(q)) {
+          parsed.qualificationCategory = 'Finance & Accounting';
+        } else if (/(nurse|nursing|health|medical|doctor|pharma)/.test(q)) {
+          parsed.qualificationCategory = 'Healthcare & Nursing';
+        } else if (/(bba|mba|business|management)/.test(q)) {
+          parsed.qualificationCategory = 'Business & Operations';
+        } else {
+          parsed.qualificationCategory = 'Technology & Software';
+        }
+      }
+
       return res.status(200).json({ success: true, parsed, rawText, textLength: rawText.length, engine: 'groq' });
     } catch (e) {
       console.warn('[Parse Resume Groq error]:', e);
@@ -1252,31 +1419,68 @@ Output valid JSON matching this schema:
 };
 
 export const applyJob = async (req: Request, res: Response) => {
-  const { jobId, coverLetter } = req.body;
-  const auJobs = await fetchAustralianJobs();
-  const job = auJobs.find((j) => j.jobId === jobId) || defaultJobListings.find((j) => j.jobId === jobId);
+  try {
+    const { jobId, coverLetter, candidateDetails, userId, userEmail } = req.body;
+    const auJobs = await fetchAustralianJobs();
+    const job = auJobs.find((j) => j.jobId === jobId) || defaultJobListings.find((j) => j.jobId === jobId);
 
-  if (!job) {
-    return res.status(404).json({ success: false, error: 'Job not found' });
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    const effectiveUserId = userId || candidateDetails?.email || userEmail || 'anonymous';
+    const effectiveEmail = userEmail || candidateDetails?.email || '';
+
+    const newAppRecord = {
+      userId: effectiveUserId,
+      userEmail: effectiveEmail,
+      jobId: job.jobId,
+      company: job.company,
+      title: job.title,
+      location: job.location,
+      salary: job.salaryRange,
+      status: 'Application Sent' as const,
+      appliedDate: new Date().toISOString().split('T')[0],
+      candidateDetails: candidateDetails || {
+        fullName: candidateDetails?.fullName || 'Candidate',
+        email: effectiveEmail,
+        phone: candidateDetails?.phone || '',
+        location: candidateDetails?.location || job.location,
+        headline: candidateDetails?.headline || '',
+        qualification: candidateDetails?.qualification || '',
+        yearsOfExperience: candidateDetails?.yearsOfExperience || '',
+        skills: candidateDetails?.skills || [],
+        resumeTitle: candidateDetails?.resumeTitle || '',
+        portfolioUrl: candidateDetails?.portfolioUrl || '',
+        coverLetter: coverLetter || '',
+        reviewedAndConfirmed: true
+      },
+      notes: coverLetter ? `Cover Letter: ${coverLetter.slice(0, 100)}...` : 'Applied via HerRise Platform'
+    };
+
+    let savedId = `app-${Date.now()}`;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const savedDoc = await JobApplicationModel.create(newAppRecord);
+        savedId = savedDoc._id.toString();
+      } catch (err) {
+        console.error('Failed to persist job application to MongoDB:', err);
+      }
+    }
+
+    const applicationResult = { ...newAppRecord, id: savedId };
+    memoryApplications.unshift(applicationResult);
+
+    return res.status(200).json({
+      success: true,
+      message: `Application submitted successfully for ${job.title} at ${job.company}`,
+      status: 'Application Sent',
+      application: applicationResult,
+      applyUrl: job.applyUrl
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
   }
-
-  // Add to applications
-  memoryApplications.unshift({
-    id: `app-${Date.now()}`,
-    company: job.company,
-    title: job.title,
-    location: job.location,
-    salary: job.salaryRange,
-    status: 'Applied',
-    appliedDate: new Date().toISOString().split('T')[0],
-    notes: coverLetter ? `Cover Letter: ${coverLetter.slice(0, 100)}...` : 'Applied via HerRise Platform'
-  });
-
-  return res.status(200).json({
-    success: true,
-    message: `Application submitted successfully for ${job.title} at ${job.company}`,
-    applyUrl: job.applyUrl
-  });
 };
 
 export const generateAtsSummary = async (req: Request, res: Response) => {

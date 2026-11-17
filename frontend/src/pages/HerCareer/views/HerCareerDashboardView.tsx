@@ -175,7 +175,7 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
           <span className="text-[11px] text-slate-500">Select an action to launch</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           <button
             type="button"
             onClick={() => onNavigateTab('builder')}
@@ -222,18 +222,6 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
             </div>
             <h4 className="text-xs font-bold text-slate-900">Interview Prep</h4>
             <p className="text-[10px] text-slate-500 mt-0.5">Simulate answers</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigateTab('restart')}
-            className="p-3.5 rounded-2xl bg-slate-50 hover:bg-teal-50/70 border border-slate-200/80 hover:border-teal-300 text-left transition-all group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-              <RotateCcw className="w-4 h-4" />
-            </div>
-            <h4 className="text-xs font-bold text-slate-900">Career Restart</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Returnee support</p>
           </button>
         </div>
       </div>
