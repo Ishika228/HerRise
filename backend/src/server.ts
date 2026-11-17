@@ -93,11 +93,16 @@ app.use('/api/assistant', assistantRoutes);
 app.use('/api/digital-services', digitalServicesRoutes);
 
 // Serve compiled React frontend in production if dist exists
-const frontendDist = path.resolve(process.cwd(), 'frontend/dist');
-const altFrontendDist = path.resolve(__dirname, '../../frontend/dist');
-const activeDist = fs.existsSync(frontendDist) ? frontendDist : (fs.existsSync(altFrontendDist) ? altFrontendDist : null);
+const distCandidates = [
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(__dirname, '../../../frontend/dist')
+];
+const activeDist = distCandidates.find(d => fs.existsSync(d) && fs.existsSync(path.join(d, 'index.html'))) || null;
 
 if (activeDist) {
+  console.log(`📦 Serving frontend from: ${activeDist}`);
   app.use(express.static(activeDist));
   app.get('*', (req: Request, res: Response, next) => {
     if (req.path.startsWith('/api')) {
@@ -105,6 +110,8 @@ if (activeDist) {
     }
     res.sendFile(path.join(activeDist, 'index.html'));
   });
+} else {
+  console.log(`⚠️ Frontend build directory not found. Candidates checked:\n${distCandidates.join('\n')}`);
 }
 
 // 404 Route Handler for unmatched API routes
