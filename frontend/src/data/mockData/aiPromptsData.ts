@@ -81,7 +81,7 @@ export const initialAssistantMessages: ChatMessage[] = [
   {
     id: 'msg-1',
     sender: 'assistant',
-    content: `👋 **Welcome to HerRise AI Assistant!** 
+    content: `👋 **Welcome to HerRise Assistant!** 
 
 I am your personal copilot across financial planning, career acceleration, business building, and funding navigation.
 
@@ -165,7 +165,7 @@ Angel investors evaluate clarity, market size, and execution readiness:
 
 > 🏛️ **Next Action**: Use our **[HerFund Pitch Deck Builder](/fund)** to generate and download slide templates.`,
 
-  'default': `### 💡 Actionable Guidance from HerRise AI
+  'default': `### 💡 Actionable Guidance from HerRise
 
 Thank you for your question. Here is our recommended strategic framework:
 

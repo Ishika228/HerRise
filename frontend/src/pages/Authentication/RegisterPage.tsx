@@ -152,7 +152,7 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
-  // Analyze Resume with HerRise AI
+  // Analyze Resume with HerRise
   const handleAnalyzeResume = async (fileOverride?: File) => {
     const fileToUse = fileOverride || selectedFile;
     if (!fileToUse && !pastedText.trim()) {
@@ -169,13 +169,13 @@ export const RegisterPage: React.FC = () => {
       if (fileToUse) {
         const formData = new FormData();
         formData.append('resume', fileToUse);
-        setParseProgress('HerRise AI extracting candidate identity, skills, experience & education...');
+        setParseProgress('HerRise extracting candidate identity, skills, experience & education...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           body: formData
         });
       } else {
-        setParseProgress('HerRise AI analyzing resume text...');
+        setParseProgress('HerRise analyzing resume text...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -247,7 +247,7 @@ export const RegisterPage: React.FC = () => {
         }
 
         setMissingFields(detectedMissing);
-        showToast('Resume Analyzed!', `Welcome ${atsData.fullName}. Details extracted with HerRise AI.`, 'success');
+        showToast('Resume Analyzed!', `Welcome ${atsData.fullName}. Details extracted with HerRise.`, 'success');
       } else {
         throw new Error(json.error || 'Failed to parse resume.');
       }
@@ -272,7 +272,7 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
 
     if (!extractedData) {
-      showToast('Resume Required', 'Please upload or paste your resume first so HerRise AI can extract your profile.', 'warning');
+      showToast('Resume Required', 'Please upload or paste your resume first so HerRise can extract your profile.', 'warning');
       return;
     }
 
@@ -441,11 +441,13 @@ export const RegisterPage: React.FC = () => {
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center relative z-10 px-4">
         <Link to="/" className="inline-flex items-center gap-3 group mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#e11d48] flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-            <Sparkles className="w-6 h-6 text-pink-200" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="HerRise"
+            className="w-14 h-14 object-contain group-hover:scale-105 transition-transform"
+          />
           <span className="font-extrabold text-3xl tracking-tight text-gray-900">
-            HerRise<span className="text-[#fb7185]">AI</span>
+            HerRise
           </span>
         </Link>
 
@@ -453,7 +455,7 @@ export const RegisterPage: React.FC = () => {
           Create Your HerRise Account
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-gray-600 max-w-lg mx-auto">
-          Upload your resume for instant HerRise AI extraction — no need to re-type your details. Just pick what you want and launch your personalized dashboard!
+          Upload your resume for instant HerRise extraction — no need to re-type your details. Just pick what you want and launch your personalized dashboard!
         </p>
       </div>
 
@@ -500,7 +502,7 @@ export const RegisterPage: React.FC = () => {
             {/* ========================================================= */}
             {activeTab === 'fast-ai' && (
               <form onSubmit={handleFastAiSubmit} className="space-y-6">
-                {/* STEP 1: UPLOAD & HERRISE AI EXTRACTION */}
+                {/* STEP 1: UPLOAD & HERRISE EXTRACTION */}
                 {!extractedData ? (
                   <div
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -525,15 +527,15 @@ export const RegisterPage: React.FC = () => {
                       <div>
                         <h3 className="text-base font-bold text-gray-900">
                           {isParsing
-                            ? 'Analyzing Resume with HerRise AI...'
+                            ? 'Analyzing Resume with HerRise...'
                             : selectedFile
-                            ? selectedFile.name
-                            : 'Upload Your Resume File'}
+                              ? selectedFile.name
+                              : 'Upload Your Resume File'}
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
                           {isParsing ? (
                             <span className="text-purple-700 font-bold animate-pulse">
-                              {parseProgress || 'HerRise AI extracting candidate identity, skills, experience & education...'}
+                              {parseProgress || 'HerRise extracting candidate identity, skills, experience & education...'}
                             </span>
                           ) : (
                             <>
@@ -599,7 +601,7 @@ export const RegisterPage: React.FC = () => {
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>HerRise AI Analyzed Your Resume Successfully</span>
+                          <span>HerRise Analyzed Your Resume Successfully</span>
                         </div>
                         <h2 className="text-lg font-black text-gray-900">{extractedData.fullName}</h2>
                         <p className="text-xs font-bold text-[#4A154B]">{extractedData.headline}</p>
@@ -715,7 +717,7 @@ export const RegisterPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-extrabold text-gray-900">
-                        What would you like to achieve on HerRise AI?
+                        What would you like to achieve on HerRise?
                       </h3>
                       <p className="text-xs text-gray-500">
                         Select one or more goals — we tailor your dashboard & modules accordingly.
@@ -781,7 +783,7 @@ export const RegisterPage: React.FC = () => {
                 {/* FINAL SUBMIT BUTTON */}
                 <div className="pt-4 border-t border-purple-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <p className="text-[11px] text-gray-500">
-                    By registering, you agree to HerRise AI Terms of Service and Privacy Policy.
+                    By registering, you agree to HerRise Terms of Service and Privacy Policy.
                   </p>
 
                   <button
@@ -882,7 +884,7 @@ export const RegisterPage: React.FC = () => {
                               required
                               value={manualForm.phone}
                               onChange={(e) => setManualForm({ ...manualForm, phone: e.target.value })}
-                              placeholder="+91 98765 43210"
+                              placeholder="+61 412 345 678"
                               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#4A154B] rounded-xl text-xs outline-none"
                             />
                           </div>

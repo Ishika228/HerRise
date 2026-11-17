@@ -65,7 +65,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    service: 'HerRise AI Backend API Service',
+    service: 'HerRise Backend API Service',
     version: '1.0.0',
     environment: config.nodeEnv,
     database: {
@@ -122,7 +122,7 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {
   app.listen(config.port, '0.0.0.0', async () => {
     console.log(`=========================================`);
-    console.log(`🌸 HerRise AI Backend API Server`);
+    console.log(`🌸 HerRise Backend API Server`);
     console.log(`🚀 Live on: http://0.0.0.0:${config.port}`);
     console.log(`🩺 Health check: http://0.0.0.0:${config.port}/api/health`);
     console.log(`=========================================`);

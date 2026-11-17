@@ -1,7 +1,7 @@
 {
   "name": "herrise-backend",
   "version": "1.0.0",
-  "description": "HerRise AI Backend API Service - Women's Financial Empowerment & Growth Platform",
+  "description": "HerRise Backend API Service - Women's Financial Empowerment & Growth Platform",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -15,7 +15,7 @@
     "express",
     "typescript"
   ],
-  "author": "HerRise AI Team",
+  "author": "HerRise Team",
   "license": "MIT",
   "dependencies": {
     "@types/multer": "^2.3.0",

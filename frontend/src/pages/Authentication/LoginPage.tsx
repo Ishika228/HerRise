@@ -66,11 +66,13 @@ export const LoginPage: React.FC = () => {
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
         <Link to="/" className="inline-flex items-center gap-3 group mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#e11d48] flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-            <Sparkles className="w-6 h-6 text-pink-200" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="HerRise"
+            className="w-14 h-14 object-contain group-hover:scale-105 transition-transform"
+          />
           <span className="font-extrabold text-3xl tracking-tight text-gray-900">
-            HerRise<span className="text-[#fb7185]">AI</span>
+            HerRise
           </span>
         </Link>
         <h2 className="text-2xl font-black text-gray-900 tracking-tight">

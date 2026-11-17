@@ -69,7 +69,7 @@ export const MyServicesView: React.FC<MyServicesViewProps> = ({
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(22);
-      doc.text('HerRise AI', 18, 20);
+      doc.text('HerRise', 18, 20);
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -227,7 +227,7 @@ export const MyServicesView: React.FC<MyServicesViewProps> = ({
       doc.setFontSize(8);
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
       doc.text('Thank you for partnering with HerRise! Official tax invoice compliant with Australian ATO requirements.', 18, y);
-      doc.text('HerRise AI Platform · Dedicated Female Entrepreneur Digital Ecosystem · Sydney NSW Australia', 18, y + 4);
+      doc.text('HerRise Platform · Dedicated Female Entrepreneur Digital Ecosystem · Sydney NSW Australia', 18, y + 4);
 
       doc.save(`Tax_Invoice_${orderRef}.pdf`);
     } catch (err) {
@@ -328,7 +328,7 @@ export const MyServicesView: React.FC<MyServicesViewProps> = ({
         <div class="container">
           <div class="header">
             <div>
-              <h1>HerRise AI</h1>
+              <h1>HerRise</h1>
               <p>TAX INVOICE & OFFICIAL PAYMENT RECEIPT</p>
             </div>
             <div class="badge">PAID IN FULL</div>
@@ -408,8 +408,8 @@ export const MyServicesView: React.FC<MyServicesViewProps> = ({
             </div>
 
             <div class="footer">
-              <p>Thank you for partnering with HerRise AI. Official Tax Invoice compliant with Australian Taxation Office (ATO) requirements.</p>
-              <p>HerRise AI • ABN 84 923 104 592 • Sydney, NSW Australia • orders@herrise.org</p>
+              <p>Thank you for partnering with HerRise. Official Tax Invoice compliant with Australian Taxation Office (ATO) requirements.</p>
+              <p>HerRise • ABN 84 923 104 592 • Sydney, NSW Australia • orders@herrise.org</p>
             </div>
           </div>
         </div>

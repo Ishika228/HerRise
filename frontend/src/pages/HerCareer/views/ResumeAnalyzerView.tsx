@@ -17,7 +17,15 @@ import { useHerCareer } from '../../../context/HerCareerContext';
 import { useToast } from '../../../context/ToastContext';
 
 export const ResumeAnalyzerView: React.FC = () => {
-  const { resumeAnalysis, isAnalyzing, analyzeResumeContent, parseResumeFile, importParsedResume, profile } = useHerCareer();
+  const {
+    resumeAnalysis,
+    isAnalyzing,
+    analyzeResumeContent,
+    parseResumeFile,
+    importParsedResume,
+    profile,
+    activeResume
+  } = useHerCareer();
   const { showToast } = useToast();
 
   const [inputMode, setInputMode] = useState<'upload' | 'paste'>('upload');
@@ -25,6 +33,57 @@ export const ResumeAnalyzerView: React.FC = () => {
   const [targetJobDesc, setTargetJobDesc] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
+
+  // Helper to serialize any parsed resume or active builder resume into comprehensive evaluation text
+  const serializeResumeToText = (res: any): string => {
+    if (!res) return '';
+    const parts: string[] = [];
+    const name = res.fullName || res.personalInfo?.fullName;
+    const headline = res.headline || res.title || res.personalInfo?.headline;
+    const summary = res.summary || '';
+    if (name) parts.push(`Candidate: ${name}`);
+    if (headline) parts.push(`Target Role: ${headline}`);
+    if (summary) parts.push(`Professional Summary:\n${summary}`);
+
+    const skills = res.skills?.technical || res.skills;
+    if (Array.isArray(skills) && skills.length > 0) {
+      parts.push(`Technical Skills:\n${skills.join(', ')}`);
+    }
+
+    const exp = res.experience || [];
+    if (Array.isArray(exp) && exp.length > 0) {
+      const expStr = exp
+        .map((e: any) => {
+          const role = e.title || e.role || 'Role';
+          const company = e.company || '';
+          const duration = e.duration || '';
+          const highlights = Array.isArray(e.highlights)
+            ? e.highlights.join(' ')
+            : e.description || '';
+          return `• ${role} at ${company} (${duration})\n  ${highlights}`;
+        })
+        .join('\n');
+      parts.push(`Work Experience:\n${expStr}`);
+    }
+
+    const edu = res.education || [];
+    if (Array.isArray(edu) && edu.length > 0) {
+      const eduStr = edu
+        .map((ed: any) => `• ${ed.degree} from ${ed.institution} (${ed.year || ed.graduationYear || ''})`)
+        .join('\n');
+      parts.push(`Education:\n${eduStr}`);
+    }
+
+    const proj = res.projects || [];
+    if (Array.isArray(proj) && proj.length > 0) {
+      const projStr = proj
+        .map((p: any) => `• ${p.title}: ${p.description || ''} (Tech: ${Array.isArray(p.technologies) ? p.technologies.join(', ') : ''})`)
+        .join('\n');
+      parts.push(`Projects:\n${projStr}`);
+    }
+
+    return parts.filter(Boolean).join('\n\n');
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,26 +94,38 @@ export const ResumeAnalyzerView: React.FC = () => {
     try {
       const data = await parseResumeFile(file);
       if (data && data.parsed) {
-        showToast('File Extracted Successfully', `Extracted details from ${file.name}`, 'success');
+        showToast('Document Analyzed Successfully', `Extracted details from ${file.name}`, 'success');
         // Synchronize and apply extracted resume to Resume Builder & profile
         await importParsedResume(data.parsed);
-        // Auto trigger analysis
-        const rawText = (data.parsed.summary || '') + ' ' + (data.parsed.skills?.join(', ') || '');
-        await analyzeResumeContent(rawText, targetJobDesc);
+        // Build rich comprehensive resume text
+        const fullResumeText = data.rawText && data.rawText.trim().length > 30
+          ? data.rawText
+          : serializeResumeToText(data.parsed);
+
+        setPastedText(fullResumeText);
+        await analyzeResumeContent(fullResumeText, targetJobDesc);
       }
     } catch (err) {
-      showToast('Parsing Notice', 'Could not parse binary document. You can paste the text below.', 'warning');
+      showToast('Parsing Notice', 'Could not parse document directly. You can paste the text below.', 'warning');
     } finally {
       setIsParsingFile(false);
     }
   };
 
   const handleRunAnalysis = async () => {
-    if (!pastedText.trim()) {
-      showToast('Input Required', 'Please paste your resume text to evaluate', 'warning');
+    let text = pastedText.trim();
+
+    if (!text && activeResume?.personalInfo?.fullName) {
+      text = serializeResumeToText(activeResume);
+      setPastedText(text);
+    }
+
+    if (!text || text.length < 15) {
+      showToast('Input Required', 'Please upload a resume or paste your resume text to evaluate.', 'warning');
       return;
     }
-    await analyzeResumeContent(pastedText, targetJobDesc);
+
+    await analyzeResumeContent(text, targetJobDesc);
   };
 
   return (
@@ -111,13 +182,43 @@ export const ResumeAnalyzerView: React.FC = () => {
 
             <label className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0f172a] hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer">
               {isParsingFile ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-              <span>{isParsingFile ? 'Analyzing Document...' : 'Select File from Computer'}</span>
+              <span>{isParsingFile ? 'Extracting with Eden AI Engine...' : 'Select File from Computer'}</span>
               <input type="file" accept=".pdf,.docx,.doc,.txt" onChange={handleFileUpload} className="hidden" />
             </label>
+
+            {activeResume?.personalInfo?.fullName && (
+              <div className="mt-4 pt-3 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                <span className="text-slate-500">
+                  Or evaluate your active resume: <strong className="text-slate-900">{activeResume.personalInfo.fullName}</strong> ({activeResume.title || 'Builder Resume'})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const txt = serializeResumeToText(activeResume);
+                    setPastedText(txt);
+                    analyzeResumeContent(txt, targetJobDesc);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 transition-all cursor-pointer"
+                >
+                  Evaluate Active Resume →
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
-            <label className="block text-xs font-bold text-slate-700">Paste Resume Raw Content:</label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700">Paste Resume Raw Content:</label>
+              {activeResume?.personalInfo?.fullName && (
+                <button
+                  type="button"
+                  onClick={() => setPastedText(serializeResumeToText(activeResume))}
+                  className="text-xs text-teal-700 font-bold hover:underline cursor-pointer"
+                >
+                  Insert from Resume Builder
+                </button>
+              )}
+            </div>
             <textarea
               rows={8}
               value={pastedText}
@@ -142,17 +243,25 @@ export const ResumeAnalyzerView: React.FC = () => {
           />
         </div>
 
-        {inputMode === 'paste' && (
-          <button
-            type="button"
-            onClick={handleRunAnalysis}
-            disabled={isAnalyzing}
-            className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-          >
-            {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            <span>{isAnalyzing ? 'Running AI Evaluation...' : 'Evaluate Resume with AI'}</span>
-          </button>
-        )}
+        {/* Action Trigger Button */}
+        <button
+          type="button"
+          onClick={handleRunAnalysis}
+          disabled={isAnalyzing || isParsingFile}
+          className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-teal-200" />
+              <span>Analyzing with Live AI Engine...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 text-teal-200" />
+              <span>Evaluate Resume with AI</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Analysis Results Display */}

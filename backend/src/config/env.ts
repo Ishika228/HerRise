@@ -28,6 +28,7 @@ export const config = {
   digitalServicesWhatsapp: (process.env.DIGITAL_SERVICES_WHATSAPP || '').replace(/\D/g, ''),
   mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/herrise_db',
   mongoDbName: process.env.MONGODB_DB_NAME || 'herrise_db',
-  startupDbApiBase: process.env.STARTUPDB_API_BASE || 'https://startupdb.com/api/v1'
+  startupDbApiBase: process.env.STARTUPDB_API_BASE || 'https://startupdb.com/api/v1',
+  edenAiApiKey: process.env.EDENAI_API_KEY || process.env.EDEN_AI_API_KEY || process.env.RESUME_ANALYZER_API_KEY || ''
 };
 

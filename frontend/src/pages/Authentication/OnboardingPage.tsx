@@ -101,7 +101,7 @@ export const OnboardingPage: React.FC = () => {
       // safe fallback
     }
 
-    showToast('Personalization Complete!', 'Welcome to your tailored HerRise AI dashboard.', 'success');
+    showToast('Personalization Complete!', 'Welcome to your tailored HerRise dashboard.', 'success');
     navigate('/dashboard');
   };
 

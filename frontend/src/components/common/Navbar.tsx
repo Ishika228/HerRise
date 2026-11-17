@@ -32,13 +32,15 @@ export const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-20">
           {/* Logo & Tagline */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#e11d48] flex items-center justify-center text-white shadow-md shadow-purple-950/20 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-6 h-6 text-pink-200" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="HerRise Logo"
+              className="w-12 h-12 object-contain group-hover:scale-105 transition-transform"
+            />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-[#3b0764] via-[#4A154B] to-[#be185d] bg-clip-text text-transparent">
-                  HerRise<span className="text-[#fb7185] font-black">AI</span>
+                  HerRise
                 </span>
               </div>
               <p className="text-[11px] font-medium text-gray-500 tracking-wide hidden sm:block">
@@ -73,25 +75,22 @@ export const Navbar: React.FC = () => {
               <Globe className="w-3.5 h-3.5 text-[#4A154B] mr-1 ml-1" />
               <button
                 onClick={() => handleLanguageChange('en')}
-                className={`px-2 py-1 rounded transition-colors ${
-                  language === 'en' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
-                }`}
+                className={`px-2 py-1 rounded transition-colors ${language === 'en' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
+                  }`}
               >
                 EN
               </button>
               <button
                 onClick={() => handleLanguageChange('hi')}
-                className={`px-2 py-1 rounded transition-colors ${
-                  language === 'hi' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
-                }`}
+                className={`px-2 py-1 rounded transition-colors ${language === 'hi' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
+                  }`}
               >
                 हिन्दी
               </button>
               <button
                 onClick={() => handleLanguageChange('mr')}
-                className={`px-2 py-1 rounded transition-colors ${
-                  language === 'mr' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
-                }`}
+                className={`px-2 py-1 rounded transition-colors ${language === 'mr' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
+                  }`}
               >
                 मराठी
               </button>

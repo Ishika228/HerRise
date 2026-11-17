@@ -193,7 +193,7 @@ export const LandingPage: React.FC = () => {
               </p>
 
               <p className="text-base text-gray-600 max-w-2xl leading-relaxed mx-auto lg:mx-0">
-                HerRise AI is a modern, unified platform designed to help women learn high-value skills, manage personal wealth with confidence, launch resilient micro-enterprises, secure non-predatory funding, and thrive through verified 1:1 mentorship.
+                HerRise is a modern, unified platform designed to help women learn high-value skills, manage personal wealth with confidence, launch resilient micro-enterprises, secure non-predatory funding, and thrive through verified 1:1 mentorship.
               </p>
 
               {/* Action Buttons */}
@@ -278,7 +278,7 @@ export const LandingPage: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-900 to-[#4A154B] text-white shadow-md">
                     <div className="flex items-center gap-2 mb-2">
                       <Sparkles className="w-4 h-4 text-pink-300" />
-                      <span className="text-xs font-bold text-pink-200">HerRise AI Copilot</span>
+                      <span className="text-xs font-bold text-pink-200">HerRise Copilot</span>
                     </div>
                     <p className="text-xs text-purple-100 leading-relaxed">
                       "I’ve matched your 5-year marketing background with 3 remote Returnship programs offering structured onboarding and 20% higher pay."
@@ -366,7 +366,7 @@ export const LandingPage: React.FC = () => {
             Seven Purpose-Built Modules for Total Empowerment
           </h2>
           <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-            Unlike fragmented apps, HerRise AI connects your money, career, business ventures, capital access, and community into one synchronized engine.
+            Unlike fragmented apps, HerRise connects your money, career, business ventures, capital access, and community into one synchronized engine.
           </p>
         </div>
 
@@ -400,7 +400,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/20 text-white inline-block mb-2">
                 Unified Copilot
               </span>
-              <h3 className="text-xl font-bold text-white mb-1">HerRise AI Assistant</h3>
+              <h3 className="text-xl font-bold text-white mb-1">HerRise Assistant</h3>
               <p className="text-xs text-pink-200 font-semibold mb-3">One Chatbot for All 7 Disciplines</p>
               <p className="text-xs text-purple-100 leading-relaxed mb-6">
                 Ask questions regarding emergency funds, resume gap wording, pricing handmade goods, or loan requirements.
@@ -437,7 +437,7 @@ export const LandingPage: React.FC = () => {
               Clear & Simple Path
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-              How HerRise AI Works
+              How HerRise Works
             </h2>
             <p className="text-sm text-gray-600">
               A 4-step progressive journey tailored to your individual ambitions and current stage of life.
@@ -492,18 +492,18 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Why Choose HerRise AI */}
+      {/* Why Choose HerRise */}
       <section id="about" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6">
             <span className="text-xs font-bold uppercase tracking-wider text-[#fb7185] bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
-              Why Choose HerRise AI
+              Why Choose HerRise
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
               Designed with Dignity, Privacy and Genuine Economic Impact
             </h2>
             <p className="text-sm text-gray-600 leading-relaxed">
-              We eliminated the noise, aggressive advertising, and condescending advice found in conventional financial portals. HerRise AI treats every woman as the CEO of her own destiny.
+              We eliminated the noise, aggressive advertising, and condescending advice found in conventional financial portals. HerRise treats every woman as the CEO of her own destiny.
             </p>
 
             <div className="space-y-4 pt-2">
@@ -609,7 +609,7 @@ export const LandingPage: React.FC = () => {
               Stories of Transformation & Sisterhood
             </h2>
             <p className="text-sm text-gray-600">
-              Discover how women from diverse backgrounds leveraged HerRise AI to build independence.
+              Discover how women from diverse backgrounds leveraged HerRise to build independence.
             </p>
           </div>
 
@@ -753,12 +753,6 @@ export const LandingPage: React.FC = () => {
             >
               Create Free Account
             </Link>
-            <a
-              href="#modules"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/30 transition-all text-center"
-            >
-              Explore All 7 Modules
-            </a>
           </div>
         </div>
       </section>

@@ -48,7 +48,7 @@ export const HerCareerAssistantView: React.FC = () => {
 
         <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-200 border border-teal-500/30 flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-          HerRise AI Connected
+          HerRise Connected
         </span>
       </div>
 

@@ -57,7 +57,7 @@ export function downloadGeneratedBlueprintPdf(blueprint: GeneratedIdeaPlan): voi
     doc.setFontSize(8);
     doc.setTextColor(140, 140, 140);
     doc.text(
-      `HerRise AI Entrepreneurship Studio  |  Official Business Blueprint  |  Page ${pageNum}`,
+      `HerRise Entrepreneurship Studio  |  Official Business Blueprint  |  Page ${pageNum}`,
       pageWidth / 2,
       pageHeight - 18,
       { align: 'center' }
@@ -73,7 +73,7 @@ export function downloadGeneratedBlueprintPdf(blueprint: GeneratedIdeaPlan): voi
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(244, 114, 182); // pink-300
-  doc.text('HERRISE AI ENTREPRENEURSHIP INCUBATOR STUDIO', margin + 16, cursorY + 20);
+  doc.text('HERRISE ENTREPRENEURSHIP INCUBATOR STUDIO', margin + 16, cursorY + 20);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
@@ -446,7 +446,7 @@ export function downloadBusinessPlanPdf(plan: BusinessPlan, ventureName?: string
     doc.setFontSize(8);
     doc.setTextColor(140, 140, 140);
     doc.text(
-      `HerRise AI Entrepreneurship Studio  |  10-Section Executive Plan  |  Page ${pageNum}`,
+      `HerRise Entrepreneurship Studio  |  10-Section Executive Plan  |  Page ${pageNum}`,
       pageWidth / 2,
       pageHeight - 18,
       { align: 'center' }
@@ -462,7 +462,7 @@ export function downloadBusinessPlanPdf(plan: BusinessPlan, ventureName?: string
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(244, 114, 182);
-  doc.text('HERRISE AI ENTREPRENEURSHIP INCUBATOR STUDIO', margin + 16, cursorY + 20);
+  doc.text('HERRISE ENTREPRENEURSHIP INCUBATOR STUDIO', margin + 16, cursorY + 20);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);

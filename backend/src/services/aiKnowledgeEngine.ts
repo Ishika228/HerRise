@@ -1,5 +1,5 @@
 /**
- * HerRise AI Universal Knowledge & Reasoning Engine
+ * HerRise Universal Knowledge & Reasoning Engine
  * High-fidelity, domain-specific intelligence for Finance, Career, Business,
  * Funding Schemes, Marketplaces, Learning Roadmaps, and Mentorship.
  */
@@ -870,7 +870,7 @@ I am dedicated to your complete personal financial security, cash-flow mastery, 
 
     // Default Universal General Greeting
     return {
-      title: 'Welcome to HerRise AI Assistant',
+      title: 'Welcome to HerRise Assistant',
       response: `### 🌸 Hello ${userName}! I am your HerRise All-in-One Advisor.
 
 I am designed to guide you through every stage of your personal, financial, and career growth. Here is what we can do together:

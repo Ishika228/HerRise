@@ -1,8 +1,8 @@
-# HerRise AI – Women's Financial Empowerment Platform
+# HerRise – Women's Financial Empowerment Platform
 
 > **Tagline:** Her Future. Her Finance. Her Freedom.
 
-HerRise AI is a unified platform empowering women to learn, earn, build businesses, manage finances, discover funding opportunities, find jobs, and connect with mentors.
+HerRise is a unified platform empowering women to learn, earn, build businesses, manage finances, discover funding opportunities, find jobs, and connect with mentors.
 
 ---
 

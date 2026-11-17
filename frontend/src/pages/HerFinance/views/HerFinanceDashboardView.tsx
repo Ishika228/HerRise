@@ -194,7 +194,7 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
                 AI Financial Command Bar
               </h2>
               <p className="text-xs text-slate-500">
-                Just type what you spent, earned, or want to save — HerRise AI does the rest.
+                Just type what you spent, earned, or want to save — HerRise does the rest.
               </p>
             </div>
           </div>
@@ -348,7 +348,7 @@ export const HerFinanceDashboardView: React.FC<HerFinanceDashboardViewProps> = (
           <div>
             <h3 className="font-extrabold text-sm text-slate-900">Live AI Activity Feed</h3>
             <p className="text-xs text-slate-500">
-              Transactions parsed and recorded automatically by HerRise AI
+              Transactions parsed and recorded automatically by HerRise
             </p>
           </div>
           <button

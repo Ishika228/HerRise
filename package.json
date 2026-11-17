@@ -2,7 +2,7 @@
   "name": "herrise-workspace",
   "version": "1.0.0",
   "private": true,
-  "description": "HerRise AI – Her Future. Her Finance. Her Freedom. (Frontend & Backend Monorepo)",
+  "description": "HerRise – Her Future. Her Finance. Her Freedom. (Frontend & Backend Monorepo)",
   "workspaces": [
     "frontend",
     "backend"
@@ -26,7 +26,7 @@
     "express",
     "typescript"
   ],
-  "author": "HerRise AI Team",
+  "author": "HerRise Team",
   "license": "MIT"
 }
 

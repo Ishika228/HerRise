@@ -928,7 +928,7 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       salary: job.salaryRange,
       status: 'Applied',
       appliedDate: new Date().toISOString().split('T')[0],
-      notes: coverNote || 'Applied via HerRise AI Career Portal'
+      notes: coverNote || 'Applied via HerRise Career Portal'
     };
 
     setApplications((prev) => [newApp, ...prev]);

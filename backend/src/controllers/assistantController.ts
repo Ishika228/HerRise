@@ -52,7 +52,7 @@ export const chatWithAssistant = async (req: Request, res: Response) => {
           network: 'Act as a community and mentorship coordinator helping the user connect with experienced women leaders.'
         };
 
-        const systemContent = `You are the Unified HerRise AI Assistant, an elite, empowering, empathetic, and executive copilot for women professionals, entrepreneurs, students, and career relaunchers.
+        const systemContent = `You are the Unified HerRise Assistant, an elite, empowering, empathetic, and executive copilot for women professionals, entrepreneurs, students, and career relaunchers.
 Discipline Focus: ${topic.toUpperCase()} (${topicInstructions[topic] || topicInstructions.general})
 User Context: ${userProfile ? `Candidate: ${userProfile.name || 'Member'}, Target Role: ${userProfile.targetRole || 'Growth Professional'}` : 'HerRise Member'}
 
@@ -66,7 +66,7 @@ Tone & Formatting Guidelines:
   1. Politely state that they have currently selected the ${topic.toUpperCase()} specialist, but their query is specifically handled by our dedicated specialist (HerCareer Coach, HerFinance Advisor, HerBusiness Strategist, HerFund Guide, or HerMarket Optimizer).
   2. Instruct them politely to switch to that specialist's tab in the Focus Discipline bar above (or open that module) to get dedicated, domain-specific tools and guidance.
   3. Do NOT provide off-topic or unsolicited advice from your own discipline. Keep the reassignment referral polite, concise, and professional.
-- Under NO circumstances mention backend vendor or model names (such as Groq, Gemini, OpenAI, LPU, or internal APIs). You are HerRise AI.`;
+- Under NO circumstances mention backend vendor or model names (such as Groq, Gemini, OpenAI, LPU, or internal APIs). You are HerRise.`;
 
         const messages: GroqChatMessage[] = [{ role: 'system', content: systemContent }];
 

@@ -16,7 +16,7 @@ export const platformTestimonials: Testimonial[] = [
     role: 'Founder, TerraCraft Decor',
     location: 'Bengaluru',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    content: 'HerRise AI brought all my fragmented business needs into one sanctuary. From planning startup budgets in HerBusiness to listing handcrafted ceramic ware on HerMarket, I achieved operational profitability in four months.',
+    content: 'HerRise brought all my fragmented business needs into one sanctuary. From planning startup budgets in HerBusiness to listing handcrafted ceramic ware on HerMarket, I achieved operational profitability in four months.',
     rating: 5,
     highlight: 'Operational profitability in 4 months'
   },
@@ -53,8 +53,8 @@ export const platformFAQs: FAQItem[] = [
   {
     id: 'faq-1',
     category: 'General',
-    question: 'What is HerRise AI, and who is it designed for?',
-    answer: 'HerRise AI is a unified, all-in-one empowerment ecosystem tailored for women across every phase of their journey — aspiring entrepreneurs, corporate professionals, women returning to work after career breaks, students, and freelancers. It integrates financial management, career placement, startup creation, funding discovery, marketplace selling, curated education, and verified mentorship under one roof.'
+    question: 'What is HerRise, and who is it designed for?',
+    answer: 'HerRise is a unified, all-in-one empowerment ecosystem tailored for women across every phase of their journey — aspiring entrepreneurs, corporate professionals, women returning to work after career breaks, students, and freelancers. It integrates financial management, career placement, startup creation, funding discovery, marketplace selling, curated education, and verified mentorship under one roof.'
   },
   {
     id: 'faq-2',
@@ -78,7 +78,7 @@ export const platformFAQs: FAQItem[] = [
     id: 'faq-5',
     category: 'Security & Languages',
     question: 'Is my data secure, and is the platform available in regional Indian languages?',
-    answer: 'Yes. HerRise AI prioritizes privacy and financial dignity. The interface supports English, Hindi, and Marathi with localized resources, and client data is protected with enterprise-grade encryption principles.'
+    answer: 'Yes. HerRise prioritizes privacy and financial dignity. The interface supports English, Hindi, and Marathi with localized resources, and client data is protected with enterprise-grade encryption principles.'
   }
 ];
 

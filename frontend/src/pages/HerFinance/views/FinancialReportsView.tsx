@@ -226,7 +226,7 @@ export const FinancialReportsView: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-teal-600" />
               <span className="text-xs font-bold text-teal-800 uppercase tracking-wider font-mono">
-                HerRise AI Enterprise • HerFinance Statement
+                HerRise Enterprise • HerFinance Statement
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 mt-1">Monthly Financial Health Report</h1>
@@ -461,7 +461,7 @@ export const FinancialReportsView: React.FC = () => {
 
         {/* Footer Disclaimer */}
         <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
-          <span>HerRise AI Platform • Confidential Financial Summary</span>
+          <span>HerRise Platform • Confidential Financial Summary</span>
           <span>Verified Internal Ledger Hash: #{Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
         </div>
       </div>

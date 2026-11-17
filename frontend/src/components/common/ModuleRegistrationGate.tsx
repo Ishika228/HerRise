@@ -332,7 +332,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
         {step === 1 && (
           <form onSubmit={handleNext} className="space-y-4">
             <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100 text-xs text-purple-900 leading-relaxed">
-              👋 <strong>Welcome to HerRise AI!</strong> Please confirm your member details so all reports, contracts, and certificates reflect your verified identity.
+              👋 <strong>Welcome to HerRise!</strong> Please confirm your member details so all reports, contracts, and certificates reflect your verified identity.
             </div>
 
             <div className="space-y-3">
@@ -381,7 +381,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                       type="tel"
                       value={personalInfo.phone}
                       onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })}
-                      placeholder="+91 98765 43210"
+                      placeholder="+61 412 345 678"
                       className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#4A154B] rounded-xl text-xs outline-none transition-all"
                     />
                   </div>
@@ -398,7 +398,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                     type="text"
                     value={personalInfo.location}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, location: e.target.value })}
-                    placeholder="e.g. Bengaluru, Karnataka"
+                    placeholder="e.g. Sydney, NSW"
                     className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#4A154B] rounded-xl text-xs outline-none transition-all"
                   />
                 </div>
@@ -879,7 +879,7 @@ export const ModuleRegistrationGate: React.FC<ModuleRegistrationGateProps> = ({
                 <span>Live Dynamic Calculations Derived from Your Input</span>
               </div>
               <p className="text-[11px] text-emerald-800 leading-relaxed">
-                Zero static numbers. HerRise AI computes your indicators in real-time and persists your baseline to MongoDB Atlas.
+                Zero static numbers. HerRise computes your indicators in real-time and persists your baseline to MongoDB Atlas.
               </p>
             </div>
 

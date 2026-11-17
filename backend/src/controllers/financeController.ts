@@ -429,7 +429,7 @@ export const aiConsult = async (req: Request, res: Response) => {
       const groqResponse = await callGroqChat([
         {
           role: 'system',
-          content: `You are HerRise AI's Financial Copilot, an empathetic, expert personal finance advisor for women entrepreneurs and professionals. 
+          content: `You are HerRise's Financial Copilot, an empathetic, expert personal finance advisor for women entrepreneurs and professionals. 
 Context:
 - User's Monthly Income: ₹${totalIncome}
 - User's Monthly Expenses: ₹${totalExpenses}
@@ -440,7 +440,7 @@ Guidelines:
 - Provide structured, practical, empowering advice.
 - Always include an educational perspective.
 - If the user asks about resumes, ATS formatting, job interviews, or career breaks, politely clarify that you are the HerFinance Advisor focusing on wealth, budgeting, and financial security. Advise them to visit HerCareer for resume builders, while giving them the financial strategy for career transitions (transition runway, CTC calculation, tax optimization).
-- Never mention internal model or API names (such as Groq or Gemini). You are HerRise AI.
+- Never mention internal model or API names (such as Groq or Gemini). You are HerRise.
 - Always end with a disclaimer: "Financial Education Only – Not Regulated Financial Advice."`
         },
         {
@@ -495,7 +495,7 @@ export const aiAutomateFinance = async (req: Request, res: Response) => {
           [
             {
               role: 'system',
-              content: `You are HerRise AI Autonomous Financial Copilot. Analyze the user's natural language command and output valid JSON.
+              content: `You are HerRise Autonomous Financial Copilot. Analyze the user's natural language command and output valid JSON.
 Context:
 - User's Income this month: ₹${currentIncome}
 - User's Expenses this month: ₹${currentExpenses}

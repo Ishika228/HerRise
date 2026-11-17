@@ -220,7 +220,7 @@ export const BusinessIdeaGenerator: React.FC<BusinessIdeaGeneratorProps> = ({
   // Copy plan summary
   const handleCopySummary = () => {
     if (!generatedPlan) return;
-    const summaryText = `HERRISE AI BUSINESS BLUEPRINT: ${generatedPlan.businessName}
+    const summaryText = `HERRISE BUSINESS BLUEPRINT: ${generatedPlan.businessName}
 Tagline: ${generatedPlan.tagline}
 Industry: ${generatedPlan.industry}
 Estimated Capital: ${generatedPlan.initialInvestment}

@@ -142,7 +142,7 @@ export const MentorProfileModal: React.FC<MentorProfileModalProps> = ({
 
         {/* Disclaimer Note */}
         <p className="text-[10px] text-gray-400 italic text-center">
-          * Verified mentor roster for HerRise AI sisterhood. Demo profile for platform preview.
+          * Verified mentor roster for HerRise sisterhood. Demo profile for platform preview.
         </p>
 
         {/* Action Buttons */}

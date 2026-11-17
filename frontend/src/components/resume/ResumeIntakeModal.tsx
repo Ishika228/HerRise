@@ -170,13 +170,13 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
       if (fileToUse) {
         const formData = new FormData();
         formData.append('resume', fileToUse);
-        setParseProgress('HerRise AI scanning resume & extracting ATS structure...');
+        setParseProgress('HerRise scanning resume & extracting ATS structure...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           body: formData
         });
       } else {
-        setParseProgress('HerRise AI parsing resume text...');
+        setParseProgress('HerRise parsing resume text...');
         response = await fetch(`${API_BASE}/api/career/parse-resume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -292,7 +292,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
         }
 
         setMissingFields(detectedMissing);
-        showToast('Resume Extracted! ✨', 'HerRise AI successfully parsed your qualifications, experience & skills.', 'success');
+        showToast('Resume Extracted! ✨', 'HerRise successfully parsed your qualifications, experience & skills.', 'success');
       } else {
         throw new Error(json.error || 'Parsing failed.');
       }
@@ -591,7 +591,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                 <div>
                   <h4 className="text-base font-bold text-gray-900">
                     {isParsing
-                      ? 'Analyzing Resume with HerRise AI...'
+                      ? 'Analyzing Resume with HerRise...'
                       : selectedFile
                       ? selectedFile.name
                       : 'Upload Your Existing Resume File'}
@@ -844,7 +844,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                         required
                         value={resumeData.phone}
                         onChange={(e) => setResumeData({ ...resumeData, phone: e.target.value })}
-                        placeholder="e.g. +91 98765 43210"
+                        placeholder="e.g. +61 412 345 678"
                         className="w-full text-xs pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-[#4A154B]"
                       />
                     </div>
@@ -1533,7 +1533,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     ) : (
                       <>
                         <Sparkles className="w-3.5 h-3.5 text-pink-300" />
-                        <span>Generate with HerRise AI</span>
+                        <span>Generate with AI</span>
                       </>
                     )}
                   </button>
@@ -1585,7 +1585,7 @@ export const ResumeIntakeModal: React.FC<ResumeIntakeModalProps> = ({
                     rows={4}
                     value={resumeData.summary}
                     onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-                    placeholder="Click 'Generate with HerRise AI' above or write your custom summary..."
+                    placeholder="Click 'Generate with AI' above or write your custom summary..."
                     className="w-full text-xs p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-[#4A154B] leading-relaxed font-sans"
                   />
                 </div>

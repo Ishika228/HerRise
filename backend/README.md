@@ -1,6 +1,6 @@
-# HerRise AI – Backend API Service
+# HerRise – Backend API Service
 
-Node.js, Express, and TypeScript RESTful API service supporting the **HerRise AI** platform (*Her Future. Her Finance. Her Freedom.*).
+Node.js, Express, and TypeScript RESTful API service supporting the **HerRise** platform (*Her Future. Her Finance. Her Freedom.*).
 
 ---
 

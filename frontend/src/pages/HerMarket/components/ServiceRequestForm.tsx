@@ -378,7 +378,7 @@ export const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
                       required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+91 98765 43210"
+                      placeholder="+61 412 345 678"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-[#4A154B] focus:bg-white bg-gray-50 outline-none"
                     />
                   </div>

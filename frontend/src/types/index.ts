@@ -1,4 +1,4 @@
-// HerRise AI - Core Type Definitions
+// HerRise - Core Type Definitions
 
 export type Language = 'en' | 'hi' | 'mr';
 

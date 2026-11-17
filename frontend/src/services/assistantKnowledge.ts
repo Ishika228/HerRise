@@ -654,7 +654,7 @@ I am dedicated to your complete personal financial security, cash-flow mastery, 
     }
 
     return {
-      title: 'Welcome to HerRise AI Assistant',
+      title: 'Welcome to HerRise Assistant',
       response: `### 🌸 Hello ${userName}! I am your HerRise All-in-One Advisor.
 
 I am designed to guide you through every stage of your personal, financial, and career growth:
@@ -767,7 +767,7 @@ Here is a financial roadmap for your goal:
 Here is an actionable framework to address this:
 
 1. **Clarify Objectives**: Break your long-term goal into measurable 30-day milestones with daily 15-minute actions.
-2. **Leverage HerRise AI Modules**:
+2. **Leverage HerRise Modules**:
    - For career questions and resume editing, use **[HerCareer](/career)**.
    - For wealth budgeting and financial allocations, visit **[HerFinance](/finance)**.
    - For business feasibility and pricing models, explore **[HerBusiness](/business)**.

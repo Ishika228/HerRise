@@ -64,14 +64,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="flex flex-col h-full bg-white border-r border-purple-100 select-none">
       {/* Brand Header */}
       <div className="h-20 flex items-center justify-between px-4 border-b border-purple-100">
-        <NavLink to="/" className="flex items-center gap-3 overflow-hidden" title="HerRise AI Website">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3b0764] via-[#4A154B] to-[#e11d48] flex items-center justify-center text-white shrink-0 shadow-md">
-            <Sparkles className="w-5 h-5 text-pink-200" />
-          </div>
+        <NavLink to="/" className="flex items-center gap-3 overflow-hidden" title="HerRise Website">
+          <img
+            src="/logo.png"
+            alt="HerRise"
+            className="w-10 h-10 object-contain shrink-0"
+          />
           {!collapsed && (
             <div className="leading-tight">
               <span className="font-extrabold text-xl tracking-tight text-gray-900">
-                HerRise<span className="text-[#fb7185]">AI</span>
+                HerRise
               </span>
               <p className="text-[10px] text-gray-500 font-medium truncate">Fintech & Career Hub</p>
             </div>
@@ -115,10 +117,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               end={item.path === '/dashboard'}
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all relative group ${
-                  isActive
-                    ? 'bg-[#4A154B] text-white shadow-md shadow-purple-950/20'
-                    : item.special
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all relative group ${isActive
+                  ? 'bg-[#4A154B] text-white shadow-md shadow-purple-950/20'
+                  : item.special
                     ? 'text-purple-900 bg-purple-50/70 hover:bg-purple-100/80'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-[#4A154B]'
                 } ${collapsed ? 'justify-center px-2' : ''}`
@@ -128,24 +129,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {({ isActive }) => (
                 <>
                   <Icon
-                    className={`w-5 h-5 shrink-0 ${
-                      isActive
-                        ? 'text-white'
-                        : item.special
+                    className={`w-5 h-5 shrink-0 ${isActive
+                      ? 'text-white'
+                      : item.special
                         ? 'text-[#4A154B] animate-pulse-subtle'
                         : 'text-gray-500 group-hover:text-[#4A154B]'
-                    }`}
+                      }`}
                   />
                   {!collapsed && (
                     <span className="truncate flex-1">{item.name}</span>
                   )}
                   {!collapsed && item.badge && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        isActive
-                          ? 'bg-pink-400 text-white'
-                          : 'bg-[#fb7185] text-white'
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive
+                        ? 'bg-pink-400 text-white'
+                        : 'bg-[#fb7185] text-white'
+                        }`}
                     >
                       {item.badge}
                     </span>
@@ -168,10 +167,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               to={item.path}
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-colors ${
-                  isActive
-                    ? 'bg-purple-100 text-[#4A154B] font-semibold'
-                    : 'text-gray-600 hover:bg-purple-50 hover:text-[#4A154B]'
+                `flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-sm transition-colors ${isActive
+                  ? 'bg-purple-100 text-[#4A154B] font-semibold'
+                  : 'text-gray-600 hover:bg-purple-50 hover:text-[#4A154B]'
                 } ${collapsed ? 'justify-center px-2' : ''}`
               }
               title={collapsed ? item.name : undefined}
@@ -215,9 +213,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:block shrink-0 transition-all duration-300 z-30 ${
-          collapsed ? 'w-20' : 'w-64'
-        }`}
+        className={`hidden lg:block shrink-0 transition-all duration-300 z-30 ${collapsed ? 'w-20' : 'w-64'
+          }`}
       >
         <div className="sticky top-0 h-screen">
           {sidebarContent}

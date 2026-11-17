@@ -65,7 +65,7 @@ export const ResumeBuilderView: React.FC = () => {
     if (!file) return;
 
     setIsUploadingResume(true);
-    showToast('Analyzing Document', `HerRise AI scanning ${file.name}...`, 'info');
+    showToast('Analyzing Document', `HerRise scanning ${file.name}...`, 'info');
     try {
       const data = await parseResumeFile(file);
       if (data && data.parsed) {

@@ -74,7 +74,7 @@ async function getTransporter() {
 export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
   try {
     const transporter = await getTransporter();
-    const fromAddress = process.env.SMTP_FROM || process.env.EMAIL_FROM || '"HerRise AI Digital Market" <orders@herrise.org>';
+    const fromAddress = process.env.SMTP_FROM || process.env.EMAIL_FROM || '"HerRise Digital Market" <orders@herrise.org>';
 
     const gstAmount = Math.round(params.amountPaid / 11);
     const subtotal = params.amountPaid - gstAmount;
@@ -109,7 +109,7 @@ export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ su
         <div class="header">
           <div class="badge">Official Tax Invoice & Receipt</div>
           <h1>Payment Confirmed! 🌸</h1>
-          <p>Thank you for partnering with HerRise AI Digital Services</p>
+          <p>Thank you for partnering with HerRise Digital Services</p>
         </div>
 
         <div class="content">
@@ -178,7 +178,7 @@ export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ su
         </div>
 
         <div class="footer">
-          <p style="margin: 0 0 6px 0;">HerRise AI Platform • ABN 84 923 104 592 • Sydney, NSW Australia</p>
+          <p style="margin: 0 0 6px 0;">HerRise Platform • ABN 84 923 104 592 • Sydney, NSW Australia</p>
           <p style="margin: 0;">Questions? Reply directly to this email or reach us on WhatsApp Support.</p>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { store } from '../data/mockStore.js';
 import { callGroqChat } from '../services/groqService.js';
+import { parseResumeWithEdenAI, analyzeResumeWithEdenAI } from '../services/edenAiService.js';
 import { fetchAustralianJobs, fallbackAustralianJobs } from '../services/jobDataService.js';
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
@@ -234,50 +235,87 @@ Output valid JSON format:
 // ==========================================
 export const analyzeResumeDetailed = async (req: Request, res: Response) => {
   try {
-    const { resumeText, targetJobDescription } = req.body;
-    if (!resumeText || resumeText.trim().length < 20) {
-      return res.status(400).json({ success: false, error: 'Resume text is required for analysis.' });
+    const { targetJobDescription } = req.body;
+    let textToAnalyze = req.body.resumeText || req.body.text || '';
+
+    // If structured resume data is passed, synthesize into full analysis text
+    if (!textToAnalyze && req.body.resumeData) {
+      const d = req.body.resumeData;
+      textToAnalyze = [
+        d.fullName || d.personalInfo?.fullName || '',
+        d.headline || d.title || d.personalInfo?.headline || '',
+        d.summary || '',
+        d.skills ? `Skills: ${Array.isArray(d.skills) ? d.skills.join(', ') : (d.skills.technical || []).join(', ')}` : '',
+        d.experience?.length
+          ? `Work Experience:\n${d.experience.map((e: any) => `${e.title || e.role} at ${e.company} (${e.duration}): ${Array.isArray(e.highlights) ? e.highlights.join(' ') : (e.description || '')}`).join('\n')}`
+          : '',
+        d.education?.length
+          ? `Education:\n${d.education.map((ed: any) => `${ed.degree} from ${ed.institution} (${ed.year || ''})`).join('\n')}`
+          : '',
+        d.projects?.length
+          ? `Projects:\n${d.projects.map((p: any) => `${p.title}: ${p.description || ''} (${(p.technologies || []).join(', ')})`).join('\n')}`
+          : ''
+      ].filter(Boolean).join('\n\n');
     }
 
+    if (!textToAnalyze || textToAnalyze.trim().length < 15) {
+      return res.status(400).json({
+        success: false,
+        error: 'Resume content is required for evaluation. Please upload a file or paste resume text.'
+      });
+    }
+
+    // 1. Attempt Eden AI Resume Analysis (using user's pasted API key)
+    try {
+      const edenAnalysis = await analyzeResumeWithEdenAI(textToAnalyze, targetJobDescription);
+      if (edenAnalysis && typeof edenAnalysis.overallScore === 'number') {
+        if (edenAnalysis.overallScore <= 10) edenAnalysis.overallScore = Math.round(edenAnalysis.overallScore * 10);
+        return res.status(200).json({ success: true, analysis: edenAnalysis, engine: 'eden-ai' });
+      }
+    } catch (edenErr: any) {
+      console.warn('[EdenAI Resume Analysis notice]:', edenErr?.message);
+    }
+
+    // 2. Call Groq Cloud LLM (openai/gpt-oss-120b)
     const messages = [
       {
         role: 'system' as const,
         content: `You are an AI Resume Evaluator and Senior Technical Talent Director.
 Analyze the candidate's resume text thoroughly. Provide an estimated quality assessment score (0 to 100), detailed feedback on structure, weak points, spelling/grammar check, skills analysis, and missing high-impact keywords.
-Important: Always present the score as an estimated quality assessment.
+Important: Always present the score as an estimated quality assessment on a 0 to 100 integer scale.
 
-Output valid JSON format:
+Output valid JSON format matching this exact schema:
 {
-  "overallScore": number (e.g. 84),
+  "overallScore": number (between 65 and 96, e.g. 84),
   "summaryRating": "Strong" | "Good" | "Needs Improvement",
   "categoryScores": {
-    "impactAndMetrics": number (0-100),
-    "skillsAlignment": number (0-100),
-    "formattingAndClarity": number (0-100),
-    "experienceDepth": number (0-100)
+    "impactAndMetrics": number (between 50 and 95),
+    "skillsAlignment": number (between 50 and 95),
+    "formattingAndClarity": number (between 50 and 95),
+    "experienceDepth": number (between 50 and 95)
   },
   "strengths": [
-    "Detailed strength 1...",
-    "Detailed strength 2...",
-    "Detailed strength 3..."
+    "Specific strength from candidate background...",
+    "Another distinct strength...",
+    "Third distinct strength..."
   ],
   "improvements": [
     "Actionable improvement 1...",
     "Actionable improvement 2...",
     "Actionable improvement 3..."
   ],
-  "missingKeywords": ["Keyword 1", "Keyword 2", "Keyword 3"],
+  "missingKeywords": ["Keyword 1", "Keyword 2", "Keyword 3", "Keyword 4"],
   "improvedSampleBullets": [
     {
-      "original": "Short weak bullet from resume",
-      "improved": "Quantified, achievement-oriented replacement"
+      "original": "Weak bullet or summary point from candidate resume",
+      "improved": "Quantified, achievement-oriented replacement using strong action verbs"
     }
   ]
 }`
       },
       {
         role: 'user' as const,
-        content: `Resume Content:\n${resumeText.slice(0, 4000)}\n\nTarget Job Description (Optional):\n${(targetJobDescription || 'Standard Industry Role').slice(0, 1000)}`
+        content: `Resume Content:\n${textToAnalyze.slice(0, 4000)}\n\nTarget Job Description (Optional):\n${(targetJobDescription || 'Standard Industry Professional').slice(0, 1000)}`
       }
     ];
 
@@ -288,41 +326,103 @@ Output valid JSON format:
         responseFormat: { type: 'json_object' }
       });
       const parsed = JSON.parse(response);
-      return res.status(200).json({ success: true, analysis: parsed });
+      if (parsed && typeof parsed.overallScore === 'number') {
+        // Normalize 0-10 score to 0-100 if model outputs single digit
+        if (parsed.overallScore <= 10) {
+          parsed.overallScore = Math.min(100, Math.round(parsed.overallScore * 10));
+        }
+        if (parsed.categoryScores) {
+          for (const key of Object.keys(parsed.categoryScores)) {
+            if (typeof parsed.categoryScores[key] === 'number' && parsed.categoryScores[key] <= 10) {
+              parsed.categoryScores[key] = Math.min(100, Math.round(parsed.categoryScores[key] * 10));
+            }
+          }
+        }
+        return res.status(200).json({ success: true, analysis: parsed, engine: 'groq' });
+      }
     } catch (e: any) {
       console.warn('[AI Resume Detailed Analyzer error]:', e?.message);
     }
 
-    // Heuristic fallback analysis
+    // 3. Dynamic Heuristic Evaluation Engine (Calculated directly from candidate text)
+    const lower = textToAnalyze.toLowerCase();
+    const wordCount = textToAnalyze.split(/\s+/).length;
+
+    // Detect quantifiable metrics
+    const metricsMatches = textToAnalyze.match(/(\d+[\d,.]*%|\$\s*\d+[\d,.]*|\b\d+\s*(?:k|million|users|clients|customers|projects|hours|team|x)\b)/gi) || [];
+    const metricCount = metricsMatches.length;
+
+    // Detect action verbs
+    const actionVerbs = ['architected', 'developed', 'engineered', 'led', 'managed', 'designed', 'built', 'spearheaded', 'optimized', 'implemented', 'orchestrated', 'delivered', 'reduced', 'increased', 'streamlined'];
+    const actionVerbsFound = actionVerbs.filter(v => lower.includes(v));
+
+    // Detect sections
+    const hasExp = /experience|employment|work history/i.test(textToAnalyze);
+    const hasEdu = /education|university|college|degree|bachelor|master|diploma/i.test(textToAnalyze);
+    const hasSkills = /skills|technologies|proficiencies|tools/i.test(textToAnalyze);
+    const hasProjects = /projects|portfolio|initiatives/i.test(textToAnalyze);
+
+    // Compute category scores based on actual document characteristics
+    const impactScore = Math.min(95, Math.max(62, 60 + metricCount * 4 + actionVerbsFound.length * 2));
+    const skillsScore = Math.min(96, Math.max(68, hasSkills ? 82 + Math.min(12, actionVerbsFound.length) : 70));
+    const formatScore = Math.min(95, Math.max(70, 68 + (hasExp ? 8 : 0) + (hasEdu ? 8 : 0) + (wordCount > 150 ? 8 : 0)));
+    const depthScore = Math.min(94, Math.max(65, 65 + (wordCount > 250 ? 15 : wordCount > 120 ? 8 : 0) + (hasProjects ? 10 : 0)));
+    const overallScore = Math.round((impactScore * 0.3) + (skillsScore * 0.3) + (formatScore * 0.2) + (depthScore * 0.2));
+
+    const rating = overallScore >= 85 ? 'Strong' : overallScore >= 75 ? 'Good' : 'Needs Improvement';
+
+    const dynamicStrengths = [
+      actionVerbsFound.length > 0
+        ? `Effective use of leadership and execution action verbs (${actionVerbsFound.slice(0, 3).join(', ')})`
+        : 'Clear chronological background presentation',
+      hasSkills
+        ? 'Well-organized technical proficiencies and tooling representation'
+        : 'Solid functional overview of career milestones',
+      metricCount > 0
+        ? `Included ${metricCount} quantified impact indicators, boosting recruiter recall`
+        : 'Consistent structural layout aligned with ATS scanning norms'
+    ];
+
+    const dynamicImprovements = [];
+    if (metricCount < 3) {
+      dynamicImprovements.push('Add more quantified outcomes (e.g. % performance increase, cost reduction, client count) to work experience bullets.');
+    }
+    if (actionVerbsFound.length < 3) {
+      dynamicImprovements.push('Lead bullet points with active verbs like "Architected", "Engineered", or "Spearheaded" rather than passive phrasing.');
+    }
+    if (!hasProjects) {
+      dynamicImprovements.push('Include a dedicated Projects or Key Initiatives section demonstrating hands-on technical execution.');
+    }
+    if (dynamicImprovements.length < 3) {
+      dynamicImprovements.push('Customize summary statement directly matching keywords from your target job description.');
+    }
+
+    const missingKeywords = targetJobDescription
+      ? (targetJobDescription as string).split(/\W+/).filter((w: string) => w.length > 5 && !lower.includes(w.toLowerCase())).slice(0, 4)
+      : ['System Design', 'CI/CD Pipelines', 'Performance Optimization', 'Agile Collaboration'];
+
     return res.status(200).json({
       success: true,
       analysis: {
-        overallScore: 82,
-        summaryRating: 'Good',
+        overallScore,
+        summaryRating: rating,
         categoryScores: {
-          impactAndMetrics: 76,
-          skillsAlignment: 88,
-          formattingAndClarity: 85,
-          experienceDepth: 80
+          impactAndMetrics: impactScore,
+          skillsAlignment: skillsScore,
+          formattingAndClarity: formatScore,
+          experienceDepth: depthScore
         },
-        strengths: [
-          'Clear chronological career progression with recognized organization names',
-          'Good foundational keyword presence across core engineering competencies',
-          'Clean, standard section layout for ATS scanning readability'
-        ],
-        improvements: [
-          'Add quantitative metrics (e.g. % performance increase, latency reduction, user volume) to recent projects',
-          'Include 3-4 specialized modern framework keywords in your skills section',
-          'Strengthen summary statement to lead with strategic value and core achievements'
-        ],
-        missingKeywords: ['System Design', 'CI/CD Pipelines', 'Performance Optimization', 'Agile Collaboration'],
+        strengths: dynamicStrengths,
+        improvements: dynamicImprovements,
+        missingKeywords: missingKeywords.length > 0 ? missingKeywords : ['Technical Strategy', 'Cross-functional Leadership', 'API Architecture'],
         improvedSampleBullets: [
           {
-            original: 'Worked on building frontend interfaces and fixing bugs.',
-            improved: 'Architected and deployed responsive client interfaces using React and TypeScript, decreasing UI render latency by 32% across 50,000+ active users.'
+            original: 'Responsible for developing features and supporting team deliverables.',
+            improved: 'Spearheaded end-to-end development of core product features, improving system responsiveness by 28% and accelerating deployment cycles.'
           }
         ]
-      }
+      },
+      engine: 'intelligent-heuristic'
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
@@ -874,7 +974,7 @@ export const careerAiAssistant = async (req: Request, res: Response) => {
     const conversation: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
       {
         role: 'system',
-        content: `You are HerCareer AI Assistant, an elite, empowering, and empathetic career advisor designed for women, fresh graduates, and career relaunchers on the HerRise AI platform.
+        content: `You are HerCareer AI Assistant, an elite, empowering, and empathetic career advisor designed for women, fresh graduates, and career relaunchers on the HerRise platform.
 You give actionable, structured, encouraging, and honest advice about resume crafting, interview prep, skill roadmaps, job search tactics, and career comeback strategies.
 Keep advice clear, professional, and practical with bullet points where appropriate.`
       }
@@ -963,6 +1063,23 @@ export const parseResume = async (req: Request, res: Response) => {
     const file = req.file;
 
     if (file) {
+      // 1. Try Eden AI Resume Parser using the user's configured live key
+      try {
+        const edenResult = await parseResumeWithEdenAI(file.buffer, file.originalname, file.mimetype);
+        if (edenResult.success && edenResult.parsed) {
+          return res.status(200).json({
+            success: true,
+            parsed: edenResult.parsed,
+            rawText: edenResult.rawText || '',
+            textLength: (edenResult.rawText || '').length,
+            engine: `eden-ai (${edenResult.provider || 'affinda'})`
+          });
+        }
+      } catch (edenErr: any) {
+        console.warn('[EdenAI Parser attempt notice]:', edenErr?.message);
+      }
+
+      // 2. Extract text locally from PDF / Word
       const mime = file.mimetype;
       const originalName = file.originalname.toLowerCase();
 
@@ -985,7 +1102,7 @@ export const parseResume = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Could not extract text from the provided file.' });
     }
 
-    // Call Groq LLM to parse extracted text into structured resume fields
+    // Call Groq LLM (openai/gpt-oss-120b) to parse extracted text into structured resume fields
     const messages = [
       {
         role: 'system' as const,
@@ -1103,7 +1220,7 @@ Output valid JSON matching this schema:
         parsed.projects = [...parsed.projects, ...extraProjects];
       }
 
-      return res.status(200).json({ success: true, parsed, textLength: rawText.length });
+      return res.status(200).json({ success: true, parsed, rawText, textLength: rawText.length, engine: 'groq' });
     } catch (e) {
       console.warn('[Parse Resume Groq error]:', e);
     }
@@ -1125,7 +1242,9 @@ Output valid JSON matching this schema:
         achievements: [],
         qualityScore: 80
       },
-      textLength: rawText.length
+      rawText,
+      textLength: rawText.length,
+      engine: 'fallback'
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });

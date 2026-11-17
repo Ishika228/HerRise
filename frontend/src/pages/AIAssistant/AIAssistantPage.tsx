@@ -449,7 +449,7 @@ export const AIAssistantPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-base sm:text-lg text-gray-900">Unified HerRise AI Assistant</h1>
+                <h1 className="font-extrabold text-base sm:text-lg text-gray-900">Unified HerRise Assistant</h1>
                 <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
                   Ready • Multi-Discipline AI
                 </span>
@@ -600,7 +600,7 @@ export const AIAssistantPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" />
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce [animation-delay:0.2s]" />
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce [animation-delay:0.4s]" />
-              <span className="text-[11px] font-medium text-gray-500">HerRise AI is synthesizing strategy...</span>
+              <span className="text-[11px] font-medium text-gray-500">HerRise is synthesizing strategy...</span>
             </div>
           )}
 
