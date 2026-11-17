@@ -78,15 +78,11 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
     <div className="space-y-12 pb-10">
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#4A154B]">
-          <Sparkles className="w-3.5 h-3.5 text-[#4A154B]" />
-          Digital Service Packages · AUD
-        </div>
         <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-          Fixed-Price Digital Packages (AUD)
+          Fixed-Price Digital Packages
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
-          Priced in Australian Dollars for Australian small businesses, sole traders, and entrepreneurs. Compare packages below, customize with add-ons, or checkout directly via Stripe.
+          Priced in Australian Dollars for Australian small businesses, sole traders, and entrepreneurs. Compare packages below, customize with add-ons.
         </p>
       </div>
 

@@ -9,11 +9,13 @@ import { SavingsGoalModel } from '../models/SavingsGoalModel.js';
 import { UserModel } from '../models/UserModel.js';
 
 export const getFinanceOverview = async (req: Request, res: Response) => {
+  const userId = req.query.userId || req.query.userEmail || '';
   if (mongoose.connection.readyState === 1) {
     try {
-      const txs = await TransactionModel.find();
-      const goals = await SavingsGoalModel.find();
-      const categories = await BudgetCategoryModel.find();
+      const userFilter = userId ? { userId: String(userId).toLowerCase() } : {};
+      const txs = await TransactionModel.find(userFilter);
+      const goals = await SavingsGoalModel.find(userFilter);
+      const categories = await BudgetCategoryModel.find(userFilter);
 
       const totalIncome = txs
         .filter((t) => t.type === 'income')
@@ -76,11 +78,13 @@ export const getFinanceOverview = async (req: Request, res: Response) => {
 };
 
 export const getTransactions = async (req: Request, res: Response) => {
-  const { type, category, search } = req.query;
+  const { type, category, search, userId, userEmail } = req.query;
+  const targetUser = userId || userEmail;
 
   if (mongoose.connection.readyState === 1) {
     try {
       const queryFilter: any = {};
+      if (targetUser) queryFilter.userId = String(targetUser).toLowerCase();
       if (type && type !== 'all') queryFilter.type = type;
       if (category && category !== 'all') queryFilter.category = new RegExp(String(category), 'i');
       if (search) {
@@ -132,14 +136,16 @@ export const getTransactions = async (req: Request, res: Response) => {
 };
 
 export const createTransaction = async (req: Request, res: Response) => {
-  const { title, amount, type, category, date, paymentMethod, notes } = req.body;
+  const { title, amount, type, category, date, paymentMethod, notes, userId, userEmail } = req.body;
 
   if (!title || !amount || !type || !category) {
     return res.status(400).json({ success: false, error: 'Missing required transaction fields' });
   }
 
+  const effectiveUserId = (userId || userEmail || 'usr-default').toString().toLowerCase();
+
   const txData = {
-    userId: 'usr-101',
+    userId: effectiveUserId,
     title,
     amount: Number(amount),
     type: type as 'income' | 'expense',
@@ -608,12 +614,13 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
   // If MongoDB is connected:
   if (mongoose.connection.readyState === 1) {
     try {
+      const userEmail = email.toLowerCase();
       // 1. Update or create User
       const user = await UserModel.findOneAndUpdate(
-        { email: email.toLowerCase() },
+        { email: userEmail },
         {
           name: fullName,
-          email: email.toLowerCase(),
+          email: userEmail,
           financialSetupCompleted: true,
           financialProfile: {
             monthlyIncome: Number(monthlyIncome),
@@ -628,7 +635,7 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
       );
 
       // 2. Rebuild budget categories from user's actual entered expenses
-      await BudgetCategoryModel.deleteMany({ userId: 'usr-101' });
+      await BudgetCategoryModel.deleteMany({ userId: userEmail });
       const newBudgetDocs: any[] = [];
       const colors = ['#1e3a8a', '#0d9488', '#059669', '#d97706', '#e11d48', '#9333ea', '#2563eb', '#f59e0b'];
 
@@ -637,7 +644,7 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
           const exp = monthlyExpenses[i];
           if (exp.amount > 0) {
             newBudgetDocs.push({
-              userId: 'usr-101',
+              userId: userEmail,
               categoryId: `cat-${exp.category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
               categoryName: exp.category,
               limit: Number(exp.amount),
@@ -653,7 +660,7 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
       }
 
       // 3. Clear old goals and create user's goals
-      await SavingsGoalModel.deleteMany({ userId: 'usr-101' });
+      await SavingsGoalModel.deleteMany({ userId: userEmail });
       const goalsToCreate: any[] = [];
 
       // A: Emergency Cushion Fund if currentSavings entered
@@ -663,7 +670,7 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
           : 40000;
         const targetRunway = (Number(emergencyFundTargetMonths) || 6) * totalExp;
         goalsToCreate.push({
-          userId: 'usr-101',
+          userId: userEmail,
           title: 'Liquid Emergency Cushion',
           targetAmount: targetRunway > 0 ? targetRunway : Number(currentSavings) * 1.5,
           currentAmount: Number(currentSavings),
@@ -677,7 +684,7 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
       // B: Primary Goal
       if (primaryGoal && primaryGoal.title && primaryGoal.targetAmount) {
         goalsToCreate.push({
-          userId: 'usr-101',
+          userId: userEmail,
           title: primaryGoal.title,
           targetAmount: Number(primaryGoal.targetAmount),
           currentAmount: Number(primaryGoal.currentAmount || 0),
@@ -692,10 +699,10 @@ export const setupFinancialProfile = async (req: Request, res: Response) => {
         await SavingsGoalModel.insertMany(goalsToCreate);
       }
 
-      // 4. Create opening transaction record for verified monthly income
-      await TransactionModel.deleteMany({ userId: 'usr-101' });
+      // 4. Create opening transaction record for verified monthly income (replaces previous income inflow, keeping expenses intact)
+      await TransactionModel.deleteMany({ userId: userEmail, type: 'income' });
       await TransactionModel.create({
-        userId: 'usr-101',
+        userId: userEmail,
         title: incomeSources?.[0]?.name || 'Baseline Monthly Income',
         amount: Number(monthlyIncome),
         type: 'income',

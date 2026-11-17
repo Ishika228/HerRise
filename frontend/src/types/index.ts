@@ -287,6 +287,33 @@ export interface PitchDeckSlide {
   bulletPoints: string[];
 }
 
+export interface SubmittedFundRequest {
+  id?: string;
+  _id?: string;
+  userId: string;
+  userEmail: string;
+  ventureId: string;
+  ventureName: string;
+  ventureSlug: string;
+  ventureLogo?: string;
+  ventureIndustry?: string;
+  ventureRound?: string;
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone?: string;
+  applicantLocation?: string;
+  startupName: string;
+  businessCategory?: string;
+  requestedAmount: number;
+  currency: string;
+  fundingType: string;
+  useOfFunds: string;
+  pitchSummary: string;
+  monthlyRevenue?: string;
+  status: 'Request Sent' | 'Under Review' | 'Accepted' | 'Declined';
+  createdAt: string;
+}
+
 // Module 5: HerMarket Types
 export interface Product {
   id: string;

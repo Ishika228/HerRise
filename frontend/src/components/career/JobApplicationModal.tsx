@@ -16,8 +16,7 @@ import {
   GraduationCap,
   Globe,
   Clock,
-  ShieldCheck,
-  ExternalLink
+  ShieldCheck
 } from 'lucide-react';
 import { JobListing, CandidateApplicationDetails } from '../../types/career';
 import { useAuth } from '../../context/AuthContext';

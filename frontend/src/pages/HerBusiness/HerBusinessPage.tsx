@@ -48,8 +48,8 @@ export const HerBusinessPage: React.FC = () => {
   });
   const [gateOpen, setGateOpen] = useState<boolean>(false);
 
-  // Tabs: Generator, Ideas, Feasibility, Pricing, Plan Builder
-  const [activeTab, setActiveTab] = useState<'generator' | 'ideas' | 'pricing' | 'plan' | 'feasibility'>('generator');
+  // Tabs: Generator, Ideas, Feasibility, Pricing
+  const [activeTab, setActiveTab] = useState<'generator' | 'ideas' | 'pricing' | 'feasibility'>('generator');
 
   // Business plan state (clean initial state for user's own venture)
   const [businessPlan, setBusinessPlan] = useState<BusinessPlan>(() => {
@@ -277,7 +277,6 @@ export const HerBusinessPage: React.FC = () => {
                 ...prev,
                 ...generated
               }));
-              setActiveTab('plan');
             }}
             onOpenPricing={(cogs, margin) => {
               setPricingCalc((prev) => ({
@@ -377,8 +376,8 @@ export const HerBusinessPage: React.FC = () => {
                           problemStatement: `Addressing unmet customer demands in the ${idea.category} market.`,
                           solution: idea.description
                         });
-                        setActiveTab('plan');
-                        showToast('Idea Loaded into Plan', 'Customizing 10-section business plan', 'success');
+                        setActiveTab('generator');
+                        showToast('Idea Loaded', `Template "${idea.title}" loaded into AI Generator`, 'success');
                       }}
                       className="bg-[#4A154B] hover:bg-[#350c36] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
                     >

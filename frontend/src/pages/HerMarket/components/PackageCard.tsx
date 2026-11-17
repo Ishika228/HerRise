@@ -118,12 +118,8 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center justify-between text-[10px] text-gray-400 px-1">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            Stripe / PayID Supported
-          </span>
-          {onViewComparison && (
+        {onViewComparison && (
+          <div className="flex items-center justify-end text-[10px] text-gray-400 px-1">
             <button
               onClick={onViewComparison}
               className="text-[#4A154B] font-semibold hover:underline cursor-pointer flex items-center gap-0.5"
@@ -131,8 +127,8 @@ export const PackageCard: React.FC<PackageCardProps> = ({
               <HelpCircle className="w-3 h-3" />
               Compare
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

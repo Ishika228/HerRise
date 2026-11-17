@@ -3,7 +3,9 @@ import {
   getGrants,
   checkEligibility,
   getStartupFunding,
-  getStartupFundingDetail
+  getStartupFundingDetail,
+  createFundRequest,
+  getUserFundRequests
 } from '../controllers/fundController.js';
 
 const router = Router();
@@ -11,9 +13,12 @@ const router = Router();
 router.get('/grants', getGrants);
 router.post('/check-eligibility', checkEligibility);
 
-// Live StartupDB venture funding routes
+// Live & catalog venture funding routes
 router.get('/startups', getStartupFunding);
 router.get('/startups/:slug', getStartupFundingDetail);
 
-export default router;
+// Funding Request Submission & User Tracker routes
+router.post('/requests', createFundRequest);
+router.get('/requests', getUserFundRequests);
 
+export default router;

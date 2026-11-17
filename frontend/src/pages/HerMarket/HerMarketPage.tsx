@@ -261,69 +261,6 @@ export const HerMarketPage: React.FC = () => {
                 </p>
               </div>
             </div>
-
-            {/* Header Right Actions & Profile Menu */}
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Return to Main App Dashboard"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Main Dashboard</span>
-              </Link>
-
-              {/* Profile Dropdown Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 py-1.5 px-3 rounded-xl border border-purple-100 bg-white hover:bg-purple-50 transition-colors cursor-pointer text-xs font-bold text-gray-800"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[#4A154B] text-white flex items-center justify-center text-[11px] font-black">
-                    {user?.name ? user.name[0].toUpperCase() : 'H'}
-                  </div>
-                  <span className="max-w-[100px] truncate">{user?.name || 'My Account'}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                </button>
-
-                {profileDropdownOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-purple-100 py-2 z-50 text-xs animate-in fade-in"
-                    onClick={() => setProfileDropdownOpen(false)}
-                  >
-                    <div className="px-4 py-2 border-b border-purple-50">
-                      <div className="font-bold text-gray-900">{user?.name || 'Entrepreneur'}</div>
-                      <div className="text-[11px] text-gray-400 truncate">{user?.email || 'user@herrise.ai'}</div>
-                    </div>
-                    <button
-                      onClick={() => navigate('/profile')}
-                      className="w-full text-left px-4 py-2 hover:bg-purple-50 flex items-center gap-2 text-gray-700 font-medium cursor-pointer"
-                    >
-                      <User className="w-3.5 h-3.5 text-gray-400" />
-                      <span>My Profile</span>
-                    </button>
-                    <button
-                      onClick={() => setActiveNav('my-services')}
-                      className="w-full text-left px-4 py-2 hover:bg-purple-50 flex items-center gap-2 text-gray-700 font-medium cursor-pointer"
-                    >
-                      <Clock className="w-3.5 h-3.5 text-gray-400" />
-                      <span>My Services</span>
-                    </button>
-                    <div className="my-1 border-t border-purple-50" />
-                    <button
-                      onClick={() => {
-                        logout();
-                        navigate('/login');
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-rose-50 flex items-center gap-2 text-rose-600 font-medium cursor-pointer"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Navigation Tabs Row (Section 12) */}

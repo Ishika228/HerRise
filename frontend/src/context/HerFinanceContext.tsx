@@ -6,8 +6,10 @@ import {
   FinancialProfile,
   NotificationItem,
   UserPreferences,
-  FinancialLessonItem
+  FinancialLessonItem,
+  PaymentMethod
 } from '../types/finance';
+import { useAuth } from './AuthContext';
 import {
   getStoredProfile,
   saveStoredProfile,
@@ -83,6 +85,17 @@ interface HerFinanceContextType {
   emergencyFundCoverageMonths: number;
   unreadNotificationsCount: number;
 
+  // User-specific monthly income & daily expense tracking
+  setMonthlyIncome: (income: number) => Promise<void>;
+  logDailyExpense: (data: {
+    title: string;
+    amount: number;
+    category: string;
+    date?: string;
+    paymentMethod?: PaymentMethod;
+    notes?: string;
+  }) => TransactionRecord;
+
   // CRUD & actions
   addTransaction: (data: Omit<TransactionRecord, 'id' | 'userId' | 'createdAt'>) => TransactionRecord;
   editTransaction: (id: string, data: Partial<TransactionRecord>) => void;
@@ -118,17 +131,53 @@ const HerFinanceContext = createContext<HerFinanceContextType | undefined>(undef
 
 export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const userKey = user?.email ? user.email.toLowerCase() : (user?.id ? user.id.toLowerCase() : 'guest');
+
+  const getStoredUserProfile = (): FinancialProfile => {
+    try {
+      const raw = localStorage.getItem(`herfinance_${userKey}_profile`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.monthlyIncome === 'number') {
+          return parsed;
+        }
+      }
+    } catch {}
+
+    const authIncome = (user as any)?.financialProfile?.monthlyIncome || (user as any)?.monthlyIncome || 0;
+    return {
+      userId: userKey,
+      fullName: user?.name || '',
+      email: user?.email || '',
+      monthlyIncome: Number(authIncome) || 0,
+      incomeSources: authIncome > 0 ? [{ name: 'Primary Inflow', amount: Number(authIncome), type: 'salary' }] : [],
+      emergencyFundTargetMonths: 6,
+      monthlySavingsTarget: Math.round((Number(authIncome) || 0) * 0.20),
+      riskTolerance: 'moderate',
+      financialScore: 82,
+      currency: 'INR',
+      updatedAt: new Date().toISOString()
+    };
+  };
+
+  const getStoredUserTransactions = (): TransactionRecord[] => {
+    try {
+      const raw = localStorage.getItem(`herfinance_${userKey}_transactions`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [];
+  };
 
   const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
-    return localStorage.getItem('herfinance_setup_completed') === 'true';
+    return localStorage.getItem(`herfinance_${userKey}_setup_completed`) === 'true' ||
+           localStorage.getItem('herfinance_setup_completed') === 'true';
   });
 
-  const [setupModalOpen, setSetupModalOpen] = useState<boolean>(() => {
-    return localStorage.getItem('herfinance_setup_completed') !== 'true';
-  });
+  const [setupModalOpen, setSetupModalOpen] = useState<boolean>(false);
 
-  const [profile, setProfile] = useState<FinancialProfile>(getStoredProfile);
-  const [transactions, setTransactions] = useState<TransactionRecord[]>(getStoredTransactions);
+  const [profile, setProfile] = useState<FinancialProfile>(getStoredUserProfile);
+  const [transactions, setTransactions] = useState<TransactionRecord[]>(getStoredUserTransactions);
   const [budget, setBudget] = useState<BudgetRecord>(getStoredBudget);
   const [goals, setGoals] = useState<SavingsGoalRecord[]>(getStoredGoals);
   const [lessons, setLessons] = useState<FinancialLessonItem[]>(getStoredLessons);
@@ -136,9 +185,29 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
   const [preferences, setPreferences] = useState<UserPreferences>(getStoredPreferences);
   const [dateFilter, setDateFilter] = useState<DateFilterType>('this_month');
 
-  // Sync to localStorage
-  useEffect(() => { saveStoredProfile(profile); }, [profile]);
-  useEffect(() => { saveStoredTransactions(transactions); }, [transactions]);
+  // Reload when active user changes
+  useEffect(() => {
+    const loadedProfile = getStoredUserProfile();
+    setProfile(loadedProfile);
+    const loadedTxs = getStoredUserTransactions();
+    setTransactions(loadedTxs);
+
+    const savedSetup = localStorage.getItem(`herfinance_${userKey}_setup_completed`);
+    setIsSetupCompleted(savedSetup === 'true' || loadedProfile.monthlyIncome > 0);
+  }, [userKey]);
+
+  // Sync to user-scoped localStorage
+  useEffect(() => {
+    if (userKey) {
+      localStorage.setItem(`herfinance_${userKey}_profile`, JSON.stringify(profile));
+    }
+  }, [profile, userKey]);
+
+  useEffect(() => {
+    if (userKey) {
+      localStorage.setItem(`herfinance_${userKey}_transactions`, JSON.stringify(transactions));
+    }
+  }, [transactions, userKey]);
   useEffect(() => { saveStoredBudget(budget); }, [budget]);
   useEffect(() => { saveStoredGoals(goals); }, [goals]);
   useEffect(() => { saveStoredLessons(lessons); }, [lessons]);
@@ -209,11 +278,24 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
     const newTx: TransactionRecord = {
       ...data,
       id: 'tx-' + Date.now().toString(36),
-      userId: profile.userId,
+      userId: userKey,
       createdAt: new Date().toISOString()
     };
 
     setTransactions((prev) => [newTx, ...prev]);
+
+    // Asynchronously sync to backend MongoDB Atlas
+    try {
+      fetch(`${API_BASE}/api/finance/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newTx,
+          userId: userKey,
+          userEmail: user?.email
+        })
+      }).catch(() => {});
+    } catch {}
 
     // Check budget alert if expense
     if (data.type === 'expense') {
@@ -253,6 +335,89 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
     }
 
     return newTx;
+  };
+
+  // Dedicated method to update monthly income
+  const setMonthlyIncome = async (amount: number) => {
+    const num = Math.max(0, Math.round(Number(amount)));
+    const updatedProfile: FinancialProfile = {
+      ...profile,
+      userId: userKey,
+      fullName: user?.name || profile.fullName || '',
+      email: user?.email || profile.email || '',
+      monthlyIncome: num,
+      monthlySavingsTarget: Math.round(num * 0.20),
+      incomeSources: [{ name: 'Primary Monthly Inflow', amount: num, type: 'salary' }],
+      updatedAt: new Date().toISOString()
+    };
+    setProfile(updatedProfile);
+
+    // Ensure there is an income transaction for this month
+    const now = new Date();
+    const thisMonthKey = now.toISOString().slice(0, 7);
+    setTransactions((prev) => {
+      const existingIdx = prev.findIndex((t) => t.type === 'income' && t.date.startsWith(thisMonthKey));
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx] = { ...copy[existingIdx], amount: num, title: 'Verified Monthly Inflow' };
+        return copy;
+      }
+      if (num > 0) {
+        const newIncTx: TransactionRecord = {
+          id: 'tx-inc-' + Date.now().toString(36),
+          userId: userKey,
+          title: 'Verified Monthly Inflow',
+          amount: num,
+          type: 'income',
+          category: 'Monthly Salary',
+          date: now.toISOString().split('T')[0],
+          paymentMethod: 'Bank Transfer',
+          notes: 'Verified monthly inflow',
+          createdAt: now.toISOString()
+        };
+        return [newIncTx, ...prev];
+      }
+      return prev;
+    });
+
+    localStorage.setItem(`herfinance_${userKey}_setup_completed`, 'true');
+    setIsSetupCompleted(true);
+
+    try {
+      await fetch(`${API_BASE}/api/finance/setup-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: user?.name || profile.fullName || 'User',
+          email: user?.email || profile.email || 'user@example.com',
+          monthlyIncome: num
+        })
+      });
+    } catch (e) {
+      console.warn('Backend income sync note:', e);
+    }
+
+    showToast('Income Updated!', `Verified monthly inflow set to ₹${num.toLocaleString()}`, 'success');
+  };
+
+  // Dedicated daily expense logger
+  const logDailyExpense = (data: {
+    title: string;
+    amount: number;
+    category: string;
+    date?: string;
+    paymentMethod?: PaymentMethod;
+    notes?: string;
+  }): TransactionRecord => {
+    return addTransaction({
+      title: data.title.trim() || 'Daily Outflow',
+      amount: Math.abs(Number(data.amount)),
+      type: 'expense',
+      category: data.category,
+      date: data.date || new Date().toISOString().split('T')[0],
+      paymentMethod: data.paymentMethod || 'UPI',
+      notes: data.notes || 'Daily Expense Log'
+    });
   };
 
   const editTransaction = (id: string, data: Partial<TransactionRecord>) => {
@@ -669,6 +834,8 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
         setupModalOpen,
         setSetupModalOpen,
         setupFinancialBaseline,
+        setMonthlyIncome,
+        logDailyExpense,
         addTransaction,
         editTransaction,
         deleteTransaction,

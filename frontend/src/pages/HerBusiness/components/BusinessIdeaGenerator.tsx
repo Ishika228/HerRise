@@ -284,7 +284,7 @@ ${generatedPlan.legalChecklist.map((l) => ' - ' + l).join('\n')}
 
     onApplyToPlan(partialPlan);
     showToast(
-      'Loaded into 10-Section Plan! 📄',
+      'Business Blueprint Saved! 📄',
       `"${generatedPlan.businessName}" is now active in your master editable plan.`,
       'success'
     );
@@ -586,7 +586,7 @@ ${generatedPlan.legalChecklist.map((l) => ' - ' + l).join('\n')}
                 className="px-4 py-2 bg-[#4A154B] hover:bg-[#350c36] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <FileText className="w-3.5 h-3.5 text-pink-300" />
-                <span>Load into 10-Section Plan →</span>
+                <span>Save Plan Blueprint →</span>
               </button>
             </div>
           </div>
@@ -830,7 +830,7 @@ ${generatedPlan.legalChecklist.map((l) => ' - ' + l).join('\n')}
           {/* Bottom Action Footer */}
           <div className="pt-4 border-t border-purple-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-gray-500">
-              Ready to execute? Transfer this blueprint into the 10-Section Plan Builder to edit specific projections.
+              Ready to execute? Save this verified blueprint directly to your venture studio.
             </p>
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
@@ -847,7 +847,7 @@ ${generatedPlan.legalChecklist.map((l) => ' - ' + l).join('\n')}
                 onClick={handleTransferToPlan}
                 className="flex-1 sm:flex-none px-6 py-2.5 bg-[#4A154B] hover:bg-[#350c36] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span>Load into 10-Section Plan Builder</span>
+                <span>Save Plan Blueprint</span>
                 <ArrowRight className="w-4 h-4 text-pink-300" />
               </button>
             </div>

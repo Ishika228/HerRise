@@ -50,10 +50,6 @@ export const ExploreServicesView: React.FC<ExploreServicesViewProps> = ({
     <div className="space-y-8 pb-10">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#4A154B]">
-          <Sparkles className="w-3.5 h-3.5 text-[#4A154B]" />
-          A La Carte Catalog
-        </div>
         <h1 className="text-3xl font-black text-gray-900 tracking-tight">Explore Individual Services</h1>
         <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
           Order standalone digital deliverables with upfront pricing. Bundle multiple services together to request an integrated project quote.

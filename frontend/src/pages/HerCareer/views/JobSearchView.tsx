@@ -7,7 +7,6 @@ import {
   MapPin,
   Clock,
   Sparkles,
-  ExternalLink,
   CheckCircle2,
   AlertCircle,
   Check,

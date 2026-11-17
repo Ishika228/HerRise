@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   RotateCcw,
   Search,
-  ExternalLink,
   GraduationCap
 } from 'lucide-react';
 import { useHerCareer } from '../../../context/HerCareerContext';
