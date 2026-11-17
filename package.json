@@ -10,10 +10,11 @@
   "scripts": {
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
-    "dev": "npm run dev:frontend",
+    "dev": "node scripts/start-or-dev.js",
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
     "build": "npm run build:frontend && npm run build:backend",
+    "postinstall": "npm run build",
     "start": "node backend/dist/server.js",
     "install:all": "npm install && npm --prefix frontend install && npm --prefix backend install"
   },
@@ -29,4 +30,3 @@
   "author": "HerRise Team",
   "license": "MIT"
 }
-
