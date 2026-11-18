@@ -89,6 +89,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           interests: [],
           bio: '',
           completionPercentage: u.profileCompleted || 50,
+          monthlyIncome: u.financialProfile?.monthlyIncome || u.monthlyIncome || 0,
+          financialProfile: u.financialProfile,
           careerProfile: u.careerProfile,
           businessProfile: u.businessProfile,
           fundProfile: u.fundProfile,

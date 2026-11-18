@@ -169,31 +169,86 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
     return [];
   };
 
+  const getStoredUserBudget = (): BudgetRecord => {
+    try {
+      const raw = localStorage.getItem(`herfinance_${userKey}_budget`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return getStoredBudget();
+  };
+
+  const getStoredUserGoals = (): SavingsGoalRecord[] => {
+    try {
+      const raw = localStorage.getItem(`herfinance_${userKey}_goals`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return getStoredGoals();
+  };
+
   const [isSetupCompleted, setIsSetupCompleted] = useState<boolean>(() => {
-    return localStorage.getItem(`herfinance_${userKey}_setup_completed`) === 'true' ||
-           localStorage.getItem('herfinance_setup_completed') === 'true';
+    return localStorage.getItem(`herfinance_${userKey}_setup_completed`) === 'true';
   });
 
   const [setupModalOpen, setSetupModalOpen] = useState<boolean>(false);
 
   const [profile, setProfile] = useState<FinancialProfile>(getStoredUserProfile);
   const [transactions, setTransactions] = useState<TransactionRecord[]>(getStoredUserTransactions);
-  const [budget, setBudget] = useState<BudgetRecord>(getStoredBudget);
-  const [goals, setGoals] = useState<SavingsGoalRecord[]>(getStoredGoals);
+  const [budget, setBudget] = useState<BudgetRecord>(getStoredUserBudget);
+  const [goals, setGoals] = useState<SavingsGoalRecord[]>(getStoredUserGoals);
   const [lessons, setLessons] = useState<FinancialLessonItem[]>(getStoredLessons);
   const [notifications, setNotifications] = useState<NotificationItem[]>(getStoredNotifications);
   const [preferences, setPreferences] = useState<UserPreferences>(getStoredPreferences);
   const [dateFilter, setDateFilter] = useState<DateFilterType>('this_month');
 
-  // Reload when active user changes
+  // Reload when active user changes + Sync from MongoDB Atlas
   useEffect(() => {
     const loadedProfile = getStoredUserProfile();
     setProfile(loadedProfile);
     const loadedTxs = getStoredUserTransactions();
     setTransactions(loadedTxs);
+    const loadedBudget = getStoredUserBudget();
+    setBudget(loadedBudget);
+    const loadedGoals = getStoredUserGoals();
+    setGoals(loadedGoals);
 
     const savedSetup = localStorage.getItem(`herfinance_${userKey}_setup_completed`);
     setIsSetupCompleted(savedSetup === 'true' || loadedProfile.monthlyIncome > 0);
+
+    // Asynchronously fetch live data for this specific user from MongoDB Atlas
+    if (userKey && userKey !== 'guest') {
+      // 1. Fetch user's financial profile from Atlas
+      fetch(`${API_BASE}/api/finance/profile?userEmail=${encodeURIComponent(userKey)}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data && json.data.monthlyIncome > 0) {
+            setProfile((prev) => {
+              const updated = {
+                ...prev,
+                monthlyIncome: json.data.monthlyIncome,
+                fullName: json.data.fullName || prev.fullName || user?.name || '',
+                email: json.data.email || prev.email || user?.email || '',
+                monthlySavingsTarget: json.data.monthlySavingsTarget || Math.round(json.data.monthlyIncome * 0.20)
+              };
+              localStorage.setItem(`herfinance_${userKey}_profile`, JSON.stringify(updated));
+              return updated;
+            });
+            setIsSetupCompleted(true);
+            localStorage.setItem(`herfinance_${userKey}_setup_completed`, 'true');
+          }
+        })
+        .catch(() => {});
+
+      // 2. Fetch user's verified transactions from Atlas
+      fetch(`${API_BASE}/api/finance/transactions?userEmail=${encodeURIComponent(userKey)}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && Array.isArray(json.data)) {
+            setTransactions(json.data);
+            localStorage.setItem(`herfinance_${userKey}_transactions`, JSON.stringify(json.data));
+          }
+        })
+        .catch(() => {});
+    }
   }, [userKey]);
 
   // Sync to user-scoped localStorage
@@ -208,8 +263,18 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
       localStorage.setItem(`herfinance_${userKey}_transactions`, JSON.stringify(transactions));
     }
   }, [transactions, userKey]);
-  useEffect(() => { saveStoredBudget(budget); }, [budget]);
-  useEffect(() => { saveStoredGoals(goals); }, [goals]);
+
+  useEffect(() => {
+    if (userKey) {
+      localStorage.setItem(`herfinance_${userKey}_budget`, JSON.stringify(budget));
+    }
+  }, [budget, userKey]);
+
+  useEffect(() => {
+    if (userKey) {
+      localStorage.setItem(`herfinance_${userKey}_goals`, JSON.stringify(goals));
+    }
+  }, [goals, userKey]);
   useEffect(() => { saveStoredLessons(lessons); }, [lessons]);
   useEffect(() => { saveStoredNotifications(notifications); }, [notifications]);
   useEffect(() => { saveStoredPreferences(preferences); }, [preferences]);
@@ -427,6 +492,11 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const deleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
+    try {
+      fetch(`${API_BASE}/api/finance/transactions/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      }).catch(() => {});
+    } catch {}
     showToast('Transaction Deleted', 'Entry removed from records', 'info');
   };
 

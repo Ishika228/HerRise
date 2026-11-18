@@ -24,16 +24,33 @@ async function getTransporter() {
   const smtpPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
   const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER;
   const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD;
+  const cleanPass = smtpPass ? smtpPass.replace(/\s+/g, '') : '';
 
-  if (smtpHost && smtpUser && smtpPass) {
+  if (smtpUser && cleanPass) {
+    if (smtpHost === 'smtp.gmail.com' || smtpUser.includes('@gmail.com')) {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: smtpUser,
+          pass: cleanPass
+        },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000
+      });
+    }
+
     return nodemailer.createTransport({
-      host: smtpHost,
+      host: smtpHost || 'smtp.gmail.com',
       port: smtpPort,
       secure: smtpPort === 465,
       auth: {
         user: smtpUser,
-        pass: smtpPass
-      }
+        pass: cleanPass
+      },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000
     });
   }
 
@@ -43,8 +60,11 @@ async function getTransporter() {
       service: 'gmail',
       auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
+        pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '')
+      },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000
     });
   }
 
@@ -73,8 +93,12 @@ async function getTransporter() {
  */
 export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
   try {
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER;
+    const fromAddress = smtpUser
+      ? `"HerRise Marketplace" <${smtpUser}>`
+      : (process.env.SMTP_FROM || process.env.EMAIL_FROM || '"HerRise Marketplace" <orders@herrise.org>');
+
     const transporter = await getTransporter();
-    const fromAddress = process.env.SMTP_FROM || process.env.EMAIL_FROM || '"HerRise Digital Market" <orders@herrise.org>';
 
     const gstAmount = Math.round(params.amountPaid / 11);
     const subtotal = params.amountPaid - gstAmount;
@@ -85,43 +109,47 @@ export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ su
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Payment Receipt - HerRise Digital Market</title>
+      <title>Payment Receipt & Thank You - HerRise</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f7f5fa; margin: 0; padding: 20px; color: #1e1e24; }
         .receipt-card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(74, 21, 75, 0.08); border: 1px solid #f0e6f0; }
-        .header { background: linear-gradient(135deg, #4A154B 0%, #350c36 100%); padding: 32px 28px; text-align: center; color: #ffffff; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-        .header p { margin: 6px 0 0 0; font-size: 13px; color: #e9d5eb; }
-        .badge { display: inline-block; padding: 5px 14px; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .content { padding: 30px; }
-        .order-badge { background: #faf4fa; border: 1px solid #ebd9ea; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; }
+        .header { background: linear-gradient(135deg, #4A154B 0%, #350c36 100%); padding: 36px 28px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        .header p { margin: 8px 0 0 0; font-size: 14px; color: #e9d5eb; }
+        .badge { display: inline-block; padding: 6px 16px; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .content { padding: 32px; }
+        .thank-you-box { background: #faf4fa; border: 1px solid #ebd9ea; border-radius: 14px; padding: 18px 20px; margin-bottom: 24px; }
+        .thank-you-box h2 { margin: 0 0 6px 0; font-size: 16px; color: #4A154B; font-weight: 800; }
+        .thank-you-box p { margin: 0; font-size: 13px; color: #555; line-height: 1.5; }
         .table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 20px; font-size: 13px; }
         .table th { text-align: left; padding: 10px 0; border-bottom: 2px solid #f0e6f0; color: #666; font-size: 11px; text-transform: uppercase; }
         .table td { padding: 12px 0; border-bottom: 1px solid #f7f1f7; }
         .table td.amount { text-align: right; font-weight: 700; color: #4A154B; }
         .total-row { font-size: 16px; font-weight: 800; color: #4A154B; border-top: 2px solid #4A154B !important; }
-        .footer { background: #faf9fd; padding: 20px 30px; text-align: center; font-size: 11px; color: #7a7582; border-top: 1px solid #f0e6f0; }
-        .next-steps { background: #fdfaf7; border-left: 4px solid #4A154B; padding: 14px; border-radius: 0 10px 10px 0; margin-top: 20px; font-size: 12px; }
+        .footer { background: #faf9fd; padding: 24px 30px; text-align: center; font-size: 11px; color: #7a7582; border-top: 1px solid #f0e6f0; }
+        .next-steps { background: #fdfaf7; border-left: 4px solid #4A154B; padding: 16px; border-radius: 0 12px 12px 0; margin-top: 24px; font-size: 12px; line-height: 1.6; }
       </style>
     </head>
     <body>
       <div class="receipt-card">
         <div class="header">
-          <div class="badge">Official Tax Invoice & Receipt</div>
-          <h1>Payment Confirmed! 🌸</h1>
-          <p>Thank you for partnering with HerRise Digital Services</p>
+          <div class="badge">Official Purchase Receipt</div>
+          <h1>Thank You for Your Order! 🌸</h1>
+          <p>Your payment has been successfully confirmed and processed.</p>
         </div>
 
         <div class="content">
-          <p style="font-size: 14px; margin-top: 0;">Hi <strong>${params.customerName}</strong>,</p>
-          <p style="font-size: 13px; color: #555; line-height: 1.5;">
-            Your payment for <strong>${params.packageName}</strong> has been successfully processed and verified. Below is your official tax receipt for your business records.
-          </p>
+          <div class="thank-you-box">
+            <h2>🎉 Thank You, ${params.customerName}!</h2>
+            <p>
+              We truly appreciate your purchase and your partnership with <strong>HerRise</strong>. Your order for <strong>${params.packageName}</strong> is now confirmed. Below is your official itemized receipt and invoice for your business records.
+            </p>
+          </div>
 
           <table class="table">
             <tr>
               <td><strong>Invoice / Order ID:</strong></td>
-              <td style="text-align: right; font-family: monospace;">${params.orderId}</td>
+              <td style="text-align: right; font-family: monospace; font-weight: bold; color: #4A154B;">${params.orderId}</td>
             </tr>
             <tr>
               <td><strong>Transaction Reference:</strong></td>
@@ -135,14 +163,18 @@ export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ su
               <td><strong>Date & Time:</strong></td>
               <td style="text-align: right;">${params.paidAt}</td>
             </tr>
+            <tr>
+              <td><strong>Payment Status:</strong></td>
+              <td style="text-align: right; color: #059669; font-weight: bold;">✔ Verified & Paid</td>
+            </tr>
             ${params.businessName ? `<tr><td><strong>Business Storefront:</strong></td><td style="text-align: right;">${params.businessName}</td></tr>` : ''}
           </table>
 
           <table class="table">
             <thead>
               <tr>
-                <th>Service Item</th>
-                <th style="text-align: right;">Amount (AUD)</th>
+                <th>Item / Service</th>
+                <th style="text-align: right;">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -157,15 +189,15 @@ export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ su
                 </tr>
               `).join('')}
               <tr>
-                <td style="color: #666;">Subtotal (excl. GST):</td>
+                <td style="color: #666;">Subtotal:</td>
                 <td style="text-align: right; color: #666;">A$${subtotal.toLocaleString()}</td>
               </tr>
               <tr>
-                <td style="color: #666;">Includes 10% Australian GST:</td>
+                <td style="color: #666;">Includes GST / Tax:</td>
                 <td style="text-align: right; color: #666;">A$${gstAmount.toLocaleString()}</td>
               </tr>
               <tr class="total-row">
-                <td style="padding-top: 14px;">Total Paid (AUD):</td>
+                <td style="padding-top: 14px;">Total Paid:</td>
                 <td style="text-align: right; padding-top: 14px; font-size: 18px; color: #4A154B;">A$${params.amountPaid.toLocaleString()}</td>
               </tr>
             </tbody>
@@ -173,23 +205,51 @@ export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ su
 
           <div class="next-steps">
             <strong>🚀 What happens next?</strong><br>
-            Our dedicated project manager is reviewing your requirements. You can track all updates, request assets, and view milestone delivery under your <strong>HerMarket &gt; My Services</strong> portal.
+            Our dedicated project manager is reviewing your requirements. You can track all updates, download your invoices, and request assets anytime under your <strong>HerMarket &gt; My Services</strong> portal.
           </div>
         </div>
 
         <div class="footer">
-          <p style="margin: 0 0 6px 0;">HerRise Platform • ABN 84 923 104 592 • Sydney, NSW Australia</p>
-          <p style="margin: 0;">Questions? Reply directly to this email or reach us on WhatsApp Support.</p>
+          <p style="margin: 0 0 6px 0;"><strong>HerRise Digital Services</strong> • Empowering Women Entrepreneurs</p>
+          <p style="margin: 0;">Have any questions about this receipt? Reply directly to this email for instant support.</p>
         </div>
       </div>
     </body>
     </html>
     `;
 
+    const textContent = `
+Thank You for Your Order! 🌸
+
+Hi ${params.customerName},
+
+Thank you for your purchase with HerRise! We are thrilled to confirm that your payment for ${params.packageName} has been received and verified.
+
+OFFICIAL PURCHASE RECEIPT
+-------------------------------------------
+Order ID: ${params.orderId}
+Transaction ID: ${params.transactionId}
+Payment Method: ${params.paymentMethod}
+Date: ${params.paidAt}
+Status: Verified & Paid
+
+ORDER SUMMARY
+-------------------------------------------
+Item: ${params.packageName}
+Total Paid: A$${params.amountPaid.toLocaleString()}
+${params.businessName ? `Business: ${params.businessName}\n` : ''}
+
+You can track all updates and download your tax invoices anytime under HerMarket > My Services.
+
+Warm regards,
+The HerRise Team
+`;
+
     const info = await transporter.sendMail({
       from: fromAddress,
       to: params.toEmail,
-      subject: `🌸 Payment Receipt: ${params.packageName} [Invoice #${params.orderId}]`,
+      subject: `🌸 Thank You for Your Order! Receipt for ${params.packageName} [#${params.orderId}]`,
+      text: textContent,
       html: htmlContent
     });
 

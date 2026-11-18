@@ -12,11 +12,13 @@ import {
   processOcrReceipt,
   aiConsult,
   aiAutomateFinance,
-  setupFinancialProfile
+  setupFinancialProfile,
+  getFinancialProfile
 } from '../controllers/financeController.js';
 
 const router = Router();
 
+router.get('/profile', getFinancialProfile);
 router.post('/setup-profile', setupFinancialProfile);
 router.post('/ai-automate', aiAutomateFinance);
 router.get('/overview', getFinanceOverview);

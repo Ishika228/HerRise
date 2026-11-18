@@ -17,11 +17,15 @@ import {
   FileText
 } from 'lucide-react';
 import { useHerFinance } from '../../../context/HerFinanceContext';
+import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 
 export const MonthlyRuleAnalyzer: React.FC = () => {
   const { totalIncome, profile, transactions } = useHerFinance();
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  const userName = user?.name ? `Calibrated for ${user.name}` : 'Personalized';
 
   // Effective base income (strictly derived from user's verified income)
   const effectiveIncome = totalIncome > 0 ? totalIncome : (profile.monthlyIncome || 0);
@@ -205,6 +209,9 @@ export const MonthlyRuleAnalyzer: React.FC = () => {
                 <h2 className="text-base font-extrabold text-slate-900">
                   End-of-Month 50 / 30 / 20 Rule Analysis
                 </h2>
+                <span className="text-[11px] font-bold text-slate-400">
+                  • {userName}
+                </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Evaluates whether your spending followed the standard rule: 50% Needs, 30% Wants, and 20% Savings.
@@ -401,6 +408,9 @@ export const MonthlyRuleAnalyzer: React.FC = () => {
               <h3 className="font-extrabold text-sm text-slate-900">
                 Analyzed End-of-Month Report &amp; Savings Ledger
               </h3>
+              <span className="text-[11px] font-bold text-slate-400">
+                • {user?.name ? `${user.name}'s Records` : 'Private User Records'}
+              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Comprehensive report analyzing monthly savings, expenses, and whether the 50/30/20 rule was followed.

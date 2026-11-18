@@ -37,7 +37,7 @@ import {
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { StatCard } from '../../components/cards/StatCard';
 import { useAuth } from '../../context/AuthContext';
-import { useFinance } from '../../context/FinanceContext';
+import { useHerFinance } from '../../context/HerFinanceContext';
 import { calculateQualificationFit } from '../../utils/qualificationMatcher';
 import { useMarket } from '../../context/MarketContext';
 import { useHerCareer } from '../../context/HerCareerContext';
@@ -45,8 +45,12 @@ import { useHerCareer } from '../../context/HerCareerContext';
 /* ------------------------------------------------------------------ */
 /* Helper: read the richest resume from localStorage                   */
 /* ------------------------------------------------------------------ */
-function getResumeFromStorage() {
+function getResumeFromStorage(userKey?: string) {
   try {
+    if (userKey && userKey !== 'guest') {
+      const userRaw = localStorage.getItem(`hercareer_${userKey}_resume`);
+      if (userRaw) return JSON.parse(userRaw);
+    }
     const raw = localStorage.getItem('hercareer_resume');
     if (raw) return JSON.parse(raw);
     const rawArr = localStorage.getItem('hercareer_resumes');
@@ -58,8 +62,12 @@ function getResumeFromStorage() {
   return null;
 }
 
-function getProfileFromStorage() {
+function getProfileFromStorage(userKey?: string) {
   try {
+    if (userKey && userKey !== 'guest') {
+      const userRaw = localStorage.getItem(`hercareer_${userKey}_profile`);
+      if (userRaw) return JSON.parse(userRaw);
+    }
     const raw = localStorage.getItem('hercareer_profile');
     if (raw) return JSON.parse(raw);
   } catch {/* ignore */}
@@ -114,19 +122,30 @@ const EMPTY_ARRAY: any[] = [];
 /* ================================================================== */
 export const DashboardOverview: React.FC = () => {
   const { user } = useAuth();
-  const { totalIncome, totalExpenses, currentSavings } = useFinance();
+  const userKey = user?.email ? user.email.toLowerCase() : (user?.id ? user.id.toLowerCase() : 'guest');
+  const { totalIncome, totalExpenses, profile: financeProfile, goals: financeGoals } = useHerFinance();
   const { orders } = useMarket();
-  const { activeResume, profile, jobs, candidateQualification, setCandidateQualification } = useHerCareer();
+  const { activeResume, profile, jobs, candidateQualification } = useHerCareer();
   const navigate = useNavigate();
+
+  /* ── User-specific Effective Finance Metrics ── */
+  const effectiveIncome = totalIncome > 0 ? totalIncome : (financeProfile?.monthlyIncome || 0);
+  const targetSavings = Math.round(effectiveIncome * 0.20);
+  const actualSavings = Math.max(0, effectiveIncome - totalExpenses);
+  const goalsSavings = (financeGoals || []).reduce((sum, g) => sum + (g.currentAmount || 0), 0);
+  const effectiveSavings = goalsSavings > 0 ? goalsSavings : (actualSavings > 0 ? actualSavings : (financeProfile?.monthlySavingsTarget || targetSavings));
+
+  /* ── User-specific Marketplace Metrics ── */
+  const totalOrderRevenue = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
   /* Auth guard */
   React.useEffect(() => {
     if (!user) navigate('/', { replace: true });
   }, [user, navigate]);
 
-  /* ── Resume data (context > localStorage > user) ── */
-  const lsResume = React.useMemo(() => getResumeFromStorage(), []);
-  const lsProfile = React.useMemo(() => getProfileFromStorage(), []);
+  /* ── Resume data (context > user-scoped localStorage > user) ── */
+  const lsResume = React.useMemo(() => getResumeFromStorage(userKey), [userKey]);
+  const lsProfile = React.useMemo(() => getProfileFromStorage(userKey), [userKey]);
   const resume = activeResume?.personalInfo?.fullName ? activeResume : lsResume;
   const careerProfile = profile?.targetRole ? profile : lsProfile;
 
@@ -134,7 +153,7 @@ export const DashboardOverview: React.FC = () => {
   const displayName =
     resume?.personalInfo?.fullName || user?.name || 'Empowered Member';
   const displayRole =
-    careerProfile?.targetRole || resume?.title || resume?.personalInfo?.headline || user?.role;
+    careerProfile?.targetRole || user?.careerProfile?.targetRole || resume?.title || resume?.personalInfo?.headline || user?.role;
   const displayLocation =
     resume?.personalInfo?.location || user?.location;
   const techSkills: string[] =
@@ -147,7 +166,7 @@ export const DashboardOverview: React.FC = () => {
   const projects = resume?.projects || EMPTY_ARRAY;
   const education = resume?.education || EMPTY_ARRAY;
   const certifications = resume?.certifications || EMPTY_ARRAY;
-  const hasResume = Boolean(resume?.personalInfo?.fullName);
+  const hasResume = Boolean(resume?.personalInfo?.fullName || user?.resumeData?.fullName);
   const profileStrength = calcProfileStrength(resume, user);
   const domain = getDomainLabel(resume);
 
@@ -183,12 +202,17 @@ export const DashboardOverview: React.FC = () => {
     return '';
   }, [resume, user, careerProfile]);
 
-  const activeQualification = candidateQualification || detectedQualification || 'Bachelor of Technology (Computer Science)';
+  const activeQualification = candidateQualification || detectedQualification || '';
 
   /* ── Matched Jobs (live from HerCareer context, scored strictly by educational qualification & skills) ── */
   const matchedJobs = React.useMemo(() => {
     const liveJobs = Array.isArray(jobs) ? jobs : [];
     if (liveJobs.length === 0) return liveJobs;
+
+    // If candidate has not specified any qualification or skills or resume, don't fake matches
+    if (!activeQualification && !hasResume && techSkills.length === 0) {
+      return [];
+    }
 
     return liveJobs
       .map((job: any) => {
@@ -210,12 +234,13 @@ export const DashboardOverview: React.FC = () => {
           fit
         };
       })
+      .filter((j: any) => j.matchPercentage >= 50 || !activeQualification)
       .sort((a: any, b: any) => b.matchPercentage - a.matchPercentage);
-  }, [jobs, techSkills, activeQualification]);
+  }, [jobs, techSkills, activeQualification, hasResume]);
 
   /* ── Cashflow trend chart (actual user transactions only) ── */
-  const dynamicMonthlyTrend = (totalIncome > 0 || totalExpenses > 0) ? [
-    { month: 'Current Period', income: totalIncome, expenses: totalExpenses }
+  const dynamicMonthlyTrend = (effectiveIncome > 0 || totalExpenses > 0) ? [
+    { month: 'Current Period', income: effectiveIncome, expenses: totalExpenses }
   ] : [];
 
   /* ── Personalized AI prompts ── */
@@ -397,47 +422,73 @@ export const DashboardOverview: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Career Matches"
-            value={matchedJobs.length > 0 ? `${matchedJobs.length} Roles` : hasResume ? 'Loading…' : 'Upload Resume'}
+            value={
+              matchedJobs.length > 0
+                ? `${matchedJobs.length} Roles`
+                : hasResume
+                ? '0 Roles'
+                : 'Upload Resume'
+            }
             subtitle={displayRole || 'Upload resume to match'}
-            change={matchedJobs[0]?.matchPercentage ? `${matchedJobs[0].matchPercentage}% Match` : hasResume ? 'Analyzing…' : 'Not yet set up'}
+            change={
+              matchedJobs[0]?.matchPercentage
+                ? `${matchedJobs[0].matchPercentage}% Match`
+                : hasResume
+                ? 'Reviewing fit'
+                : 'Explore 35+ Roles'
+            }
             isPositive={matchedJobs.length > 0}
             icon={Briefcase}
             iconColor="text-[#be185d]"
             bgColor="bg-pink-100/70"
-            badge="Live"
+            badge={matchedJobs.length > 0 ? 'Live' : undefined}
+            onClick={() => navigate('/career')}
           />
 
           <StatCard
             title="Total Monthly Inflow"
-            value={totalIncome > 0 ? `₹${totalIncome.toLocaleString()}` : '₹0'}
-            change={totalIncome > 0 ? 'Active Inflow' : 'Pending setup'}
-            isPositive={totalIncome > 0}
-            subtitle={totalIncome > 0 ? 'Verified Cashflow' : 'Log income in HerFinance'}
+            value={effectiveIncome > 0 ? `₹${effectiveIncome.toLocaleString()}` : '₹0'}
+            change={effectiveIncome > 0 ? 'Active Inflow' : 'Pending setup'}
+            isPositive={effectiveIncome > 0}
+            subtitle={effectiveIncome > 0 ? 'Verified Cashflow' : 'Log income in HerFinance'}
             icon={Wallet}
             iconColor="text-[#4A154B]"
             bgColor="bg-purple-100/70"
+            onClick={() => navigate('/finance')}
           />
 
           <StatCard
             title="Liquid Savings Cushion"
-            value={currentSavings > 0 ? `₹${currentSavings.toLocaleString()}` : '₹0'}
-            change={currentSavings > 0 ? 'Protected' : 'Set Target'}
-            isPositive={currentSavings > 0}
-            subtitle={currentSavings > 0 ? 'Emergency Reserve' : 'Set 6-mo safety cushion'}
+            value={effectiveSavings > 0 ? `₹${effectiveSavings.toLocaleString()}` : '₹0'}
+            change={
+              effectiveIncome > 0 && actualSavings >= targetSavings && targetSavings > 0
+                ? '20% Target Met'
+                : effectiveSavings > 0
+                ? 'Protected'
+                : 'Set Target'
+            }
+            isPositive={effectiveSavings > 0}
+            subtitle={
+              effectiveSavings > 0
+                ? (actualSavings > 0 ? '20% Cushion Active' : 'Emergency Reserve')
+                : 'Set 6-mo safety cushion'
+            }
             icon={TrendingUp}
             iconColor="text-emerald-700"
             bgColor="bg-emerald-100/70"
+            onClick={() => navigate('/finance')}
           />
 
           <StatCard
             title="Marketplace Orders"
-            value={orders.length > 0 ? `₹${orders.reduce((s, o) => s + (o.amount || 0), 0).toLocaleString()}` : '₹0'}
-            change={orders.length > 0 ? `${orders.length} Orders` : 'Ready'}
+            value={orders.length > 0 ? `₹${totalOrderRevenue.toLocaleString()}` : '₹0'}
+            change={orders.length > 0 ? `${orders.length} Order${orders.length > 1 ? 's' : ''}` : '0 Orders'}
             isPositive={orders.length > 0}
             subtitle={orders.length > 0 ? 'Sales Revenue' : 'Storefront Enabled'}
             icon={ShoppingBag}
             iconColor="text-[#ea580c]"
             bgColor="bg-amber-100/70"
+            onClick={() => navigate('/market')}
           />
         </div>
 
@@ -658,7 +709,7 @@ export const DashboardOverview: React.FC = () => {
                 <div className="flex items-center gap-4 text-xs font-semibold">
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#4A154B]" />
-                    <span className="text-gray-700">Income (₹{totalIncome.toLocaleString()})</span>
+                    <span className="text-gray-700">Income (₹{effectiveIncome.toLocaleString()})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#fb7185]" />
@@ -670,7 +721,7 @@ export const DashboardOverview: React.FC = () => {
                 </div>
               </div>
 
-              {(totalIncome > 0 || totalExpenses > 0) ? (
+              {(effectiveIncome > 0 || totalExpenses > 0) ? (
                 <div className="h-64 mt-4 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={dynamicMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

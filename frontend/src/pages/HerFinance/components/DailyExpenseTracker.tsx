@@ -19,6 +19,7 @@ import {
   Gift
 } from 'lucide-react';
 import { useHerFinance } from '../../../context/HerFinanceContext';
+import { useAuth } from '../../../context/AuthContext';
 import { PaymentMethod } from '../../../types/finance';
 import { useToast } from '../../../context/ToastContext';
 
@@ -28,7 +29,10 @@ interface DailyExpenseTrackerProps {
 
 export const DailyExpenseTracker: React.FC<DailyExpenseTrackerProps> = ({ onSuccess }) => {
   const { logDailyExpense, transactions, deleteTransaction } = useHerFinance();
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  const userName = user?.name ? `${user.name}'s Ledger` : 'Daily Ledger';
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -183,6 +187,9 @@ export const DailyExpenseTracker: React.FC<DailyExpenseTrackerProps> = ({ onSucc
               <h2 className="text-base font-extrabold text-slate-900">
                 Daily Expense Tracker
               </h2>
+              <span className="text-[11px] font-bold text-slate-400">
+                • {userName}
+              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Log daily purchases in real-time to track against your 50/30/20 monthly targets.

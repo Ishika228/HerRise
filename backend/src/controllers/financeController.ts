@@ -8,11 +8,79 @@ import { BudgetCategoryModel } from '../models/BudgetModel.js';
 import { SavingsGoalModel } from '../models/SavingsGoalModel.js';
 import { UserModel } from '../models/UserModel.js';
 
-export const getFinanceOverview = async (req: Request, res: Response) => {
-  const userId = req.query.userId || req.query.userEmail || '';
+export const getFinancialProfile = async (req: Request, res: Response) => {
+  const targetUser = (req.query.userId || req.query.userEmail || '').toString().toLowerCase();
+
+  if (!targetUser) {
+    return res.status(200).json({ success: true, data: null });
+  }
+
   if (mongoose.connection.readyState === 1) {
     try {
-      const userFilter = userId ? { userId: String(userId).toLowerCase() } : {};
+      const user = await UserModel.findOne({
+        email: new RegExp(`^${targetUser.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+      });
+
+      let monthlyIncome = Number(user?.financialProfile?.monthlyIncome) || 0;
+
+      // Fallback: If not found in UserModel, check TransactionModel for user's verified income transaction
+      if (monthlyIncome <= 0) {
+        const incTx = await TransactionModel.findOne({
+          userId: targetUser,
+          type: 'income'
+        }).sort({ createdAt: -1 });
+        if (incTx && incTx.amount > 0) {
+          monthlyIncome = incTx.amount;
+        }
+      }
+
+      if (user || monthlyIncome > 0) {
+        const fp = user?.financialProfile || { monthlyIncome: 0 };
+        return res.status(200).json({
+          success: true,
+          source: 'mongodb-atlas',
+          data: {
+            userId: user?.email || targetUser,
+            fullName: user?.name || targetUser.split('@')[0],
+            email: user?.email || targetUser,
+            monthlyIncome: monthlyIncome,
+            incomeSources: fp.incomeSources || [{ name: 'Primary Inflow', amount: monthlyIncome, type: 'salary' }],
+            emergencyFundTargetMonths: fp.emergencyFundTargetMonths || 6,
+            monthlySavingsTarget: Math.round(monthlyIncome * 0.20),
+            riskTolerance: fp.riskTolerance || 'moderate',
+            currency: fp.currency || 'INR',
+            financialSetupCompleted: monthlyIncome > 0
+          }
+        });
+      }
+    } catch (err: any) {
+      console.warn('[MongoDB Atlas] getFinancialProfile error:', err.message);
+    }
+  }
+
+  return res.status(200).json({ success: true, source: 'in-memory', data: null });
+};
+
+export const getFinanceOverview = async (req: Request, res: Response) => {
+  const userId = (req.query.userId || req.query.userEmail || '').toString().toLowerCase();
+  if (!userId) {
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalIncome: 0,
+        totalExpenses: 0,
+        netBalance: 0,
+        totalSavings: 0,
+        emergencyCoverageMonths: 6.0,
+        activeGoalsCount: 0,
+        categoriesTracked: 0
+      }
+    });
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const userFilter = { userId };
       const txs = await TransactionModel.find(userFilter);
       const goals = await SavingsGoalModel.find(userFilter);
       const categories = await BudgetCategoryModel.find(userFilter);
@@ -79,12 +147,15 @@ export const getFinanceOverview = async (req: Request, res: Response) => {
 
 export const getTransactions = async (req: Request, res: Response) => {
   const { type, category, search, userId, userEmail } = req.query;
-  const targetUser = userId || userEmail;
+  const targetUser = (userId || userEmail || '').toString().toLowerCase();
+
+  if (!targetUser) {
+    return res.status(200).json({ success: true, count: 0, data: [] });
+  }
 
   if (mongoose.connection.readyState === 1) {
     try {
-      const queryFilter: any = {};
-      if (targetUser) queryFilter.userId = String(targetUser).toLowerCase();
+      const queryFilter: any = { userId: targetUser };
       if (type && type !== 'all') queryFilter.type = type;
       if (category && category !== 'all') queryFilter.category = new RegExp(String(category), 'i');
       if (search) {
@@ -117,7 +188,7 @@ export const getTransactions = async (req: Request, res: Response) => {
     }
   }
 
-  let result = [...store.transactions];
+  let result = store.transactions.filter((t) => t.userId.toLowerCase() === targetUser);
 
   if (type && type !== 'all') {
     result = result.filter((t) => t.type === type);
@@ -221,9 +292,12 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 };
 
 export const getBudgetCategories = async (req: Request, res: Response) => {
+  const targetUser = (req.query.userId || req.query.userEmail || '').toString().toLowerCase();
+  const filter = targetUser ? { userId: targetUser } : {};
+
   if (mongoose.connection.readyState === 1) {
     try {
-      const cats = await BudgetCategoryModel.find();
+      const cats = await BudgetCategoryModel.find(filter);
       if (cats.length > 0) {
         return res.status(200).json({
           success: true,
@@ -242,7 +316,8 @@ export const getBudgetCategories = async (req: Request, res: Response) => {
     }
   }
 
-  return res.status(200).json({ success: true, source: 'in-memory', data: store.budgetCategories });
+  const result = targetUser ? store.budgetCategories.filter((c: any) => c.userId?.toLowerCase() === targetUser) : store.budgetCategories;
+  return res.status(200).json({ success: true, source: 'in-memory', data: result });
 };
 
 export const updateBudgetCategoryLimit = async (req: Request, res: Response) => {
@@ -274,9 +349,12 @@ export const updateBudgetCategoryLimit = async (req: Request, res: Response) => 
 };
 
 export const getSavingsGoals = async (req: Request, res: Response) => {
+  const targetUser = (req.query.userId || req.query.userEmail || '').toString().toLowerCase();
+  const filter = targetUser ? { userId: targetUser } : {};
+
   if (mongoose.connection.readyState === 1) {
     try {
-      const goals = await SavingsGoalModel.find();
+      const goals = await SavingsGoalModel.find(filter);
       if (goals.length > 0) {
         return res.status(200).json({
           success: true,
@@ -299,18 +377,21 @@ export const getSavingsGoals = async (req: Request, res: Response) => {
     }
   }
 
-  return res.status(200).json({ success: true, source: 'in-memory', data: store.goals });
+  const result = targetUser ? store.goals.filter((g) => g.userId?.toLowerCase() === targetUser) : store.goals;
+  return res.status(200).json({ success: true, source: 'in-memory', data: result });
 };
 
 export const createSavingsGoal = async (req: Request, res: Response) => {
-  const { title, targetAmount, targetDate, category, color } = req.body;
+  const { title, targetAmount, targetDate, category, color, userId, userEmail } = req.body;
 
   if (!title || !targetAmount || !targetDate) {
     return res.status(400).json({ success: false, error: 'Title, targetAmount, and targetDate required' });
   }
 
+  const effectiveUserId = (userId || userEmail || 'usr-default').toString().toLowerCase();
+
   const goalData = {
-    userId: 'usr-101',
+    userId: effectiveUserId,
     title,
     targetAmount: Number(targetAmount),
     currentAmount: 0,

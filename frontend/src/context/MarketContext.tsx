@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem, Order } from '../types';
+import { useAuth } from './AuthContext';
 
 interface MarketContextType {
   products: Product[];
@@ -22,6 +23,9 @@ interface MarketContextType {
 const MarketContext = createContext<MarketContextType | undefined>(undefined);
 
 export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const userKey = user?.email ? user.email.toLowerCase() : (user?.id ? user.id.toLowerCase() : 'guest');
+
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const stored = localStorage.getItem('herrise_market_products');
@@ -40,7 +44,7 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const stored = localStorage.getItem('herrise_market_cart');
+      const stored = localStorage.getItem(`herrise_market_${userKey}_cart`) || localStorage.getItem('herrise_market_cart');
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -49,12 +53,22 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
-      const stored = localStorage.getItem('herrise_market_orders');
+      const stored = localStorage.getItem(`herrise_market_${userKey}_orders`);
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
     }
   });
+
+  // Reload user-scoped data whenever active user switches
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`herrise_market_${userKey}_orders`);
+      setOrders(stored ? JSON.parse(stored) : []);
+    } catch {
+      setOrders([]);
+    }
+  }, [userKey]);
 
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
@@ -70,12 +84,12 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('herrise_market_cart', JSON.stringify(cart));
-  }, [cart]);
+    localStorage.setItem(`herrise_market_${userKey}_cart`, JSON.stringify(cart));
+  }, [cart, userKey]);
 
   useEffect(() => {
-    localStorage.setItem('herrise_market_orders', JSON.stringify(orders));
-  }, [orders]);
+    localStorage.setItem(`herrise_market_${userKey}_orders`, JSON.stringify(orders));
+  }, [orders, userKey]);
 
   useEffect(() => {
     localStorage.setItem('herrise_market_wishlist', JSON.stringify(wishlist));
@@ -139,7 +153,7 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const productTitles = cart.map((c) => `${c.product.title} (x${c.quantity})`).join(', ');
     const newOrder: Order = {
       id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
-      customerName: shippingDetails.name || 'Demo Customer',
+      customerName: shippingDetails.name || user?.name || 'Customer',
       productTitle: productTitles || 'Marketplace Item',
       amount: cartTotal,
       date: new Date().toISOString().split('T')[0],

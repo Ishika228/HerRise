@@ -49,6 +49,15 @@ export interface UserProfile {
   };
 
   // Module Registration States & Profiles
+  monthlyIncome?: number;
+  financialProfile?: {
+    monthlyIncome: number;
+    incomeSources?: Array<{ name: string; amount: number; type: string }>;
+    emergencyFundTargetMonths?: number;
+    monthlySavingsTarget?: number;
+    riskTolerance?: 'conservative' | 'moderate' | 'aggressive';
+    currency?: string;
+  };
   careerProfile?: {
     targetRole: string;
     status: string;

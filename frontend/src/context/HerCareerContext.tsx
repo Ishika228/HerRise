@@ -206,9 +206,21 @@ export function separateExperienceAndProjects(resume: ResumeData): ResumeData {
 export function buildPersonalizedResume(user: any): ResumeData {
   // Read from localStorage — populated when user uploads/parses a resume
   let storedResume: any = null;
+  const userKey = user?.email ? user.email.toLowerCase() : (user?.id ? user.id.toLowerCase() : '');
   try {
-    const raw = localStorage.getItem('hercareer_resume');
-    if (raw) storedResume = JSON.parse(raw);
+    if (userKey) {
+      const userRaw = localStorage.getItem(`hercareer_${userKey}_resume`);
+      if (userRaw) storedResume = JSON.parse(userRaw);
+    }
+    if (!storedResume) {
+      const raw = localStorage.getItem('hercareer_resume');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (!user?.email || !parsed?.email || parsed.email.toLowerCase() === user.email.toLowerCase()) {
+          storedResume = parsed;
+        }
+      }
+    }
   } catch { }
 
   // ── Basic identity (from user auth or parsed resume) ────────────────────────
@@ -415,24 +427,35 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     readinessScore: user?.careerProfile?.readinessScore || 0
   });
 
+  const userKey = user?.email ? user.email.toLowerCase() : (user?.id ? user.id.toLowerCase() : 'guest');
+  const userResumesKey = `hercareer_${userKey}_resumes`;
+  const userProfileKey = `hercareer_${userKey}_profile`;
+
   // 3. Resumes State initialized dynamically from authenticated user
   const [resumes, setResumes] = useState<ResumeData[]>(() => {
     const personalized = separateExperienceAndProjects(buildPersonalizedResume(user));
     try {
-      const saved = localStorage.getItem('hercareer_resumes');
+      const saved = localStorage.getItem(userResumesKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Remove any stale hardcoded Ananya Sharma resumes AND strictly separate projects from experience
-          const sanitized = parsed
-            .filter(
-              (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
-            )
+          const userSpecific = parsed
+            .filter((r) => {
+              if (r.personalInfo?.fullName?.includes('Ananya') || r.personalInfo?.email?.includes('ananya')) return false;
+              if (user?.email) {
+                return (
+                  r.personalInfo?.email?.toLowerCase() === user.email.toLowerCase() ||
+                  r.personalInfo?.fullName?.toLowerCase() === user.name?.toLowerCase() ||
+                  r.userId === user.id ||
+                  r.userId === userKey
+                );
+              }
+              return true;
+            })
             .map((r) => separateExperienceAndProjects(r));
 
-          // Strictly deduplicate by id/title
           const dedupeMap = new Map<string, ResumeData>();
-          for (const r of sanitized) {
+          for (const r of userSpecific) {
             const key = r.id || `${r.personalInfo?.fullName || ''}-${r.title || 'Resume'}`;
             if (!dedupeMap.has(key)) {
               dedupeMap.set(key, r);
@@ -440,7 +463,6 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
           }
           const deduped = Array.from(dedupeMap.values());
           if (deduped.length > 0) {
-            localStorage.setItem('hercareer_resumes', JSON.stringify(deduped));
             return deduped;
           }
         }
@@ -461,67 +483,61 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       const userProf = buildProfileFromUser(user);
       setProfile(userProf);
 
-      setResumes((prev) => {
-        const sanitized = prev
-          .filter(
-            (r) => !r.personalInfo?.fullName?.includes('Ananya') && !r.personalInfo?.email?.includes('ananya')
-          )
-          .map((r) => separateExperienceAndProjects(r));
+      // Load strictly this user's resumes
+      try {
+        const saved = localStorage.getItem(userResumesKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const userOnly = parsed
+              .filter(
+                (r) =>
+                  !r.personalInfo?.fullName?.includes('Ananya') &&
+                  (r.personalInfo?.email?.toLowerCase() === user.email.toLowerCase() ||
+                   r.personalInfo?.fullName?.toLowerCase() === user.name?.toLowerCase() ||
+                   r.userId === user.id ||
+                   r.userId === userKey)
+              )
+              .map((r) => separateExperienceAndProjects(r));
 
-        const hasUserResume = sanitized.some((r) => r.personalInfo.email === user.email || r.personalInfo.fullName === user.name);
-        let finalResumes: ResumeData[];
-        if (!hasUserResume || sanitized.length === 0) {
-          finalResumes = [personalized, ...sanitized];
-        } else {
-          finalResumes = sanitized.map((r) =>
-            (r.personalInfo.email === user.email || r.personalInfo.fullName === user.name)
-              ? separateExperienceAndProjects(r)
-              : r
-          );
-        }
-
-        // Deduplicate to prevent accumulation of identical copies
-        const dedupeMap = new Map<string, ResumeData>();
-        for (const r of finalResumes) {
-          const key = r.id || `${r.personalInfo?.fullName || ''}-${r.title || 'Resume'}`;
-          if (!dedupeMap.has(key)) {
-            dedupeMap.set(key, r);
+            if (userOnly.length > 0) {
+              setResumes(userOnly);
+              setActiveResume(userOnly[0]);
+              return;
+            }
           }
         }
-        const dedupedResumes = Array.from(dedupeMap.values());
-        localStorage.setItem('hercareer_resumes', JSON.stringify(dedupedResumes));
-        return dedupedResumes;
-      });
+      } catch {}
 
-      setActiveResume((prev) => {
-        if (
-          !prev ||
-          prev.personalInfo?.fullName?.includes('Ananya') ||
-          prev.personalInfo?.email?.includes('ananya') ||
-          (user.name && prev.personalInfo.fullName !== user.name)
-        ) {
-          return personalized;
-        }
-        return separateExperienceAndProjects(prev);
-      });
+      // If user has no saved resumes yet, initialize with their own single personalized draft
+      setResumes([personalized]);
+      setActiveResume(personalized);
     }
-  }, [user?.id, user?.email, user?.name, user?.skills?.join(',')]);
+  }, [user?.id, user?.email, user?.name, userKey]);
 
   useEffect(() => {
-    localStorage.setItem('hercareer_profile', JSON.stringify(profile));
-  }, [profile]);
+    if (userKey) {
+      localStorage.setItem(userProfileKey, JSON.stringify(profile));
+    }
+  }, [profile, userProfileKey]);
 
   useEffect(() => {
-    localStorage.setItem('hercareer_resumes', JSON.stringify(resumes));
+    if (userKey) {
+      localStorage.setItem(userResumesKey, JSON.stringify(resumes));
+    }
     const validCount = resumes.filter(
       (r) => r.personalInfo?.fullName?.trim() || r.experience?.length || r.education?.length
     ).length;
     setStats((prev) => ({ ...prev, totalResumes: validCount > 0 ? validCount : 1 }));
-  }, [resumes]);
+  }, [resumes, userResumesKey]);
 
   const saveResumeData = async (data: ResumeData): Promise<boolean> => {
     const cleaned = separateExperienceAndProjects(data);
-    const updated = { ...cleaned, updatedAt: new Date().toISOString() };
+    const updated = {
+      ...cleaned,
+      userId: user?.id || userKey,
+      updatedAt: new Date().toISOString()
+    };
     setResumes((prev) => {
       const idx = prev.findIndex((r) => r.id === updated.id);
       if (idx >= 0) {
@@ -532,6 +548,11 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
       return [updated, ...prev];
     });
     setActiveResume(updated);
+    if (userKey) {
+      try {
+        localStorage.setItem(`hercareer_${userKey}_resume`, JSON.stringify(updated));
+      } catch {}
+    }
 
     // Sync to backend MongoDB Atlas
     try {
@@ -846,6 +867,10 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const [candidateQualification, setCandidateQualificationState] = useState<string>(() => {
     try {
+      if (userKey) {
+        const userSaved = localStorage.getItem(`hercareer_${userKey}_qualification`);
+        if (userSaved && userSaved.trim()) return userSaved.trim();
+      }
       const saved = localStorage.getItem('hercareer_qualification');
       if (saved && saved.trim()) return saved.trim();
     } catch { }
@@ -863,6 +888,13 @@ export const HerCareerProvider: React.FC<{ children: ReactNode }> = ({ children 
     const trimmed = (qual || '').trim();
     setCandidateQualificationState(trimmed);
     try {
+      if (userKey) {
+        if (trimmed) {
+          localStorage.setItem(`hercareer_${userKey}_qualification`, trimmed);
+        } else {
+          localStorage.removeItem(`hercareer_${userKey}_qualification`);
+        }
+      }
       if (trimmed) {
         localStorage.setItem('hercareer_qualification', trimmed);
       } else {

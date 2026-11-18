@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { FinanceProvider } from './context/FinanceContext';
+import { HerFinanceProvider } from './context/HerFinanceContext';
 import { MarketProvider } from './context/MarketContext';
 import { HerCareerProvider } from './context/HerCareerContext';
 
@@ -60,46 +61,48 @@ export function App() {
     <Router>
       <AuthProvider>
         <ToastProvider>
-          <FinanceProvider>
-            <MarketProvider>
-              <HerCareerProvider>
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center bg-[#faf9fd] text-sm font-medium text-[#4A154B]">
-                      Loading HerRise...
-                    </div>
-                  }
-                >
-                  <Routes>
-                    {/* Public & Landing Pages */}
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/onboarding" element={<OnboardingPage />} />
+          <HerFinanceProvider>
+            <FinanceProvider>
+              <MarketProvider>
+                <HerCareerProvider>
+                  <Suspense
+                    fallback={
+                      <div className="flex min-h-screen items-center justify-center bg-[#faf9fd] text-sm font-medium text-[#4A154B]">
+                        Loading HerRise...
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      {/* Public & Landing Pages */}
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/register" element={<RegisterPage />} />
+                      <Route path="/onboarding" element={<OnboardingPage />} />
 
-                    {/* Main Dashboard & 7 Core Modules */}
-                    <Route path="/dashboard" element={<DashboardOverview />} />
-                    <Route path="/finance" element={<HerFinancePage />} />
-                    <Route path="/career" element={<HerCareerPage />} />
-                    <Route path="/business" element={<HerBusinessPage />} />
-                    <Route path="/fund" element={<HerFundPage />} />
-                    <Route path="/market" element={<HerMarketPage />} />
-                    <Route path="/market/admin" element={<DigitalServicesAdminPage />} />
-                    <Route path="/learn" element={<HerLearnPage />} />
-                    <Route path="/network" element={<HerNetworkPage />} />
+                      {/* Main Dashboard & 7 Core Modules */}
+                      <Route path="/dashboard" element={<DashboardOverview />} />
+                      <Route path="/finance" element={<HerFinancePage />} />
+                      <Route path="/career" element={<HerCareerPage />} />
+                      <Route path="/business" element={<HerBusinessPage />} />
+                      <Route path="/fund" element={<HerFundPage />} />
+                      <Route path="/market" element={<HerMarketPage />} />
+                      <Route path="/market/admin" element={<DigitalServicesAdminPage />} />
+                      <Route path="/learn" element={<HerLearnPage />} />
+                      <Route path="/network" element={<HerNetworkPage />} />
 
-                    {/* Assistant & Preferences */}
-                    <Route path="/ai-assistant" element={<AIAssistantPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
+                      {/* Assistant & Preferences */}
+                      <Route path="/ai-assistant" element={<AIAssistantPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
 
-                    {/* Catch-all redirect */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-              </HerCareerProvider>
-            </MarketProvider>
-          </FinanceProvider>
+                      {/* Catch-all redirect */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                </HerCareerProvider>
+              </MarketProvider>
+            </FinanceProvider>
+          </HerFinanceProvider>
         </ToastProvider>
       </AuthProvider>
     </Router>

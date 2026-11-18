@@ -51,18 +51,47 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
       .sort((a, b) => b.fit.score - a.fit.score);
   }, [jobs, candidateQualification]);
 
-  // 1. Dynamic user resume count (unique valid user resumes)
+  // 1. Dynamic user resume count (strictly scoped to active user's actual resumes)
   const userValidResumesCount = React.useMemo(() => {
     const list = Array.isArray(resumes) ? resumes : [];
-    const unique = Array.from(new Map(list.map((r) => [r.id || r.title, r])).values());
-    const valid = unique.filter(
-      (r) =>
-        (r.personalInfo?.fullName && r.personalInfo.fullName.trim() !== '') ||
-        (r.experience && r.experience.length > 0) ||
-        (r.education && r.education.length > 0)
-    );
-    return valid.length > 0 ? valid.length : (activeResume?.personalInfo?.fullName ? 1 : 0);
-  }, [resumes, activeResume]);
+    const validUserResumes = list.filter((r) => {
+      // If user is authenticated, ensure resume belongs to this user
+      if (user?.email && r.personalInfo?.email && r.personalInfo.email.toLowerCase() !== user.email.toLowerCase()) {
+        return false;
+      }
+      if (user?.name && r.personalInfo?.fullName && r.personalInfo.fullName.toLowerCase() !== user.name.toLowerCase() && !r.personalInfo?.email) {
+        return false;
+      }
+
+      // Check if resume contains actual substantial user data (not an empty placeholder)
+      const hasContent = Boolean(
+        (r.personalInfo?.fullName && r.personalInfo.fullName.trim() !== '') &&
+        ((r.experience && r.experience.length > 0) ||
+         (r.education && r.education.length > 0) ||
+         (r.skills?.technical && r.skills.technical.length > 0) ||
+         (r.projects && r.projects.length > 0) ||
+         (r.summary && r.summary.trim() !== ''))
+      );
+      return hasContent;
+    });
+
+    const unique = Array.from(new Map(validUserResumes.map((r) => [r.id || `${r.personalInfo?.fullName}-${r.title}`, r])).values());
+    if (unique.length > 0) return unique.length;
+
+    // Check if activeResume is valid for this user
+    if (
+      activeResume &&
+      (!user?.email || !activeResume.personalInfo?.email || activeResume.personalInfo.email.toLowerCase() === user.email.toLowerCase())
+    ) {
+      const hasActiveContent = Boolean(
+        activeResume.personalInfo?.fullName?.trim() &&
+        (activeResume.experience?.length || activeResume.education?.length || activeResume.skills?.technical?.length)
+      );
+      if (hasActiveContent) return 1;
+    }
+
+    return 0;
+  }, [resumes, activeResume, user]);
 
   // 2. Truly recommended jobs matching candidate qualification & skills
   const candidateRecommendedJobsCount = React.useMemo(() => {
@@ -99,7 +128,9 @@ export const HerCareerDashboardView: React.FC<HerCareerDashboardViewProps> = ({ 
           <div className="mt-2">
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">{userValidResumesCount}</h3>
             <p className="text-[11px] text-teal-600 font-semibold mt-0.5">
-              {userValidResumesCount > 0 ? 'Active & ATS-Optimized' : 'No Resume Uploaded'}
+              {userValidResumesCount > 0
+                ? (userValidResumesCount === 1 ? 'Active & ATS-Optimized' : `${userValidResumesCount} Active & Optimized`)
+                : 'No Resume Uploaded'}
             </p>
           </div>
         </div>

@@ -11,6 +11,7 @@ interface StatCardProps {
   iconColor?: string;
   bgColor?: string;
   badge?: string;
+  onClick?: () => void;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -22,10 +23,16 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon: Icon,
   iconColor = 'text-[#4A154B]',
   bgColor = 'bg-purple-50',
-  badge
+  badge,
+  onClick
 }) => {
   return (
-    <div className="bg-white p-5 rounded-2xl border border-purple-100 shadow-xs hover:shadow-md transition-shadow relative overflow-hidden group">
+    <div
+      onClick={onClick}
+      className={`bg-white p-5 rounded-2xl border border-purple-100 shadow-xs hover:shadow-md transition-all relative overflow-hidden group ${
+        onClick ? 'cursor-pointer hover:border-purple-300' : ''
+      }`}
+    >
       {/* Top row */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</span>

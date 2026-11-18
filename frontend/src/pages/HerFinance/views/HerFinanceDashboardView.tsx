@@ -6,9 +6,12 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Calendar,
-  Pencil
+  Pencil,
+  ShieldCheck,
+  User
 } from 'lucide-react';
 import { useHerFinance } from '../../../context/HerFinanceContext';
+import { useAuth } from '../../../context/AuthContext';
 import { Modal } from '../../../components/common/Modal';
 import { DailyExpenseTracker } from '../components/DailyExpenseTracker';
 import { MonthlyRuleAnalyzer } from '../components/MonthlyRuleAnalyzer';
@@ -21,6 +24,10 @@ export const HerFinanceDashboardView: React.FC = () => {
     setMonthlyIncome,
     filteredTransactions
   } = useHerFinance();
+  const { user } = useAuth();
+
+  const userName = user?.name || profile.fullName || 'Member';
+  const userEmail = user?.email || profile.email || 'Personal Account';
 
   // Income Edit Modal State
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
@@ -55,6 +62,44 @@ export const HerFinanceDashboardView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* ── 0. User Personalized Profile Strip ── */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-3xl border border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-lg shadow-md shrink-0">
+            {userName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-extrabold text-white tracking-tight">
+                {userName}'s Financial Vault
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                Active Private Profile
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Account: <span className="text-slate-200 font-semibold">{userEmail}</span> • Base Currency: <span className="text-emerald-400 font-bold">INR (₹)</span>
+            </p>
+          </div>
+        </div>
+
+        {/* 50/30/20 Monthly Target Snapshot */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-400/20 text-left">
+            <span className="text-[10px] uppercase font-bold text-blue-300 block">50% Needs</span>
+            <span className="text-xs font-black text-white">₹{Math.round(effectiveIncome * 0.5).toLocaleString()}</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-400/20 text-left">
+            <span className="text-[10px] uppercase font-bold text-purple-300 block">30% Wants</span>
+            <span className="text-xs font-black text-white">₹{Math.round(effectiveIncome * 0.3).toLocaleString()}</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-400/20 text-left">
+            <span className="text-[10px] uppercase font-bold text-emerald-300 block">20% Savings</span>
+            <span className="text-xs font-black text-white">₹{Math.round(effectiveIncome * 0.2).toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
       {/* ── 1. The 4 Dynamic Key Financial Metrics Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Income */}

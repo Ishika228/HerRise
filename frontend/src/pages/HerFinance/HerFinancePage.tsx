@@ -8,7 +8,12 @@ const HerFinanceContent: React.FC = () => {
   const { profile, totalIncome } = useHerFinance();
   const [hasCompletedIntake, setHasCompletedIntake] = useState(false);
 
-  // Check if the user has entered their monthly income
+  // Reset local intake completion state whenever the active user switches
+  React.useEffect(() => {
+    setHasCompletedIntake(false);
+  }, [profile.userId]);
+
+  // Check if the active user has entered their monthly income
   const hasIncome = (profile.monthlyIncome > 0 || totalIncome > 0) || hasCompletedIntake;
 
   return (
@@ -23,11 +28,7 @@ const HerFinanceContent: React.FC = () => {
 };
 
 export const HerFinancePage: React.FC = () => {
-  return (
-    <HerFinanceProvider>
-      <HerFinanceContent />
-    </HerFinanceProvider>
-  );
+  return <HerFinanceContent />;
 };
 
 export default HerFinancePage;

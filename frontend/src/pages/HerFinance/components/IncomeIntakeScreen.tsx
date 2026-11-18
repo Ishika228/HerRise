@@ -6,9 +6,11 @@ import {
   ShieldCheck,
   CheckCircle2,
   TrendingUp,
-  PieChart
+  PieChart,
+  UserCheck
 } from 'lucide-react';
 import { useHerFinance } from '../../../context/HerFinanceContext';
+import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 
 interface IncomeIntakeScreenProps {
@@ -17,7 +19,11 @@ interface IncomeIntakeScreenProps {
 
 export const IncomeIntakeScreen: React.FC<IncomeIntakeScreenProps> = ({ onComplete }) => {
   const { setMonthlyIncome, profile } = useHerFinance();
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  const userName = user?.name || profile.fullName || 'Member';
+  const userEmail = user?.email || profile.email || '';
 
   const [incomeInput, setIncomeInput] = useState(
     profile.monthlyIncome > 0 ? profile.monthlyIncome.toString() : ''
@@ -51,11 +57,17 @@ export const IncomeIntakeScreen: React.FC<IncomeIntakeScreenProps> = ({ onComple
           <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#1e1b4b] via-[#312e81] to-[#047857] text-white flex items-center justify-center mx-auto shadow-md">
             <Wallet className="w-8 h-8 text-emerald-300" />
           </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Private User Setup • {userEmail || 'Personal Vault'}</span>
+          </div>
+
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Welcome to HerFinance
+            Welcome, {userName}!
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-            Please enter your monthly income to personalize your dashboard and calibrate your automated 50 / 30 / 20 budget.
+            Every member has an individual financial profile. Please enter your take-home monthly income to calibrate your private 50 / 30 / 20 budget.
           </p>
         </div>
 
