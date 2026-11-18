@@ -76,25 +76,19 @@ export const SettingsPage: React.FC = () => {
             <h3 className="font-bold text-sm text-gray-900">Platform Language Selection</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               {
                 code: 'en' as Language,
                 title: 'English',
                 subtitle: 'Standard Interface & Resources',
-                tag: 'Active'
+                tag: 'Primary'
               },
               {
                 code: 'hi' as Language,
                 title: 'हिन्दी (Hindi)',
                 subtitle: 'हिंदी अनुवाद व संसाधन',
-                tag: 'Localized'
-              },
-              {
-                code: 'mr' as Language,
-                title: 'मराठी (Marathi)',
-                subtitle: 'मराठी भाषा व मार्गदर्शक',
-                tag: 'Localized'
+                tag: 'Primary'
               }
             ].map((lang) => (
               <div
@@ -118,6 +112,41 @@ export const SettingsPage: React.FC = () => {
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* Other Languages Selection Dropdown */}
+          <div className="pt-2 border-t border-purple-50">
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              More Languages (Regional Indian & International):
+            </label>
+            <select
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value as Language)}
+              className="w-full sm:w-80 px-3 py-2.5 rounded-xl border border-purple-200 bg-purple-50/50 text-xs font-bold text-[#4A154B] outline-none cursor-pointer focus:bg-white"
+            >
+              <optgroup label="Primary Languages">
+                <option value="en">English (English)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+              </optgroup>
+              <optgroup label="Indian Regional Languages">
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml">മലയാളം (Malayalam)</option>
+                <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="or">ଓଡ଼ିଆ (Odia)</option>
+                <option value="ur">اردو (Urdu)</option>
+              </optgroup>
+              <optgroup label="Global Languages">
+                <option value="es">Español (Spanish)</option>
+                <option value="fr">Français (French)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ar">العربية (Arabic)</option>
+              </optgroup>
+            </select>
           </div>
         </div>
 

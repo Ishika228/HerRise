@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Menu, X, Globe, ArrowRight, ShieldCheck, HeartHandshake } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Language } from '../../types';
+import { LanguageSelector } from './LanguageSelector';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,31 +71,8 @@ export const Navbar: React.FC = () => {
 
           {/* Right Action Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Language Switcher */}
-            <div className="flex items-center bg-purple-50/80 border border-purple-100 rounded-lg p-1 text-xs font-semibold text-gray-600">
-              <Globe className="w-3.5 h-3.5 text-[#4A154B] mr-1 ml-1" />
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className={`px-2 py-1 rounded transition-colors ${language === 'en' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
-                  }`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => handleLanguageChange('hi')}
-                className={`px-2 py-1 rounded transition-colors ${language === 'hi' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
-                  }`}
-              >
-                हिन्दी
-              </button>
-              <button
-                onClick={() => handleLanguageChange('mr')}
-                className={`px-2 py-1 rounded transition-colors ${language === 'mr' ? 'bg-[#4A154B] text-white shadow-xs' : 'hover:text-[#4A154B]'
-                  }`}
-              >
-                मराठी
-              </button>
-            </div>
+            {/* Language Switcher - Hindi & English visible, others in dropdown */}
+            <LanguageSelector />
 
             {isAuthenticated ? (
               <button
@@ -177,28 +155,8 @@ export const Navbar: React.FC = () => {
             </a>
           </div>
 
-          <div className="pt-2 border-t border-purple-100 flex items-center justify-between">
-            <span className="text-xs text-gray-500 font-medium">Language:</span>
-            <div className="flex gap-1 text-xs">
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className={`px-2.5 py-1 rounded ${language === 'en' ? 'bg-[#4A154B] text-white' : 'bg-gray-100'}`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => handleLanguageChange('hi')}
-                className={`px-2.5 py-1 rounded ${language === 'hi' ? 'bg-[#4A154B] text-white' : 'bg-gray-100'}`}
-              >
-                हिन्दी
-              </button>
-              <button
-                onClick={() => handleLanguageChange('mr')}
-                className={`px-2.5 py-1 rounded ${language === 'mr' ? 'bg-[#4A154B] text-white' : 'bg-gray-100'}`}
-              >
-                मराठी
-              </button>
-            </div>
+          <div className="pt-2 border-t border-purple-100">
+            <LanguageSelector variant="mobile" />
           </div>
 
           <div className="pt-3 border-t border-purple-100 flex flex-col gap-2">

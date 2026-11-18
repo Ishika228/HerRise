@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Language } from '../../types';
+import { LanguageSelector } from './LanguageSelector';
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
@@ -101,19 +102,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick })
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Language selector */}
-        <div className="flex items-center bg-purple-50/70 border border-purple-100 rounded-lg p-0.5 text-xs font-semibold text-gray-600">
-          <Globe className="w-3.5 h-3.5 text-[#4A154B] ml-1 mr-0.5" />
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-            className="bg-transparent text-xs text-[#4A154B] font-semibold py-1 px-1 rounded outline-none cursor-pointer"
-          >
-            <option value="en">EN</option>
-            <option value="hi">हिन्दी</option>
-            <option value="mr">मराठी</option>
-          </select>
-        </div>
+        {/* Language selector - Hindi & English visible, others in dropdown */}
+        <LanguageSelector />
 
         {/* User Avatar & Name Link */}
         <Link

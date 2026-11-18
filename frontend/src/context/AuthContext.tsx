@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [language, setLanguageState] = useState<Language>(() => {
     try {
       const savedLang = localStorage.getItem('herrise_user_lang') as Language;
-      return savedLang === 'hi' || savedLang === 'mr' ? savedLang : 'en';
+      return savedLang || 'en';
     } catch {
       return 'en';
     }

@@ -1,6 +1,53 @@
 // HerRise - Core Type Definitions
 
-export type Language = 'en' | 'hi' | 'mr';
+export type Language =
+  | 'en'
+  | 'hi'
+  | 'mr'
+  | 'bn'
+  | 'ta'
+  | 'te'
+  | 'gu'
+  | 'kn'
+  | 'ml'
+  | 'pa'
+  | 'or'
+  | 'ur'
+  | 'es'
+  | 'fr'
+  | 'de'
+  | 'ar';
+
+export interface LanguageMeta {
+  code: Language;
+  name: string;
+  nativeName: string;
+  category: 'primary' | 'indian' | 'global';
+}
+
+export const ALL_LANGUAGES: LanguageMeta[] = [
+  // Primary (shown directly on website)
+  { code: 'en', name: 'English', nativeName: 'EN', category: 'primary' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', category: 'primary' },
+
+  // Indian Regional Languages (shown in dropdown)
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', category: 'indian' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', category: 'indian' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', category: 'indian' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', category: 'indian' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', category: 'indian' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', category: 'indian' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', category: 'indian' },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', category: 'indian' },
+  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', category: 'indian' },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو', category: 'indian' },
+
+  // Global / International Languages (shown in dropdown)
+  { code: 'es', name: 'Spanish', nativeName: 'Español', category: 'global' },
+  { code: 'fr', name: 'French', nativeName: 'Français', category: 'global' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', category: 'global' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', category: 'global' }
+];
 
 export interface UserProfile {
   id: string;

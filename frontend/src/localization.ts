@@ -1,6 +1,6 @@
 import { Language } from './types';
 
-const translations: Record<Exclude<Language, 'en'>, Record<string, string>> = {
+const translations: Partial<Record<Exclude<Language, 'en'>, Record<string, string>>> = {
   hi: {
     'Her Future. Her Finance. Her Freedom.': 'उसका भविष्य। उसका वित्त। उसकी स्वतंत्रता।',
     'Fintech & Career Hub': 'वित्तीय तकनीक और करियर केंद्र',
@@ -250,15 +250,461 @@ const translations: Record<Exclude<Language, 'en'>, Record<string, string>> = {
     'English': 'इंग्रजी',
     'Hindi': 'हिंदी',
     'Marathi': 'मराठी'
+  },
+  bn: {
+    'Her Future. Her Finance. Her Freedom.': 'তার ভবিষ্যৎ। তার অর্থ। তার স্বাধীনতা।',
+    'Fintech & Career Hub': 'ফিনটেক এবং ক্যারিয়ার হাব',
+    'Home': 'হোম',
+    'About Us': 'আমাদের সম্পর্কে',
+    'Explore Modules': 'মডিউল এক্সপ্লোর করুন',
+    'How It Works': 'এটি কীভাবে কাজ করে',
+    'Success Stories': 'সাফল্যের গল্প',
+    'Go to Dashboard': 'ড্যাশবোর্ডে যান',
+    'Open Dashboard': 'ড্যাশবোর্ড খুলুন',
+    'Log In': 'লগ ইন করুন',
+    'Get Started Free': 'বিনামূল্যে শুরু করুন',
+    'Language:': 'ভাষা:',
+    'Search jobs, grants, budget tools, courses or mentors... (Press Enter)': 'চাকরি, অনুদান, বাজেট টুল, কোর্স বা মেন্টর খুঁজুন... (Enter চাপুন)',
+    'Overview': 'সংক্ষিপ্ত বিবরণ',
+    'HerFinance': 'হারফাইন্যান্স',
+    'HerCareer': 'হারক্যারিয়ার',
+    'HerBusiness': 'হারবিজনেস',
+    'HerFund': 'হারফান্ড',
+    'HerMarket': 'হারমার্কেট',
+    'HerLearn': 'হারলার্ন',
+    'HerNetwork': 'হারনেটওয়ার্ক',
+    'AI Assistant': 'এআই সহকারী',
+    'My Profile': 'আমার প্রোফাইল',
+    'Settings': 'সেটিংস',
+    'Dashboard': 'ড্যাশবোর্ড',
+    'Welcome back': 'স্বাগতম',
+    'Your Dashboard': 'আপনার ড্যাশবোর্ড',
+    'Quick Actions': 'দ্রুত পদক্ষেপ',
+    'Recent Activity': 'সাম্প্রতিক কার্যকলাপ',
+    'View All': 'সব দেখুন',
+    'View Details': 'বিস্তারিত দেখুন',
+    'Learn More': 'আরও জানুন',
+    'Get Started': 'শুরু করুন',
+    'Cancel': 'বাতিল করুন',
+    'Save': 'সংরক্ষণ করুন',
+    'Submit': 'জমা দিন',
+    'Search': 'অনুসন্ধান করুন',
+    'Loading...': 'লোড হচ্ছে...',
+    'Sign In': 'সাইন ইন',
+    'Sign Up': 'সাইন আপ',
+    'Create Account': 'অ্যাকাউন্ট তৈরি করুন',
+    'Email': 'ইমেল',
+    'Password': 'পাসওয়ার্ড',
+    'Full Name': 'পুরো নাম'
+  },
+  ta: {
+    'Her Future. Her Finance. Her Freedom.': 'அவள் எதிர்காலம். அவள் நிதி. அவள் சுதந்திரம்.',
+    'Fintech & Career Hub': 'ஃபின்டெக் மற்றும் தொழில் மையம்',
+    'Home': 'முகப்பு',
+    'About Us': 'எங்களை பற்றி',
+    'Explore Modules': 'தொகுதிகளை ஆராயுங்கள்',
+    'How It Works': 'இது எவ்வாறு செயல்படுகிறது',
+    'Success Stories': 'வெற்றிக் கதைகள்',
+    'Go to Dashboard': 'டாஷ்போர்டுக்குச் செல்லவும்',
+    'Open Dashboard': 'டாஷ்போர்டைத் திறக்கவும்',
+    'Log In': 'உள்நுழையவும்',
+    'Get Started Free': 'இலவசமாகத் தொடங்கவும்',
+    'Language:': 'மொழி:',
+    'Search jobs, grants, budget tools, courses or mentors... (Press Enter)': 'வேலைகள், மானியங்கள், பட்ஜெட் கருவிகள், படிப்புகள் அல்லது வழிகாட்டிகளைத் தேடுங்கள்... (Enter அழுத்தவும்)',
+    'Overview': 'கண்ணோட்டம்',
+    'HerFinance': 'ஹர்ஃபைனான்ஸ்',
+    'HerCareer': 'ஹர்கரியர்',
+    'HerBusiness': 'ஹர்பிசினஸ்',
+    'HerFund': 'ஹர்ஃபண்ட்',
+    'HerMarket': 'ஹர்மார்க்கெட்',
+    'HerLearn': 'ஹர்லேர்ன்',
+    'HerNetwork': 'ஹர்நெட்வொர்க்',
+    'AI Assistant': 'AI உதவியாளர்',
+    'My Profile': 'என் சுயவிவரம்',
+    'Settings': 'அமைப்புகள்',
+    'Dashboard': 'டாஷ்போர்டு',
+    'Welcome back': 'மீண்டும் வருக',
+    'Your Dashboard': 'உங்கள் டாஷ்போர்டு',
+    'Quick Actions': 'விரைவான நடவடிக்கைகள்',
+    'Recent Activity': 'சமீபத்திய செயல்பாடு',
+    'View All': 'அனைத்தையும் காண்க',
+    'View Details': 'விவரங்களைக் காண்க',
+    'Learn More': 'மேலும் அறிக',
+    'Get Started': 'தொடங்கவும்',
+    'Cancel': 'ரத்துசெய்',
+    'Save': 'சேமிக்க',
+    'Submit': 'சமர்ப்பிக்க',
+    'Search': 'தேடுக',
+    'Loading...': 'ஏற்றுகிறது...',
+    'Sign In': 'உள்நுழைய',
+    'Sign Up': 'பதிவு செய்ய',
+    'Create Account': 'கணக்கை உருவாக்கவும்',
+    'Email': 'மின்னஞ்சல்',
+    'Password': 'கடவுச்சொல்',
+    'Full Name': 'முழு பெயர்'
+  },
+  te: {
+    'Her Future. Her Finance. Her Freedom.': 'ఆమె భవిష్యత్తు. ఆమె ఆర్థికం. ఆమె స్వేచ్ఛ.',
+    'Fintech & Career Hub': 'ఫిన్‌టెక్ & కెరీర్ హబ్',
+    'Home': 'హోమ్',
+    'About Us': 'మా గురించి',
+    'Explore Modules': 'మాడ్యూల్స్ అన్వేషించండి',
+    'How It Works': 'ఇది ఎలా పనిచేస్తుంది',
+    'Success Stories': 'విజయ కథనాలు',
+    'Go to Dashboard': 'డాష్‌బోర్డ్‌కు వెళ్లండి',
+    'Open Dashboard': 'డాష్‌బోర్డ్ తెరవండి',
+    'Log In': 'లాగిన్ అవ్వండి',
+    'Get Started Free': 'ఉచితంగా ప్రారంభించండి',
+    'Language:': 'భాష:',
+    'Search jobs, grants, budget tools, courses or mentors... (Press Enter)': 'ఉద్యోగాలు, గ్రాంట్లు, బడ్జెట్ టూల్స్, కోర్సులు లేదా మెంటార్లను శోధించండి... (Enter నొక్కండి)',
+    'Overview': 'సమీక్ష',
+    'HerFinance': 'హర్‌ఫైనాన్స్',
+    'HerCareer': 'హర్‌కెరీర్',
+    'HerBusiness': 'హర్‌బిజినెస్',
+    'HerFund': 'హర్‌ఫండ్',
+    'HerMarket': 'హర్‌మార్కెట్',
+    'HerLearn': 'హర్‌లెర్న్',
+    'HerNetwork': 'హర్‌నెట్‌వర్క్',
+    'AI Assistant': 'AI సహాయకుడు',
+    'My Profile': 'నా ప్రొఫైల్',
+    'Settings': 'సెట్టింగ్‌లు',
+    'Dashboard': 'డాష్‌బోర్డ్',
+    'Welcome back': 'స్వాగతం',
+    'Your Dashboard': 'మీ డాష్‌బోర్డ్',
+    'Quick Actions': 'త్వరిత చర్యలు',
+    'Recent Activity': 'ఇటీవలి కార్యాచరణ',
+    'View All': 'అన్నీ చూడండి',
+    'View Details': 'వివరాలు చూడండి',
+    'Learn More': 'మరింత తెలుసుకోండి',
+    'Get Started': 'ప్రారంభించండి',
+    'Cancel': 'రద్దు చేయండి',
+    'Save': 'సేవ్ చేయండి',
+    'Submit': 'సమర్పించండి',
+    'Search': 'శోధించండి',
+    'Loading...': 'లోడ్ అవుతోంది...',
+    'Sign In': 'సైన్ ఇన్',
+    'Sign Up': 'సైన్ అప్',
+    'Create Account': 'ఖాతాను సృష్టించండి',
+    'Email': 'ఇమెయిల్',
+    'Password': 'పాస్‌వర్డ్',
+    'Full Name': 'పూర్తి పేరు'
+  },
+  gu: {
+    'Her Future. Her Finance. Her Freedom.': 'તેણીનું ભવિષ્ય. તેણીનું નાણાં. તેણીની સ્વતંત્રતા.',
+    'Fintech & Career Hub': 'ફિનટેક અને કારકિર્દી હબ',
+    'Home': 'હોમ',
+    'About Us': 'અમારા વિશે',
+    'Explore Modules': 'મોડ્યુલ જુઓ',
+    'How It Works': 'આ કેવી રીતે કાર્ય કરે છે',
+    'Success Stories': 'સફળતાની વાર્તાઓ',
+    'Go to Dashboard': 'ડેશબોર્ડ પર જાઓ',
+    'Open Dashboard': 'ડેશબોર્ડ ખોલો',
+    'Log In': 'લૉગ ઇન કરો',
+    'Get Started Free': 'મફત શરૂ કરો',
+    'Language:': 'ભાષા:',
+    'Search jobs, grants, budget tools, courses or mentors... (Press Enter)': 'નોકરીઓ, અનુદાન, બજેટ સાધનો, અભ્યાસક્રમો અથવા માર્ગદર્શકો શોધો... (Enter દબાવો)',
+    'Overview': 'ઝાંખી',
+    'HerFinance': 'હરફાઇનાન્સ',
+    'HerCareer': 'હરકારકિર્દી',
+    'HerBusiness': 'હરબિઝનેસ',
+    'HerFund': 'હરફંડ',
+    'HerMarket': 'હરમાર્કેટ',
+    'HerLearn': 'હરલર્ન',
+    'HerNetwork': 'હરનેટવર્ક',
+    'AI Assistant': 'AI સહાયક',
+    'My Profile': 'મારી પ્રોફાઇલ',
+    'Settings': 'સેટિંગ્સ',
+    'Dashboard': 'ડેશબોર્ડ',
+    'Welcome back': 'પાછા આવવા બદલ સ્વાગત',
+    'Your Dashboard': 'તમારું ડેશબોર્ડ',
+    'Quick Actions': 'ઝડપી પગલાં',
+    'Recent Activity': 'તાજેતરની પ્રવૃત્તિ',
+    'View All': 'બધું જુઓ',
+    'View Details': 'વિગતો જુઓ',
+    'Learn More': 'વધુ જાણો',
+    'Get Started': 'શરૂ કરો',
+    'Cancel': 'રદ કરો',
+    'Save': 'સાચવો',
+    'Submit': 'સબમિટ કરો',
+    'Search': 'શોધો',
+    'Loading...': 'લોડ થઈ રહ્યું છે...',
+    'Sign In': 'સાઇન ઇન',
+    'Sign Up': 'સાઇન અપ',
+    'Create Account': 'ખાતું બનાવો',
+    'Email': 'ઇમેઇલ',
+    'Password': 'પાસવર્ડ',
+    'Full Name': 'પૂરું નામ'
+  },
+  kn: {
+    'Her Future. Her Finance. Her Freedom.': 'ಅವಳ ಭವಿಷ್ಯ. ಅವಳ ಹಣಕಾಸು. ಅವಳ ಸ್ವಾತಂತ್ರ್ಯ.',
+    'Fintech & Career Hub': 'ಫಿನ್‌ಟೆಕ್ ಮತ್ತು ವೃತ್ತಿ ಕೇಂದ್ರ',
+    'Home': 'ಮುಖಪುಟ',
+    'About Us': 'ನಮ್ಮ ಬಗ್ಗೆ',
+    'Explore Modules': 'ಮಾಡ್ಯೂಲ್‌ಗಳನ್ನು ಅನ್ವೇಷಿಸಿ',
+    'How It Works': 'ಇದು ಹೇಗೆ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ',
+    'Success Stories': 'ಯಶಸ್ಸಿನ ಕಥೆಗಳು',
+    'Go to Dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹೋಗಿ',
+    'Open Dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ',
+    'Log In': 'ಲಾಗಿನ್ ಆಗಿ',
+    'Get Started Free': 'ಉಚಿತವಾಗಿ ಪ್ರಾರಂಭಿಸಿ',
+    'Language:': 'ಭಾಷೆ:',
+    'Overview': 'ಅವಲೋಕನ',
+    'AI Assistant': 'AI ಸಹಾಯಕ',
+    'My Profile': 'ನನ್ನ ಪ್ರೊಫೈಲ್',
+    'Settings': 'ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
+    'Dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+    'Welcome back': 'ಮರಳಿ ಸ್ವಾಗತ',
+    'Your Dashboard': 'ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+    'Quick Actions': 'ತ್ವರಿತ ಕ್ರಿಯೆಗಳು',
+    'Save': 'ಉಳಿಸಿ',
+    'Cancel': 'ರದ್ದುಮಾಡಿ',
+    'Submit': 'ಸಲ್ಲಿಸಿ',
+    'Search': 'ಹುಡುಕಿ',
+    'Sign In': 'ಸೈನ್ ಇನ್',
+    'Sign Up': 'ಸೈನ್ ಅಪ್'
+  },
+  ml: {
+    'Her Future. Her Finance. Her Freedom.': 'അവളുടെ ഭാവി. അവളുടെ ധനകാര്യം. അവളുടെ സ്വാതന്ത്ര്യം.',
+    'Fintech & Career Hub': 'ഫിൻടെക് & കരിയർ ഹബ്',
+    'Home': 'ഹോം',
+    'About Us': 'ഞങ്ങളെക്കുറിച്ച്',
+    'Explore Modules': 'മൊഡ്യൂളുകൾ പര്യവേക്ഷണം ചെയ്യുക',
+    'How It Works': 'ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു',
+    'Success Stories': 'വിജയഗാഥകൾ',
+    'Go to Dashboard': 'ഡാഷ്‌ബോർഡിലേക്ക് പോകുക',
+    'Open Dashboard': 'ഡാഷ്‌ബോർഡ് തുറക്കുക',
+    'Log In': 'ലോഗിൻ ചെയ്യുക',
+    'Get Started Free': 'സൗജന്യമായി ആരംഭിക്കുക',
+    'Language:': 'ഭാഷ:',
+    'Overview': 'അവലോകനം',
+    'AI Assistant': 'AI അസിസ്റ്റന്റ്',
+    'My Profile': 'എന്റെ പ്രൊഫൈൽ',
+    'Settings': 'ക്രമീകരണങ്ങൾ',
+    'Dashboard': 'ഡാഷ്‌ബോർഡ്',
+    'Welcome back': 'സ്വാഗതം',
+    'Your Dashboard': 'നിങ്ങളുടെ ഡാഷ്‌ബോർഡ്',
+    'Quick Actions': 'ദ്രുത നടപടികൾ',
+    'Save': 'സേവ് ചെയ്യുക',
+    'Cancel': 'റദ്ദാക്കുക',
+    'Submit': 'സമർപ്പിക്കുക',
+    'Search': 'തിരയുക',
+    'Sign In': 'സൈൻ ഇൻ',
+    'Sign Up': 'സൈൻ അപ്പ്'
+  },
+  pa: {
+    'Her Future. Her Finance. Her Freedom.': 'ਉਸਦਾ ਭਵਿੱਖ। ਉਸਦਾ ਵਿੱਤ। ਉਸਦੀ ਆਜ਼ਾਦੀ।',
+    'Fintech & Career Hub': 'ਫਿਨਟੈਕ ਅਤੇ ਕਰੀਅਰ ਹੱਬ',
+    'Home': 'ਮੁੱਖ ਪੰਨਾ',
+    'About Us': 'ਸਾਡੇ ਬਾਰੇ',
+    'Explore Modules': 'ਮੌਡਿਊਲ ਦੇਖੋ',
+    'How It Works': 'ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ',
+    'Success Stories': 'ਸਫਲਤਾ ਦੀਆਂ ਕਹਾਣੀਆਂ',
+    'Go to Dashboard': 'ਡੈਸ਼ਬੋਰਡ ਤੇ ਜਾਓ',
+    'Open Dashboard': 'ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹੋ',
+    'Log In': 'ਲਾਗ ਇਨ ਕਰੋ',
+    'Get Started Free': 'ਮੁਫ਼ਤ ਸ਼ੁਰੂ ਕਰੋ',
+    'Language:': 'ਭਾਸ਼ਾ:',
+    'Overview': 'ਸੰਖੇਪ ਜਾਣਕਾਰੀ',
+    'AI Assistant': 'AI ਸਹਾਇਕ',
+    'My Profile': 'ਮੇਰੀ ਪ੍ਰੋਫਾਈਲ',
+    'Settings': 'ਸੈਟਿੰਗਾਂ',
+    'Dashboard': 'ਡੈਸ਼ਬੋਰਡ',
+    'Welcome back': 'ਜੀ ਆਇਆਂ ਨੂੰ',
+    'Your Dashboard': 'ਤੁਹਾਡਾ ਡੈਸ਼ਬੋਰਡ',
+    'Quick Actions': 'ਤੇਜ਼ ਕਾਰਵਾਈਆਂ',
+    'Save': 'ਸੰਭਾਲੋ',
+    'Cancel': 'ਰੱਦ ਕਰੋ',
+    'Submit': 'ਜਮ੍ਹਾ ਕਰੋ',
+    'Search': 'ਖੋਜੋ',
+    'Sign In': 'ਸਾਈਨ ਇਨ',
+    'Sign Up': 'ਸਾਈਨ ਅੱਪ'
+  },
+  or: {
+    'Her Future. Her Finance. Her Freedom.': 'ତାଙ୍କ ଭବିଷ୍ୟତ। ତାଙ୍କ ଅର୍ଥ। ତାଙ୍କ ସ୍ୱାଧୀନତା।',
+    'Home': 'ମୁଖ୍ୟ ପୃଷ୍ଠା',
+    'About Us': 'ଆମ ବିଷୟରେ',
+    'Explore Modules': 'ମଡ୍ୟୁଲ୍ ଦେଖନ୍ତୁ',
+    'How It Works': 'ଏହା କିପରି କାਮ କରେ',
+    'Success Stories': 'ସଫଳତା କାହାଣୀ',
+    'Go to Dashboard': 'ଡ୍ୟାସବୋର୍ଡକୁ ଯାଆନ୍ତୁ',
+    'Open Dashboard': 'ଡ୍ୟାସବୋର୍ଡ ଖୋଲନ୍ତୁ',
+    'Log In': 'ଲଗ୍ ଇନ୍ କରନ୍ତୁ',
+    'Get Started Free': 'ମାଗଣାରେ ଆରମ୍ଭ କରନ୍ତୁ',
+    'Language:': 'ଭାଷା:',
+    'Overview': 'ସମୀକ୍ଷା',
+    'AI Assistant': 'AI ସହାୟକ',
+    'My Profile': 'ମୋ ପ୍ରୋଫାଇଲ୍',
+    'Settings': 'ସେଟିଙ୍ଗ୍ସ',
+    'Dashboard': 'ଡ୍ୟାସବୋର୍ଡ',
+    'Welcome back': 'ସ୍ୱାଗତ',
+    'Save': 'ସାଇତନ୍ତୁ',
+    'Cancel': 'ବାତିଲ କରନ୍ତୁ',
+    'Submit': 'ଦାଖଲ କରନ୍ତୁ',
+    'Search': 'ଖୋଜନ୍ତୁ',
+    'Sign In': 'ସାଇନ୍ ଇନ୍',
+    'Sign Up': 'ସାଇନ୍ ଅପ୍'
+  },
+  ur: {
+    'Her Future. Her Finance. Her Freedom.': 'اس کا مستقبل۔ اس کا مالیات۔ اس کی آزادی۔',
+    'Home': 'ہوم',
+    'About Us': 'ہمارے بارے میں',
+    'Explore Modules': 'ماڈیولز دیکھیں',
+    'How It Works': 'یہ کیسے کام کرتا ہے',
+    'Success Stories': 'کامیابی کی کہانیاں',
+    'Go to Dashboard': 'ڈیش بورڈ پر جائیں',
+    'Open Dashboard': 'ڈیش بورڈ کھولیں',
+    'Log In': 'لاگ ان کریں',
+    'Get Started Free': 'مفت شروع کریں',
+    'Language:': 'زبان:',
+    'Overview': 'جائزہ',
+    'AI Assistant': 'اے آئی معاون',
+    'My Profile': 'میرا پروفائل',
+    'Settings': 'ترتیبات',
+    'Dashboard': 'ڈیش بورڈ',
+    'Welcome back': 'خوش آمدید',
+    'Save': 'محفوظ کریں',
+    'Cancel': 'منسوخ کریں',
+    'Submit': 'جمع کرائیں',
+    'Search': 'تلاش کریں',
+    'Sign In': 'سائن ان',
+    'Sign Up': 'سائن اپ'
+  },
+  es: {
+    'Her Future. Her Finance. Her Freedom.': 'Su Futuro. Sus Finanzas. Su Libertad.',
+    'Fintech & Career Hub': 'Centro de Fintech y Carreras Profesionales',
+    'Home': 'Inicio',
+    'About Us': 'Sobre Nosotros',
+    'Explore Modules': 'Explorar Módulos',
+    'How It Works': 'Cómo Funciona',
+    'Success Stories': 'Casos de Éxito',
+    'Go to Dashboard': 'Ir al Panel',
+    'Open Dashboard': 'Abrir Panel',
+    'Log In': 'Iniciar Sesión',
+    'Get Started Free': 'Comenzar Gratis',
+    'Language:': 'Idioma:',
+    'Search jobs, grants, budget tools, courses or mentors... (Press Enter)': 'Buscar empleos, becas, presupuestos, cursos o mentores... (Presione Enter)',
+    'Overview': 'Resumen',
+    'HerFinance': 'HerFinance',
+    'HerCareer': 'HerCareer',
+    'HerBusiness': 'HerBusiness',
+    'HerFund': 'HerFund',
+    'HerMarket': 'HerMarket',
+    'HerLearn': 'HerLearn',
+    'HerNetwork': 'HerNetwork',
+    'AI Assistant': 'Asistente IA',
+    'My Profile': 'Mi Perfil',
+    'Settings': 'Configuración',
+    'Dashboard': 'Panel de Control',
+    'Welcome back': 'Bienvenida de nuevo',
+    'Your Dashboard': 'Tu Panel',
+    'Quick Actions': 'Acciones Rápidas',
+    'Recent Activity': 'Actividad Reciente',
+    'View All': 'Ver Todo',
+    'View Details': 'Ver Detalles',
+    'Learn More': 'Más Información',
+    'Get Started': 'Comenzar',
+    'Cancel': 'Cancelar',
+    'Save': 'Guardar',
+    'Submit': 'Enviar',
+    'Search': 'Buscar',
+    'Loading...': 'Cargando...',
+    'Sign In': 'Iniciar Sesión',
+    'Sign Up': 'Registrarse',
+    'Create Account': 'Crear Cuenta',
+    'Email': 'Correo Electrónico',
+    'Password': 'Contraseña',
+    'Full Name': 'Nombre Completo'
+  },
+  fr: {
+    'Her Future. Her Finance. Her Freedom.': 'Son Avenir. Ses Finances. Sa Liberté.',
+    'Fintech & Career Hub': 'Pôle Fintech et Carrière',
+    'Home': 'Accueil',
+    'About Us': 'À Propos',
+    'Explore Modules': 'Explorer les Modules',
+    'How It Works': 'Comment Ça Marche',
+    'Success Stories': 'Témoignages',
+    'Go to Dashboard': 'Accéder au Tableau de Bord',
+    'Open Dashboard': 'Ouvrir le Tableau de Bord',
+    'Log In': 'Connexion',
+    'Get Started Free': 'Commencer Gratuitement',
+    'Language:': 'Langue :',
+    'Overview': 'Aperçu',
+    'AI Assistant': 'Assistant IA',
+    'My Profile': 'Mon Profil',
+    'Settings': 'Paramètres',
+    'Dashboard': 'Tableau de Bord',
+    'Welcome back': 'Bon retour',
+    'Quick Actions': 'Actions Rapides',
+    'Cancel': 'Annuler',
+    'Save': 'Enregistrer',
+    'Submit': 'Soumettre',
+    'Search': 'Rechercher',
+    'Sign In': 'Se Connecter',
+    'Sign Up': "S'inscrire"
+  },
+  de: {
+    'Her Future. Her Finance. Her Freedom.': 'Ihre Zukunft. Ihre Finanzen. Ihre Freiheit.',
+    'Fintech & Career Hub': 'Fintech- & Karriere-Zentrum',
+    'Home': 'Startseite',
+    'About Us': 'Über Uns',
+    'Explore Modules': 'Module Entdecken',
+    'How It Works': 'So Funktioniert Es',
+    'Success Stories': 'Erfolgsgeschichten',
+    'Go to Dashboard': 'Zum Dashboard',
+    'Open Dashboard': 'Dashboard Öffnen',
+    'Log In': 'Anmelden',
+    'Get Started Free': 'Kostenlos Starten',
+    'Language:': 'Sprache:',
+    'Overview': 'Übersicht',
+    'AI Assistant': 'KI-Assistent',
+    'My Profile': 'Mein Profil',
+    'Settings': 'Einstellungen',
+    'Dashboard': 'Dashboard',
+    'Welcome back': 'Willkommen zurück',
+    'Quick Actions': 'Schnellaktionen',
+    'Cancel': 'Abbrechen',
+    'Save': 'Speichern',
+    'Submit': 'Absenden',
+    'Search': 'Suchen',
+    'Sign In': 'Anmelden',
+    'Sign Up': 'Registrieren'
+  },
+  ar: {
+    'Her Future. Her Finance. Her Freedom.': 'مستقبلها. ماليتها. حريتها.',
+    'Home': 'الرئيسية',
+    'About Us': 'من نحن',
+    'Explore Modules': 'استكشاف الوحدات',
+    'How It Works': 'كيف يعمل',
+    'Success Stories': 'قصص النجاح',
+    'Go to Dashboard': 'الذهاب إلى لوحة التحكم',
+    'Open Dashboard': 'فتح لوحة التحكم',
+    'Log In': 'تسجيل الدخول',
+    'Get Started Free': 'ابدأ مجاناً',
+    'Language:': 'اللغة:',
+    'Overview': 'نظرة عامة',
+    'AI Assistant': 'المساعد الذكي',
+    'My Profile': 'ملفي الشخصي',
+    'Settings': 'الإعدادات',
+    'Dashboard': 'لوحة التحكم',
+    'Welcome back': 'مرحباً بعودتك',
+    'Quick Actions': 'إجراءات سريعة',
+    'Cancel': 'إلغاء',
+    'Save': 'حفظ',
+    'Submit': 'إرسال',
+    'Search': 'بحث',
+    'Sign In': 'تسجيل الدخول',
+    'Sign Up': 'إنشاء حساب'
   }
 };
 
 const normalize = (value: string) => value.trim().replace(/\s+/g, ' ');
 
-// Pre-build fast lookup map for reverse translation
+// Pre-build fast lookup map for reverse translation across all languages
 const reverseTranslationMap = new Map<string, string>();
-for (const lang of ['hi', 'mr'] as const) {
-  for (const [enKey, trVal] of Object.entries(translations[lang])) {
+for (const langKey of Object.keys(translations)) {
+  const dict = translations[langKey as Exclude<Language, 'en'>];
+  if (!dict) continue;
+  for (const [enKey, trVal] of Object.entries(dict)) {
     reverseTranslationMap.set(normalize(trVal), enKey);
   }
 }
@@ -322,10 +768,66 @@ function localizeNode(node: Node, language: Language): void {
 
 let isMutating = false;
 
+/**
+ * Programmatically synchronize Google Translate engine with selected language
+ */
+export function applyGoogleTranslation(targetLang: Language): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  const hostname = window.location.hostname;
+
+  if (targetLang === 'en') {
+    // Clear translation cookies to return cleanly to English
+    document.cookie = 'googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = `googtrans=;path=/;domain=${hostname};expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    if (hostname.includes('.')) {
+      document.cookie = `googtrans=;path=/;domain=.${hostname};expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    }
+
+    const select = document.querySelector<HTMLSelectElement>('.goog-te-combo');
+    if (select && select.value !== 'en') {
+      select.value = 'en';
+      select.dispatchEvent(new Event('change'));
+    }
+    return;
+  }
+
+  // Set translation cookie for destination language
+  document.cookie = `googtrans=/en/${targetLang};path=/;`;
+  document.cookie = `googtrans=/en/${targetLang};path=/;domain=${hostname};`;
+  if (hostname.includes('.')) {
+    document.cookie = `googtrans=/en/${targetLang};path=/;domain=.${hostname};`;
+  }
+
+  const triggerGoogleCombo = () => {
+    const select = document.querySelector<HTMLSelectElement>('.goog-te-combo');
+    if (select) {
+      if (select.value !== targetLang) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event('change'));
+      }
+      return true;
+    }
+    return false;
+  };
+
+  if (!triggerGoogleCombo()) {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (triggerGoogleCombo() || attempts >= 10) {
+        clearInterval(interval);
+      }
+    }, 250);
+  }
+}
+
 export function observeLocalization(language: Language): () => void {
   if (typeof document === 'undefined') return () => undefined;
 
   document.documentElement.lang = language;
+  applyGoogleTranslation(language);
+
   if (language === 'en') {
     return () => undefined;
   }
