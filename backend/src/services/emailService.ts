@@ -228,9 +228,17 @@ async function sendViaSendGridHttp(
 }
 
 /**
- * Send Payment Confirmation & Tax Invoice Receipt Email
+ * Send Payment Confirmation & Tax Invoice Receipt Email (Mail system disabled per user request)
  */
-export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
+export async function sendReceiptEmail(_params: ReceiptEmailParams): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
+  // Mail system disabled per user requirement - orders succeed immediately without sending emails
+  return {
+    success: true,
+    messageId: `local_order_${Date.now()}`
+  };
+}
+
+async function unusedOldSendReceiptEmail(params: ReceiptEmailParams) {
   try {
     const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || 'ishiiiii43@gmail.com';
     const brevoApiKey = (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY || '').trim();

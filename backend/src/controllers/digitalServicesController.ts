@@ -465,25 +465,9 @@ export async function createServiceOrder(req: Request, res: Response, next: Next
       });
     }
 
-    // Dispatch official tax invoice email
-    const emailResult = await sendReceiptEmail({
-      toEmail: cleanEmail,
-      customerName: customerName || 'Valued Client',
-      businessName: businessName || '',
-      orderId,
-      transactionId: txId,
-      packageName: selectedPackageName || 'Digital Package',
-      packagePrice: selectedPackagePrice || finalAmount,
-      addOns: selectedAddOns || [],
-      amountPaid: finalAmount,
-      monthlyAmount: monthlyTotal || 0,
-      paymentMethod: paymentDetails?.method || 'Card',
-      paidAt
-    });
-
     res.status(201).json({
       success: true,
-      message: 'Order placed and stored successfully in database. Receipt email sent.',
+      message: 'Order placed and stored successfully in database.',
       order: savedOrder || {
         orderId,
         id: orderId,
@@ -495,8 +479,7 @@ export async function createServiceOrder(req: Request, res: Response, next: Next
         oneTimeTotal: finalAmount,
         status: 'In Progress',
         paymentDetails: { transactionId: txId, amountPaid: finalAmount, status: 'Paid', paidAt }
-      },
-      emailResult
+      }
     });
   } catch (error) {
     handleError(next, error);
@@ -546,59 +529,19 @@ export async function getServiceOrders(req: Request, res: Response, next: NextFu
 }
 
 /**
- * Resend receipt email for an order
+ * Receipt confirmed endpoint (mail system disabled)
  */
-export async function resendOrderReceiptEmail(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { toEmail, orderId, customerName, packageName, amountPaid, transactionId, paymentMethod } = req.body || {};
-    if (!toEmail) {
-      res.status(400).json({ success: false, error: 'Recipient email is required.' });
-      return;
-    }
-
-    const emailResult = await sendReceiptEmail({
-      toEmail: toEmail.toLowerCase().trim(),
-      customerName: customerName || 'Valued Customer',
-      orderId: orderId || `ORD-${Date.now().toString(36)}`,
-      transactionId: transactionId || `tx_${Date.now()}`,
-      packageName: packageName || 'Digital Package',
-      packagePrice: amountPaid || 0,
-      amountPaid: amountPaid || 0,
-      paymentMethod: paymentMethod || 'Card',
-      paidAt: new Date().toLocaleString('en-AU')
-    });
-
-    res.json({ success: true, emailResult });
-  } catch (error) {
-    handleError(next, error);
-  }
+export async function resendOrderReceiptEmail(req: Request, res: Response) {
+  res.json({ success: true, message: 'Order receipt recorded in client portal.' });
 }
 
 /**
- * 1-Click Email Delivery Verification Test (works in browser GET request)
+ * Service status endpoint
  */
-export async function testEmailDelivery(req: Request, res: Response, next: NextFunction) {
-  try {
-    const targetEmail = ((req.query.email as string) || 'ishiiiii43@gmail.com').toLowerCase().trim();
-    const result = await sendReceiptEmail({
-      toEmail: targetEmail,
-      customerName: 'Ishika',
-      orderId: `TEST-${Date.now().toString(36).toUpperCase()}`,
-      transactionId: `tx_live_${Date.now()}`,
-      packageName: 'HerRise Live Verification Test',
-      packagePrice: 100,
-      amountPaid: 100,
-      paymentMethod: 'Instant Test',
-      paidAt: new Date().toLocaleString('en-AU')
-    });
-
-    res.json({
-      success: result.success,
-      recipient: targetEmail,
-      providerUsed: 'Brevo HTTP API (Port 443)',
-      result
-    });
-  } catch (error) {
-    handleError(next, error);
-  }
+export async function testEmailDelivery(req: Request, res: Response) {
+  res.json({
+    success: true,
+    service: 'HerRise Digital Market Service Orders',
+    mailSystem: 'disabled'
+  });
 }
