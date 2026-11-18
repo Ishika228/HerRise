@@ -383,21 +383,35 @@ The HerRise Team
 `;
 
     // 1. Try Brevo HTTP API (Port 443 HTTPS - Works on Render Free Tier)
-    if (brevoApiKey) {
-      console.log('[EmailService] Dispatching receipt via Brevo HTTP API (Port 443)...');
-      return await sendViaBrevoHttp(params, brevoApiKey, smtpUser, htmlContent, textContent, subject);
+    if (brevoApiKey && brevoApiKey.trim().startsWith('xkeysib-')) {
+      try {
+        console.log('[EmailService] Dispatching receipt via Brevo HTTP API (Port 443)...');
+        return await sendViaBrevoHttp(params, brevoApiKey, smtpUser, htmlContent, textContent, subject);
+      } catch (brevoErr: any) {
+        console.warn('[EmailService] Brevo HTTP API error, attempting fallback:', brevoErr?.message);
+      }
+    } else if (brevoApiKey && brevoApiKey.trim().startsWith('xsmtpsib-')) {
+      console.warn('[EmailService Notice]: The key starting with "xsmtpsib-" is a Brevo SMTP key. For the HTTPS REST API on Render Free Tier, please generate a v3 key starting with "xkeysib-" under Brevo Settings > SMTP & API > API Keys tab.');
     }
 
     // 2. Try Resend HTTP API (Port 443 HTTPS - Works on Render Free Tier)
     if (resendApiKey) {
-      console.log('[EmailService] Dispatching receipt via Resend HTTP API (Port 443)...');
-      return await sendViaResendHttp(params, resendApiKey, smtpUser, htmlContent, textContent, subject);
+      try {
+        console.log('[EmailService] Dispatching receipt via Resend HTTP API (Port 443)...');
+        return await sendViaResendHttp(params, resendApiKey, smtpUser, htmlContent, textContent, subject);
+      } catch (resendErr: any) {
+        console.warn('[EmailService] Resend HTTP API error, attempting fallback:', resendErr?.message);
+      }
     }
 
     // 3. Try SendGrid HTTP API (Port 443 HTTPS)
     if (sendgridApiKey) {
-      console.log('[EmailService] Dispatching receipt via SendGrid HTTP API (Port 443)...');
-      return await sendViaSendGridHttp(params, sendgridApiKey, smtpUser, htmlContent, textContent, subject);
+      try {
+        console.log('[EmailService] Dispatching receipt via SendGrid HTTP API (Port 443)...');
+        return await sendViaSendGridHttp(params, sendgridApiKey, smtpUser, htmlContent, textContent, subject);
+      } catch (sgErr: any) {
+        console.warn('[EmailService] SendGrid HTTP API error, attempting fallback:', sgErr?.message);
+      }
     }
 
     // 4. Fallback to standard SMTP via Nodemailer

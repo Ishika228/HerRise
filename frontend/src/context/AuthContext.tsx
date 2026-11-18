@@ -3,6 +3,44 @@ import { UserProfile, Language } from '../types';
 import { API_BASE } from '../config/api';
 import { observeLocalization } from '../localization';
 
+/**
+ * Purge all local storage keys related to a user so they start 100% fresh on re-registration
+ */
+export const purgeLocalUserStorage = (email: string) => {
+  try {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail) return;
+    const userKey = cleanEmail.replace(/[^a-z0-9]/g, '_');
+
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (
+        key.includes(userKey) ||
+        key.includes(cleanEmail) ||
+        key.startsWith(`herfinance_${userKey}`) ||
+        key.startsWith(`herrise_finance_${userKey}`) ||
+        key.startsWith(`herrise_market_${userKey}`) ||
+        key.startsWith(`herrise_career_${userKey}`) ||
+        key.startsWith(`herrise_user_income_${userKey}`) ||
+        key.startsWith(`herrise_resume_${userKey}`)
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+    // Also remove unscoped legacy caches
+    localStorage.removeItem('herrise_finance_profile');
+    localStorage.removeItem('herrise_finance_transactions');
+    localStorage.removeItem('herrise_finance_setup_completed');
+    localStorage.removeItem('hercareer_resume');
+  } catch (err) {
+    console.warn('[Auth] Error purging local storage:', err);
+  }
+};
+
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
@@ -128,13 +166,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (data: Partial<UserProfile> & { password?: string }): Promise<boolean> => {
+    const targetEmail = (data.email || data.resumeData?.email || '').toLowerCase().trim();
+    if (targetEmail) {
+      // Purge any stale cached state from previous users with this email
+      purgeLocalUserStorage(targetEmail);
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: data.name || data.resumeData?.fullName,
-          email: data.email || data.resumeData?.email,
+          email: targetEmail,
           password: data.password || 'password123',
           phone: data.phone || data.resumeData?.phone,
           location: data.location || data.resumeData?.location,
@@ -145,7 +189,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       const json = await res.json();
       if (json.success && json.user) {
-        console.log('[Auth] Registered user in MongoDB Atlas:', json.user);
+        console.log('[Auth] Registered fresh user in MongoDB Atlas:', json.user);
       }
     } catch (e) {
       console.warn('[Auth] Backend register sync notice:', e);
@@ -162,7 +206,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newUser: UserProfile = {
       id: 'usr-' + Date.now().toString(36),
       name: data.name || data.resumeData?.fullName || 'HerRise Member',
-      email: data.email || data.resumeData?.email || 'user@example.com',
+      email: targetEmail || 'user@example.com',
       phone: data.phone || data.resumeData?.phone || '',
       location: data.location || data.resumeData?.location || '',
       language: data.language || language,
@@ -177,6 +221,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       bio: data.resumeData?.summary || '',
       completionPercentage: data.resumeData ? 85 : 40,
       resumeData: data.resumeData,
+      monthlyIncome: 0,
+      financialProfile: {
+        monthlyIncome: 0,
+        incomeSources: [],
+        emergencyFundTargetMonths: 6,
+        riskTolerance: 'moderate',
+        currency: 'INR'
+      },
       careerProfile: {
         targetRole: data.resumeData?.headline || 'Growth Professional',
         status: 'Active',
@@ -194,6 +246,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    if (user?.email) {
+      purgeLocalUserStorage(user.email);
+    }
     setUser(null);
     localStorage.removeItem('herrise_user_session');
   };

@@ -2,6 +2,109 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { store, User } from '../data/mockStore.js';
 import { UserModel } from '../models/UserModel.js';
+import { TransactionModel } from '../models/TransactionModel.js';
+import { BudgetCategoryModel } from '../models/BudgetModel.js';
+import { SavingsGoalModel } from '../models/SavingsGoalModel.js';
+import { ServiceOrderModel } from '../models/ServiceOrderModel.js';
+import { CareerProfileModel, ResumeModel, JobApplicationModel } from '../models/careerModels.js';
+import { CourseProgressModel } from '../models/CourseProgressModel.js';
+import { FundRequestModel } from '../models/FundRequestModel.js';
+
+/**
+ * Cascade-purge all data belonging to a user across all collections
+ */
+export const purgeUserDataEverywhere = async (rawEmail: string, rawUserId?: string) => {
+  if (mongoose.connection.readyState !== 1) return;
+  const cleanEmail = (rawEmail || '').toLowerCase().trim();
+  if (!cleanEmail) return;
+
+  const emailRegex = new RegExp(`^${cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
+  try {
+    await Promise.allSettled([
+      // 1. Finance Transactions
+      TransactionModel.deleteMany({
+        $or: [{ userId: cleanEmail }, { userId: emailRegex }, { userEmail: emailRegex }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+
+      // 2. Budgets
+      BudgetCategoryModel.deleteMany({
+        $or: [{ userId: cleanEmail }, { userId: emailRegex }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+
+      // 3. Savings Goals
+      SavingsGoalModel.deleteMany({
+        $or: [{ userId: cleanEmail }, { userId: emailRegex }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+
+      // 4. Digital Market Service Orders
+      ServiceOrderModel.deleteMany({
+        $or: [{ userEmail: cleanEmail }, { email: cleanEmail }, { userId: cleanEmail }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+
+      // 5. Career Profiles, Resumes, and Job Applications
+      CareerProfileModel.deleteMany({
+        $or: [{ email: cleanEmail }, { userId: cleanEmail }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+      ResumeModel.deleteMany({
+        $or: [{ 'personalInfo.email': cleanEmail }, { userId: cleanEmail }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+      JobApplicationModel.deleteMany({
+        $or: [{ 'candidate.email': cleanEmail }, { userId: cleanEmail }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+
+      // 6. Learning Course Progress
+      CourseProgressModel.deleteMany({
+        $or: [{ userEmail: cleanEmail }, { userId: cleanEmail }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      }),
+
+      // 7. Funding Requests
+      FundRequestModel.deleteMany({
+        $or: [{ userEmail: cleanEmail }, { applicantEmail: cleanEmail }, { email: cleanEmail }, { userId: cleanEmail }, ...(rawUserId ? [{ userId: rawUserId }] : [])]
+      })
+    ]);
+
+    console.log(`[DataPurge] Cascade deleted all module records for: ${cleanEmail}`);
+  } catch (err: any) {
+    console.warn(`[DataPurge Error] Failed to purge user data for ${cleanEmail}:`, err.message);
+  }
+};
+
+/**
+ * Delete User Account & Cascade All Module Records
+ */
+export const deleteUserAccount = async (req: Request, res: Response) => {
+  const targetEmail = (req.params.email || req.query.email || req.body?.email || '').toString().toLowerCase().trim();
+  if (!targetEmail) {
+    return res.status(400).json({ success: false, error: 'User email is required to delete account' });
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      // Purge all records across all modules
+      await purgeUserDataEverywhere(targetEmail);
+      // Delete user from UserModel
+      await UserModel.deleteMany({ email: new RegExp(`^${targetEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+
+      return res.status(200).json({
+        success: true,
+        message: `User ${targetEmail} and all related data across all modules have been completely deleted.`
+      });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  }
+
+  // In-memory fallback
+  const idx = store.users.findIndex((u) => u.email.toLowerCase() === targetEmail);
+  if (idx !== -1) {
+    store.users.splice(idx, 1);
+  }
+  return res.status(200).json({
+    success: true,
+    message: `User ${targetEmail} deleted from in-memory store.`
+  });
+};
 
 export const registerUser = async (req: Request, res: Response) => {
   const { name, email, password, phone, location, preferredLanguage, resumeData, goals } = req.body;
@@ -10,26 +113,40 @@ export const registerUser = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Name and email are required' });
   }
 
+  const cleanEmail = email.toLowerCase().trim();
+
   // Save to MongoDB Atlas if connected
   if (mongoose.connection.readyState === 1) {
     try {
-      const existing = await UserModel.findOne({ email: email.toLowerCase() });
+      const existing = await UserModel.findOne({ email: cleanEmail });
       if (existing) {
         return res.status(400).json({ success: false, error: 'An account with this email already exists' });
       }
+
+      // CRITICAL: When registering as a new user, purge any orphaned records from prior deletions!
+      await purgeUserDataEverywhere(cleanEmail);
 
       const parsedGoals = Array.isArray(goals) ? goals : (goals ? [goals] : []);
 
       const userDoc = await UserModel.create({
         name,
-        email: email.toLowerCase(),
+        email: cleanEmail,
         phone: phone || (resumeData?.phone || ''),
         location: location || (resumeData?.location || ''),
         preferredLanguage: preferredLanguage || 'English',
         goals: parsedGoals,
         skills: resumeData?.skills || [],
         profileCompleted: resumeData ? 85 : 50,
-        resumeData: resumeData || undefined
+        resumeData: resumeData || undefined,
+        financialSetupCompleted: false,
+        financialProfile: {
+          monthlyIncome: 0,
+          incomeSources: [],
+          emergencyFundTargetMonths: 6,
+          riskTolerance: 'moderate',
+          currency: 'INR',
+          currentSavings: 0
+        }
       });
 
       return res.status(201).json({

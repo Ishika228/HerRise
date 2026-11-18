@@ -234,6 +234,27 @@ export const HerFinanceProvider: React.FC<{ children: ReactNode }> = ({ children
             });
             setIsSetupCompleted(true);
             localStorage.setItem(`herfinance_${userKey}_setup_completed`, 'true');
+          } else if (json.success && (!json.data || !json.data.monthlyIncome || json.data.monthlyIncome <= 0)) {
+            // User does not exist or has 0 verified income in database -> Reset completely!
+            const freshProfile: FinancialProfile = {
+              userId: userKey,
+              fullName: user?.name || '',
+              email: user?.email || '',
+              monthlyIncome: 0,
+              incomeSources: [],
+              emergencyFundTargetMonths: 6,
+              monthlySavingsTarget: 0,
+              riskTolerance: 'moderate',
+              financialScore: 82,
+              currency: 'INR',
+              updatedAt: new Date().toISOString()
+            };
+            setProfile(freshProfile);
+            setIsSetupCompleted(false);
+            localStorage.removeItem(`herfinance_${userKey}_setup_completed`);
+            localStorage.removeItem(`herfinance_${userKey}_profile`);
+            localStorage.removeItem(`herfinance_${userKey}_transactions`);
+            setTransactions([]);
           }
         })
         .catch(() => {});

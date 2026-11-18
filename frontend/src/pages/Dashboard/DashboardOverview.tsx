@@ -458,7 +458,7 @@ export const DashboardOverview: React.FC = () => {
           />
 
           <StatCard
-            title="Liquid Savings Cushion"
+            title="Savings"
             value={effectiveSavings > 0 ? `₹${effectiveSavings.toLocaleString()}` : '₹0'}
             change={
               effectiveIncome > 0 && actualSavings >= targetSavings && targetSavings > 0

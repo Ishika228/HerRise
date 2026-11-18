@@ -21,40 +21,44 @@ export const getFinancialProfile = async (req: Request, res: Response) => {
         email: new RegExp(`^${targetUser.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
       });
 
-      let monthlyIncome = Number(user?.financialProfile?.monthlyIncome) || 0;
+      // If user does not exist in UserModel (user was deleted from MongoDB Atlas):
+      if (!user) {
+        // Automatically purge any remaining orphaned records for this targetUser
+        await Promise.allSettled([
+          TransactionModel.deleteMany({ $or: [{ userId: targetUser }, { userEmail: targetUser }] }),
+          BudgetCategoryModel.deleteMany({ userId: targetUser }),
+          SavingsGoalModel.deleteMany({ userId: targetUser })
+        ]);
 
-      // Fallback: If not found in UserModel, check TransactionModel for user's verified income transaction
-      if (monthlyIncome <= 0) {
-        const incTx = await TransactionModel.findOne({
-          userId: targetUser,
-          type: 'income'
-        }).sort({ createdAt: -1 });
-        if (incTx && incTx.amount > 0) {
-          monthlyIncome = incTx.amount;
-        }
-      }
-
-      if (user || monthlyIncome > 0) {
-        const fp = user?.financialProfile;
         return res.status(200).json({
           success: true,
           source: 'mongodb-atlas',
-          data: {
-            userId: user?.email || targetUser,
-            fullName: user?.name || targetUser.split('@')[0],
-            email: user?.email || targetUser,
-            monthlyIncome: monthlyIncome,
-            incomeSources: fp?.incomeSources?.length
-              ? fp.incomeSources
-              : [{ name: 'Primary Inflow', amount: monthlyIncome, type: 'salary' }],
-            emergencyFundTargetMonths: fp?.emergencyFundTargetMonths || 6,
-            monthlySavingsTarget: Math.round(monthlyIncome * 0.20),
-            riskTolerance: fp?.riskTolerance || 'moderate',
-            currency: fp?.currency || 'INR',
-            financialSetupCompleted: monthlyIncome > 0
-          }
+          data: null,
+          message: 'User does not exist in database; profile reset'
         });
       }
+
+      const monthlyIncome = Number(user.financialProfile?.monthlyIncome) || 0;
+
+      const fp = user.financialProfile;
+      return res.status(200).json({
+        success: true,
+        source: 'mongodb-atlas',
+        data: {
+          userId: user.email || targetUser,
+          fullName: user.name || targetUser.split('@')[0],
+          email: user.email || targetUser,
+          monthlyIncome: monthlyIncome,
+          incomeSources: fp?.incomeSources?.length
+            ? fp.incomeSources
+            : (monthlyIncome > 0 ? [{ name: 'Primary Inflow', amount: monthlyIncome, type: 'salary' }] : []),
+          emergencyFundTargetMonths: fp?.emergencyFundTargetMonths || 6,
+          monthlySavingsTarget: Math.round(monthlyIncome * 0.20),
+          riskTolerance: fp?.riskTolerance || 'moderate',
+          currency: fp?.currency || 'INR',
+          financialSetupCompleted: monthlyIncome > 0
+        }
+      });
     } catch (err: any) {
       console.warn('[MongoDB Atlas] getFinancialProfile error:', err.message);
     }
@@ -82,6 +86,24 @@ export const getFinanceOverview = async (req: Request, res: Response) => {
 
   if (mongoose.connection.readyState === 1) {
     try {
+      const userExists = await UserModel.exists({
+        email: new RegExp(`^${userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+      });
+      if (!userExists) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            totalIncome: 0,
+            totalExpenses: 0,
+            netBalance: 0,
+            totalSavings: 0,
+            emergencyCoverageMonths: 6.0,
+            activeGoalsCount: 0,
+            categoriesTracked: 0
+          }
+        });
+      }
+
       const userFilter = { userId };
       const txs = await TransactionModel.find(userFilter);
       const goals = await SavingsGoalModel.find(userFilter);
@@ -157,6 +179,18 @@ export const getTransactions = async (req: Request, res: Response) => {
 
   if (mongoose.connection.readyState === 1) {
     try {
+      const userExists = await UserModel.exists({
+        email: new RegExp(`^${targetUser.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+      });
+      if (!userExists) {
+        return res.status(200).json({
+          success: true,
+          source: 'mongodb-atlas',
+          count: 0,
+          data: []
+        });
+      }
+
       const queryFilter: any = { userId: targetUser };
       if (type && type !== 'all') queryFilter.type = type;
       if (category && category !== 'all') queryFilter.category = new RegExp(String(category), 'i');
