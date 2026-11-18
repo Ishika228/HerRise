@@ -35,7 +35,7 @@ export const getFinancialProfile = async (req: Request, res: Response) => {
       }
 
       if (user || monthlyIncome > 0) {
-        const fp = user?.financialProfile || { monthlyIncome: 0 };
+        const fp = user?.financialProfile;
         return res.status(200).json({
           success: true,
           source: 'mongodb-atlas',
@@ -44,11 +44,13 @@ export const getFinancialProfile = async (req: Request, res: Response) => {
             fullName: user?.name || targetUser.split('@')[0],
             email: user?.email || targetUser,
             monthlyIncome: monthlyIncome,
-            incomeSources: fp.incomeSources || [{ name: 'Primary Inflow', amount: monthlyIncome, type: 'salary' }],
-            emergencyFundTargetMonths: fp.emergencyFundTargetMonths || 6,
+            incomeSources: fp?.incomeSources?.length
+              ? fp.incomeSources
+              : [{ name: 'Primary Inflow', amount: monthlyIncome, type: 'salary' }],
+            emergencyFundTargetMonths: fp?.emergencyFundTargetMonths || 6,
             monthlySavingsTarget: Math.round(monthlyIncome * 0.20),
-            riskTolerance: fp.riskTolerance || 'moderate',
-            currency: fp.currency || 'INR',
+            riskTolerance: fp?.riskTolerance || 'moderate',
+            currency: fp?.currency || 'INR',
             financialSetupCompleted: monthlyIncome > 0
           }
         });
