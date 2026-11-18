@@ -5,6 +5,7 @@ import {
   createServiceOrder,
   getServiceOrders,
   resendOrderReceiptEmail,
+  testEmailDelivery,
   deletePackage,
   deleteService,
   getAdminDashboard,
@@ -26,6 +27,7 @@ router.post('/admin/session', createAdminSession);
 router.post('/orders', createServiceOrder);
 router.get('/orders', getServiceOrders);
 router.post('/orders/send-receipt', resendOrderReceiptEmail);
+router.get('/orders/test-email', testEmailDelivery);
 
 router.use('/admin', requireDigitalServicesAdmin);
 router.get('/admin/dashboard', getAdminDashboard);

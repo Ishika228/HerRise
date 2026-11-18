@@ -573,3 +573,32 @@ export async function resendOrderReceiptEmail(req: Request, res: Response, next:
     handleError(next, error);
   }
 }
+
+/**
+ * 1-Click Email Delivery Verification Test (works in browser GET request)
+ */
+export async function testEmailDelivery(req: Request, res: Response, next: NextFunction) {
+  try {
+    const targetEmail = ((req.query.email as string) || 'ishiiiii43@gmail.com').toLowerCase().trim();
+    const result = await sendReceiptEmail({
+      toEmail: targetEmail,
+      customerName: 'Ishika',
+      orderId: `TEST-${Date.now().toString(36).toUpperCase()}`,
+      transactionId: `tx_live_${Date.now()}`,
+      packageName: 'HerRise Live Verification Test',
+      packagePrice: 100,
+      amountPaid: 100,
+      paymentMethod: 'Instant Test',
+      paidAt: new Date().toLocaleString('en-AU')
+    });
+
+    res.json({
+      success: result.success,
+      recipient: targetEmail,
+      providerUsed: 'Brevo HTTP API (Port 443)',
+      result
+    });
+  } catch (error) {
+    handleError(next, error);
+  }
+}

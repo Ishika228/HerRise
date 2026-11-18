@@ -100,7 +100,7 @@ async function sendViaBrevoHttp(
   subject: string
 ) {
   const cleanKey = apiKey.trim();
-  const fromEmail = senderEmail.includes('@') ? senderEmail.trim() : 'orders@herrise.org';
+  const fromEmail = (senderEmail && senderEmail.includes('@')) ? senderEmail.trim() : 'ishiiiii43@gmail.com';
 
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -128,7 +128,8 @@ async function sendViaBrevoHttp(
 
   const body: any = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(body?.message || body?.error || `Brevo HTTP error ${res.status}`);
+    const errorDetails = body?.message || body?.error || `Brevo HTTP error ${res.status}`;
+    throw new Error(errorDetails);
   }
 
   return {
@@ -232,9 +233,9 @@ async function sendViaSendGridHttp(
 export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
   try {
     const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || 'ishiiiii43@gmail.com';
-    const brevoApiKey = process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY;
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const sendgridApiKey = process.env.SENDGRID_API_KEY;
+    const brevoApiKey = (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY || '').trim();
+    const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
+    const sendgridApiKey = (process.env.SENDGRID_API_KEY || '').trim();
 
     const subject = `🌸 Thank You for Your Order! Receipt for ${params.packageName} [#${params.orderId}]`;
     const gstAmount = Math.round(params.amountPaid / 11);
@@ -388,7 +389,18 @@ The HerRise Team
         console.log('[EmailService] Dispatching receipt via Brevo HTTP API (Port 443)...');
         return await sendViaBrevoHttp(params, brevoApiKey, smtpUser, htmlContent, textContent, subject);
       } catch (brevoErr: any) {
-        console.warn('[EmailService] Brevo HTTP API error, attempting fallback:', brevoErr?.message);
+        const errorMsg = brevoErr?.message || '';
+        console.warn('[EmailService] Brevo HTTP API error:', errorMsg);
+        if (
+          errorMsg.toLowerCase().includes('unrecognised ip') ||
+          errorMsg.toLowerCase().includes('authorised_ips') ||
+          errorMsg.toLowerCase().includes('unauthorized')
+        ) {
+          return {
+            success: false,
+            error: `Brevo IP Protection: Brevo rejected the request from this server IP. ${errorMsg}. Please visit https://app.brevo.com/security/authorised_ips and click 'Deactivate blocking' (or approve the authorization email sent to ishiiiii43@gmail.com) to allow sending.`
+          };
+        }
       }
     } else if (brevoApiKey && brevoApiKey.trim().startsWith('xsmtpsib-')) {
       console.warn('[EmailService Notice]: The key starting with "xsmtpsib-" is a Brevo SMTP key. For the HTTPS REST API on Render Free Tier, please generate a v3 key starting with "xkeysib-" under Brevo Settings > SMTP & API > API Keys tab.');
