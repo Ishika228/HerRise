@@ -89,17 +89,154 @@ async function getTransporter() {
 }
 
 /**
+ * Dispatch email via Brevo (Sendinblue) HTTP API (HTTPS Port 443 - Works on Render Free Tier)
+ */
+async function sendViaBrevoHttp(
+  params: ReceiptEmailParams,
+  apiKey: string,
+  senderEmail: string,
+  htmlContent: string,
+  textContent: string,
+  subject: string
+) {
+  const cleanKey = apiKey.trim();
+  const fromEmail = senderEmail.includes('@') ? senderEmail.trim() : 'orders@herrise.org';
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'api-key': cleanKey
+    },
+    body: JSON.stringify({
+      sender: {
+        name: 'HerRise Marketplace',
+        email: fromEmail
+      },
+      to: [
+        {
+          email: params.toEmail.trim(),
+          name: params.customerName || 'Valued Customer'
+        }
+      ],
+      subject,
+      htmlContent,
+      textContent
+    })
+  });
+
+  const body: any = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.message || body?.error || `Brevo HTTP error ${res.status}`);
+  }
+
+  return {
+    success: true,
+    messageId: body.messageId || `brevo_${Date.now()}`
+  };
+}
+
+/**
+ * Dispatch email via Resend HTTP API (HTTPS Port 443 - Works on Render Free Tier)
+ */
+async function sendViaResendHttp(
+  params: ReceiptEmailParams,
+  apiKey: string,
+  senderEmail: string,
+  htmlContent: string,
+  textContent: string,
+  subject: string
+) {
+  const cleanKey = apiKey.trim();
+  const from = process.env.RESEND_FROM || 'HerRise Marketplace <onboarding@resend.dev>';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${cleanKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from,
+      to: [params.toEmail.trim()],
+      subject,
+      html: htmlContent,
+      text: textContent
+    })
+  });
+
+  const body: any = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.message || body?.error || `Resend HTTP error ${res.status}`);
+  }
+
+  return {
+    success: true,
+    messageId: body.id || `resend_${Date.now()}`
+  };
+}
+
+/**
+ * Dispatch email via SendGrid HTTP API (HTTPS Port 443 - Works on Render Free Tier)
+ */
+async function sendViaSendGridHttp(
+  params: ReceiptEmailParams,
+  apiKey: string,
+  senderEmail: string,
+  htmlContent: string,
+  textContent: string,
+  subject: string
+) {
+  const cleanKey = apiKey.trim();
+  const fromEmail = senderEmail.includes('@') ? senderEmail.trim() : 'orders@herrise.org';
+
+  const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${cleanKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      personalizations: [
+        {
+          to: [{ email: params.toEmail.trim(), name: params.customerName || 'Valued Customer' }]
+        }
+      ],
+      from: {
+        email: fromEmail,
+        name: 'HerRise Marketplace'
+      },
+      subject,
+      content: [
+        { type: 'text/plain', value: textContent },
+        { type: 'text/html', value: htmlContent }
+      ]
+    })
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    throw new Error(`SendGrid HTTP error ${res.status}: ${errorText}`);
+  }
+
+  return {
+    success: true,
+    messageId: `sendgrid_${Date.now()}`
+  };
+}
+
+/**
  * Send Payment Confirmation & Tax Invoice Receipt Email
  */
 export async function sendReceiptEmail(params: ReceiptEmailParams): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
   try {
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER;
-    const fromAddress = smtpUser
-      ? `"HerRise Marketplace" <${smtpUser}>`
-      : (process.env.SMTP_FROM || process.env.EMAIL_FROM || '"HerRise Marketplace" <orders@herrise.org>');
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || 'ishiiiii43@gmail.com';
+    const brevoApiKey = process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY;
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const sendgridApiKey = process.env.SENDGRID_API_KEY;
 
-    const transporter = await getTransporter();
-
+    const subject = `🌸 Thank You for Your Order! Receipt for ${params.packageName} [#${params.orderId}]`;
     const gstAmount = Math.round(params.amountPaid / 11);
     const subtotal = params.amountPaid - gstAmount;
 
@@ -245,10 +382,35 @@ Warm regards,
 The HerRise Team
 `;
 
+    // 1. Try Brevo HTTP API (Port 443 HTTPS - Works on Render Free Tier)
+    if (brevoApiKey) {
+      console.log('[EmailService] Dispatching receipt via Brevo HTTP API (Port 443)...');
+      return await sendViaBrevoHttp(params, brevoApiKey, smtpUser, htmlContent, textContent, subject);
+    }
+
+    // 2. Try Resend HTTP API (Port 443 HTTPS - Works on Render Free Tier)
+    if (resendApiKey) {
+      console.log('[EmailService] Dispatching receipt via Resend HTTP API (Port 443)...');
+      return await sendViaResendHttp(params, resendApiKey, smtpUser, htmlContent, textContent, subject);
+    }
+
+    // 3. Try SendGrid HTTP API (Port 443 HTTPS)
+    if (sendgridApiKey) {
+      console.log('[EmailService] Dispatching receipt via SendGrid HTTP API (Port 443)...');
+      return await sendViaSendGridHttp(params, sendgridApiKey, smtpUser, htmlContent, textContent, subject);
+    }
+
+    // 4. Fallback to standard SMTP via Nodemailer
+    const fromAddress = smtpUser
+      ? `"HerRise Marketplace" <${smtpUser}>`
+      : (process.env.SMTP_FROM || process.env.EMAIL_FROM || '"HerRise Marketplace" <orders@herrise.org>');
+
+    const transporter = await getTransporter();
+
     const info = await transporter.sendMail({
       from: fromAddress,
       to: params.toEmail,
-      subject: `🌸 Thank You for Your Order! Receipt for ${params.packageName} [#${params.orderId}]`,
+      subject,
       text: textContent,
       html: htmlContent
     });
@@ -265,10 +427,24 @@ The HerRise Team
       previewUrl
     };
   } catch (error: any) {
-    console.error('[EmailService Error]:', error);
+    const errorMsg = error?.message || 'Failed to dispatch receipt email';
+    console.error('[EmailService Error]:', errorMsg);
+
+    const isConnectionTimeout = errorMsg.toLowerCase().includes('timeout') || errorMsg.includes('ETIMEDOUT') || errorMsg.includes('ECONNREFUSED');
+    const isRenderEnv = Boolean(process.env.RENDER || process.env.IS_RENDER || process.env.RENDER_SERVICE_ID);
+
+    if (isConnectionTimeout && isRenderEnv) {
+      const guidance = 'Render Free Tier blocks outbound SMTP ports 25, 465, and 587. Please add BREVO_API_KEY (from free brevo.com) or RESEND_API_KEY in your Render Environment Variables to send emails over HTTPS Port 443.';
+      console.warn(`[EmailService Warning]: ${guidance}`);
+      return {
+        success: false,
+        error: guidance
+      };
+    }
+
     return {
       success: false,
-      error: error.message || 'Failed to dispatch receipt email'
+      error: errorMsg
     };
   }
 }
