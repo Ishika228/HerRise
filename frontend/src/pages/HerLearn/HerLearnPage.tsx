@@ -557,13 +557,10 @@ export const HerLearnPage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('australian')}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'australian'
-                ? 'bg-teal-800 text-white shadow-xs'
-                : 'text-teal-900 bg-teal-50/70 hover:bg-teal-100/70 border border-teal-200/50'
+              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'australian' ? 'bg-[#4A154B] text-white shadow-xs' : 'text-gray-700 hover:text-[#4A154B]'
                 }`}
             >
-              <span className="text-sm">🇦🇺</span>
-              <span>Australian Qualifications</span>
+              Courses
             </button>
             <button
               onClick={() => setActiveTab('player')}
@@ -973,7 +970,7 @@ export const HerLearnPage: React.FC = () => {
                   onClick={() => setActiveTab('australian')}
                   className="px-5 py-2.5 bg-[#4A154B] hover:bg-[#350c36] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
                 >
-                  Explore Australian Qualifications →
+                  Explore Courses →
                 </button>
               </div>
             ) : (

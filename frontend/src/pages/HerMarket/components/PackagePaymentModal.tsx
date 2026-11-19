@@ -884,7 +884,6 @@ export const PackagePaymentModal: React.FC<PackagePaymentModalProps> = ({
                 <div className="pt-2 border-t border-purple-100 flex justify-between items-baseline">
                   <div>
                     <span className="font-extrabold text-gray-900">Total Investment (AUD):</span>
-                    <span className="text-[10px] text-gray-400 ml-1.5">(Includes 10% GST)</span>
                   </div>
                   <div className="text-right">
                     <span className="text-xl font-black text-[#4A154B]">
@@ -1002,20 +1001,8 @@ export const PackagePaymentModal: React.FC<PackagePaymentModalProps> = ({
                   <div className="text-center space-y-2 text-xs">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-base font-black text-[#4A154B]">
-                        ₹{upiPayAmount} ({formatAUD(totalOneTimeAUD)} AUD equivalent)
+                        {formatAUD(totalOneTimeAUD)}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setTestSmallAmount(!testSmallAmount)}
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors cursor-pointer border ${
-                          testSmallAmount
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
-                            : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
-                        }`}
-                        title="Toggle to ₹1 to test live scanning with GPay without sending full package amount"
-                      >
-                        {testSmallAmount ? '✓ ₹1 Test Mode Active' : 'Switch to ₹1 Test QR'}
-                      </button>
                     </div>
 
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-200">
@@ -1059,28 +1046,6 @@ export const PackagePaymentModal: React.FC<PackagePaymentModalProps> = ({
 
                   {/* Actions for Scanner */}
                   <div className="space-y-2 pt-2 border-t border-purple-100">
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                      <a
-                        href={upiPayload}
-                        className="w-full sm:flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-white border border-purple-200 hover:bg-purple-50 text-[#4A154B] flex items-center justify-center gap-1.5 transition-colors"
-                        title="If you are on your phone, tap to open directly in Google Pay"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Open in Google Pay App</span>
-                      </a>
-
-                      <button
-                        type="button"
-                        disabled={isScanning || isProcessing}
-                        onClick={handleSimulateGPaySuccess}
-                        className="w-full sm:flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-purple-100 hover:bg-purple-200 text-[#4A154B] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                        title="Simulates instantaneous Google Pay payment confirmation"
-                      >
-                        <Smartphone className="w-3.5 h-3.5" />
-                        <span>{isScanning ? 'Verifying with GPay...' : 'Simulate GPay Payment'}</span>
-                      </button>
-                    </div>
-
                     <button
                       type="button"
                       disabled={isScanning || isProcessing}
@@ -1098,14 +1063,7 @@ export const PackagePaymentModal: React.FC<PackagePaymentModalProps> = ({
               {paymentMethod === 'card' && (
                 <div className="space-y-3 text-xs bg-gray-50 p-4 rounded-2xl border border-gray-200">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-gray-700">Card Credentials (Stripe)</span>
-                    <button
-                      type="button"
-                      onClick={handleFillTestCard}
-                      className="text-[10px] font-bold text-[#4A154B] bg-purple-100 hover:bg-purple-200 px-2.5 py-1 rounded-lg cursor-pointer"
-                    >
-                      Fill Stripe Demo Card
-                    </button>
+                    <span className="font-bold text-gray-700">Card Credentials</span>
                   </div>
 
                   <div>

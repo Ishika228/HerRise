@@ -384,7 +384,7 @@ export const AustralianCoursesSection: React.FC = () => {
                 Personalization Profile & Recommendation Controls
               </h3>
               <p className="text-[11px] text-slate-500">
-                Adjust your qualification or focus to immediately re-calculate matched Australian courses
+                Adjust your qualification or focus to immediately re-calculate matched courses
               </p>
             </div>
           </div>
@@ -534,7 +534,7 @@ export const AustralianCoursesSection: React.FC = () => {
               </div>
               <p className="text-xs text-slate-700 font-medium mt-1 leading-relaxed">
                 {progressionRationale ||
-                  `Courses curated for your ${selectedQualification} to achieve recognized Australian qualifications.`}
+                  `Courses curated for your ${selectedQualification} to advance your career competencies.`}
               </p>
             </div>
           </div>
@@ -552,7 +552,7 @@ export const AustralianCoursesSection: React.FC = () => {
           <RefreshCw className="w-8 h-8 text-teal-600 animate-spin mx-auto" />
           <p className="text-sm font-bold text-slate-800">
             {viewMode === 'recommended'
-              ? `Personalizing Australian Qualifications for your ${selectedQualification} background...`
+              ? `Personalizing Courses for your ${selectedQualification} background...`
               : 'Retrieving Qualifications Catalog from MongoDB Atlas...'}
           </p>
           <p className="text-xs text-slate-500">Matching AQF framework competency standards</p>
@@ -703,7 +703,7 @@ export const AustralianCoursesSection: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-teal-50/50 border border-teal-100 space-y-2">
                   <h4 className="text-xs font-bold text-teal-950 uppercase tracking-wider flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5 text-teal-700" /> Target Australian Occupations
+                    <Briefcase className="w-3.5 h-3.5 text-teal-700" /> Target Occupations
                   </h4>
                   <ul className="space-y-1">
                     {selectedCourse.occupations?.map((occ, idx) => (
