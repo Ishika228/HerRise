@@ -1,34 +1,65 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="HerRise – Her Future. Her Finance. Her Freedom. AI-powered women's financial empowerment, career development, entrepreneurship, funding discovery, and mentorship platform." />
-    <title>HerRise — Her Future. Her Finance. Her Freedom.</title>
-    <!-- Google Fonts Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-[#faf9fd] text-[#1f2937] antialiased">
-    <!-- Google Translate Multi-Language Integration -->
-    <div id="google_translate_element" style="display:none"></div>
-    <script type="text/javascript">
-      function googleTranslateElementInit() {
-        if (window.google && window.google.translate) {
-          new window.google.translate.TranslateElement({
-            pageLanguage: 'en',
-            includedLanguages: 'en,hi,mr,bn,ta,te,gu,kn,ml,pa,or,ur,es,fr,de,ar',
-            autoDisplay: false
-          }, 'google_translate_element');
-        }
-      }
-    </script>
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="HerRise – Her Future. Her Finance. Her Freedom. AI-powered women's financial empowerment, career development, entrepreneurship, funding discovery, and mentorship platform." />
+  <title>HerRise — Her Future. Her Finance. Her Freedom.</title>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap"
+    rel="stylesheet">
+
+  <!-- Always start with English as the default language when webapp is opened -->
+  <script type="text/javascript">
+    (function () {
+      try {
+        var cookies = ['googtrans', 'googtrans_en'];
+        var hostname = window.location.hostname;
+        var domains = ['', hostname, '.' + hostname];
+        var paths = ['/', '', window.location.pathname];
+        for (var i = 0; i < cookies.length; i++) {
+          for (var j = 0; j < domains.length; j++) {
+            for (var k = 0; k < paths.length; k++) {
+              document.cookie = cookies[i] + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; path=' + paths[k] + (domains[j] ? '; domain=' + domains[j] : '') + ';';
+            }
+          }
+        }
+        localStorage.removeItem('herrise_user_lang');
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+        document.documentElement.removeAttribute('dir');
+        document.documentElement.classList.remove('translated-rtl', 'translated-ltr');
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="bg-[#faf9fd] text-[#1f2937] antialiased">
+  <!-- Google Translate Multi-Language Integration -->
+  <div id="google_translate_element" style="display:none"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      if (window.google && window.google.translate) {
+        new window.google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'en,hi,mr,bn,ta,te,gu,kn,ml,pa,or,ur,es,fr,de,ar',
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    }
+  </script>
+  <script type="text/javascript"
+    src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

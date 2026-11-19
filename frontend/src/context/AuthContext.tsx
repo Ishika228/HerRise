@@ -73,14 +73,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
-  const [language, setLanguageState] = useState<Language>(() => {
+  // Always start with English as the default language when anyone opens the webapp
+  const [language, setLanguageState] = useState<Language>('en');
+
+  useEffect(() => {
     try {
-      const savedLang = localStorage.getItem('herrise_user_lang') as Language;
-      return savedLang || 'en';
-    } catch {
-      return 'en';
-    }
-  });
+      localStorage.removeItem('herrise_user_lang');
+    } catch {}
+  }, []);
 
   useEffect(() => observeLocalization(language), [language]);
 
@@ -94,7 +94,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('herrise_user_lang', lang);
+    if (lang === 'en') {
+      try {
+        localStorage.removeItem('herrise_user_lang');
+      } catch {}
+    } else {
+      try {
+        localStorage.setItem('herrise_user_lang', lang);
+      } catch {}
+    }
     if (user) {
       setUser({ ...user, language: lang });
     }

@@ -35,6 +35,222 @@ import { generateCertificatePdf } from '../../services/certificateService';
 import { InteractiveCoursePlayer } from '../../components/learn/InteractiveCoursePlayer';
 import { API_BASE } from '../../config/api';
 
+interface CourseEducationMatch {
+  score: number;
+  isDirectMatch: boolean;
+  badge: string;
+  reason: string;
+  badgeColor: string;
+}
+
+function calculateCourseEducationMatch(course: Course, educationStr: string): CourseEducationMatch {
+  const edu = (educationStr || '').toLowerCase().trim();
+  if (!edu) {
+    return {
+      score: 80,
+      isDirectMatch: false,
+      badge: 'Open to All Qualifications',
+      reason: 'Foundational masterclass suitable across all academic disciplines',
+      badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
+    };
+  }
+
+  const category = (course.category || '').toLowerCase();
+  const title = (course.title || '').toLowerCase();
+
+  // Tech / Computer Science / IT / BCA / MCA / B.Tech
+  const isTechEdu = /(tech|computer|software|developer|engineer|cs\b|it\b|bca|mca|programming|coding)/.test(edu);
+  // Commerce / Finance / Accounting / B.Com / M.Com / CA
+  const isFinanceEdu = /(commerce|b\.?com|m\.?com|accounting|finance|cpa|ca\b|cma|banking|tax|economics)/.test(edu);
+  // Business / MBA / BBA / Management
+  const isBusinessEdu = /(bba|mba|business|management|operations|marketing|retail)/.test(edu);
+  // Healthcare / Nursing / Medical
+  const isHealthEdu = /(nurse|nursing|health|medical|clinical|doctor|hospital|biotech|pharma)/.test(edu);
+  // Master's / Postgraduate
+  const isMasters = /(master|mca|mba|m\.?tech|m\.?sc|post graduate|phd)/.test(edu);
+
+  if (isTechEdu) {
+    if (category.includes('programming') || title.includes('react') || title.includes('web development')) {
+      return {
+        score: 98,
+        isDirectMatch: true,
+        badge: '⭐ 98% Fit • Direct Qualification Match',
+        reason: `Direct technical continuation for your ${educationStr} background`,
+        badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+      };
+    }
+    if (category.includes('artificial intelligence') || title.includes('ai')) {
+      return {
+        score: 95,
+        isDirectMatch: true,
+        badge: '🚀 95% Fit • Advanced Tech Specialization',
+        reason: `High-leverage AI competencies aligned with your ${educationStr} qualification`,
+        badgeColor: 'bg-indigo-50 text-indigo-800 border-indigo-300 font-bold'
+      };
+    }
+    if (category.includes('financial literacy')) {
+      return {
+        score: 84,
+        isDirectMatch: false,
+        badge: '💼 84% Fit • Wealth & Financial Agency',
+        reason: 'Essential wealth management and equity building for tech professionals',
+        badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
+      };
+    }
+    if (category.includes('entrepreneurship')) {
+      return {
+        score: 82,
+        isDirectMatch: false,
+        badge: '💡 82% Fit • Tech Commercialization',
+        reason: 'Learn to launch and monetize software products from your technical skills',
+        badgeColor: 'bg-amber-50 text-amber-800 border-amber-200'
+      };
+    }
+    return {
+      score: 78,
+      isDirectMatch: false,
+      badge: '78% Fit • Leadership Growth',
+      reason: 'Executive negotiation and communication for engineering career advancement',
+      badgeColor: 'bg-slate-100 text-slate-700 border-slate-200'
+    };
+  }
+
+  if (isFinanceEdu) {
+    if (category.includes('financial literacy')) {
+      return {
+        score: 99,
+        isDirectMatch: true,
+        badge: '⭐ 99% Fit • Core Discipline Match',
+        reason: `Directly leverages and advances your ${educationStr} finance expertise`,
+        badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+      };
+    }
+    if (category.includes('entrepreneurship')) {
+      return {
+        score: 94,
+        isDirectMatch: true,
+        badge: '📈 94% Fit • Commercial Financials & D2C',
+        reason: `Apply your ${educationStr} financial grounding to D2C margins and unit economics`,
+        badgeColor: 'bg-teal-50 text-teal-800 border-teal-300 font-bold'
+      };
+    }
+    if (category.includes('communication') || isMasters) {
+      return {
+        score: 89,
+        isDirectMatch: false,
+        badge: '💎 89% Fit • High-Stakes Negotiation',
+        reason: 'Master executive salary negotiation and investor pitching for finance leaders',
+        badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
+      };
+    }
+    if (category.includes('artificial intelligence')) {
+      return {
+        score: 85,
+        isDirectMatch: false,
+        badge: '🤖 85% Fit • FinTech & AI Automation',
+        reason: 'Leverage AI models for financial analysis and automated client operations',
+        badgeColor: 'bg-blue-50 text-blue-700 border-blue-200'
+      };
+    }
+  }
+
+  if (isBusinessEdu) {
+    if (category.includes('entrepreneurship')) {
+      return {
+        score: 98,
+        isDirectMatch: true,
+        badge: '⭐ 98% Fit • Business Strategy Match',
+        reason: `Direct application of your ${educationStr} qualification to scalable venture launch`,
+        badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+      };
+    }
+    if (category.includes('digital marketing')) {
+      return {
+        score: 95,
+        isDirectMatch: true,
+        badge: '🎯 95% Fit • Revenue & Market Growth',
+        reason: `Performance marketing and growth systems matching your ${educationStr} training`,
+        badgeColor: 'bg-teal-50 text-teal-800 border-teal-300 font-bold'
+      };
+    }
+    if (category.includes('communication')) {
+      return {
+        score: 92,
+        isDirectMatch: true,
+        badge: '🏆 92% Fit • Executive Leadership',
+        reason: 'High-stakes boardroom presence and client deal negotiation',
+        badgeColor: 'bg-indigo-50 text-indigo-800 border-indigo-300 font-bold'
+      };
+    }
+    if (category.includes('financial literacy')) {
+      return {
+        score: 88,
+        isDirectMatch: false,
+        badge: '📊 88% Fit • P&L & Wealth Mastery',
+        reason: 'Master business P&L accounting, investor decks, and cash flow reserves',
+        badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
+      };
+    }
+  }
+
+  if (isHealthEdu) {
+    if (category.includes('communication')) {
+      return {
+        score: 93,
+        isDirectMatch: true,
+        badge: '🏥 93% Fit • Clinical & Team Leadership',
+        reason: `Executive communication and empathetic conflict management for ${educationStr} leaders`,
+        badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+      };
+    }
+    if (category.includes('financial literacy')) {
+      return {
+        score: 90,
+        isDirectMatch: true,
+        badge: '💡 90% Fit • Private Practice Financials',
+        reason: 'Personal and clinic financial management for healthcare professionals',
+        badgeColor: 'bg-teal-50 text-teal-800 border-teal-300 font-bold'
+      };
+    }
+    if (category.includes('artificial intelligence')) {
+      return {
+        score: 86,
+        isDirectMatch: false,
+        badge: '🔬 86% Fit • HealthTech & Clinical AI',
+        reason: 'AI documentation and workflow optimization tools for medical practitioners',
+        badgeColor: 'bg-blue-50 text-blue-700 border-blue-200'
+      };
+    }
+  }
+
+  if (isMasters) {
+    if (course.level === 'Advanced') {
+      return {
+        score: 94,
+        isDirectMatch: true,
+        badge: '🎓 94% Fit • Post-Graduate Level Match',
+        reason: `Advanced masterclass calibrated for ${educationStr} post-graduate depth`,
+        badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+      };
+    }
+    return {
+      score: 86,
+      isDirectMatch: false,
+      badge: '86% Fit • Skill Expansion',
+      reason: `Practical competency to augment your ${educationStr} qualification`,
+      badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
+    };
+  }
+
+  return {
+    score: 82,
+    isDirectMatch: false,
+    badge: '82% Fit • Career Advancement',
+    reason: `Accredited masterclass to complement your ${educationStr} background`,
+    badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
+  };
+}
+
 export const HerLearnPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -48,7 +264,7 @@ export const HerLearnPage: React.FC = () => {
   });
 
   const [courses, setCourses] = useState<Course[]>(initialCourses);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'australian' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('australian');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'australian' | 'player' | 'quiz' | 'certificates' | 'roadmap'>('catalog');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -84,7 +300,7 @@ export const HerLearnPage: React.FC = () => {
   }, [courses, userCandidateName]);
 
   // Extract user education qualification from resume or profile
-  const userEducation = (() => {
+  const detectedEducation = React.useMemo(() => {
     try {
       const rawResume = localStorage.getItem('hercareer_resume');
       if (rawResume) {
@@ -94,8 +310,25 @@ export const HerLearnPage: React.FC = () => {
         }
       }
     } catch { }
+    try {
+      const rawProfile = localStorage.getItem('hercareer_profile');
+      if (rawProfile) {
+        const parsed = JSON.parse(rawProfile);
+        if (parsed.education) return parsed.education;
+      }
+    } catch { }
     return user?.education || user?.resumeData?.education?.[0]?.degree || '';
-  })();
+  }, [user]);
+
+  const [activeEducation, setActiveEducation] = useState<string>(() => {
+    return (
+      localStorage.getItem('herrise_active_qualification') ||
+      detectedEducation ||
+      'BCA / Computer Applications'
+    );
+  });
+
+  const userEducation = activeEducation;
 
   const handleGateComplete = (data: any) => {
     setIsSetupCompleted(true);
@@ -183,6 +416,7 @@ export const HerLearnPage: React.FC = () => {
 
   const courseCategories = [
     'All',
+    '⭐ Recommended For You',
     'Financial Literacy',
     'Entrepreneurship',
     'Artificial Intelligence',
@@ -191,13 +425,28 @@ export const HerLearnPage: React.FC = () => {
     'Digital Marketing'
   ];
 
-  const filteredCourses = courses.filter((c) => {
-    const matchesCat = selectedCategory === 'All' || c.category === selectedCategory;
-    const matchesSearch =
-      c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.instructor.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  const processedCourses = React.useMemo(() => {
+    return courses.map((c) => ({
+      ...c,
+      educationMatch: calculateCourseEducationMatch(c, activeEducation)
+    }));
+  }, [courses, activeEducation]);
+
+  const filteredCourses = React.useMemo(() => {
+    return processedCourses
+      .filter((c) => {
+        if (selectedCategory === '⭐ Recommended For You') {
+          return c.educationMatch.score >= 85 || c.educationMatch.isDirectMatch;
+        }
+        const matchesCat = selectedCategory === 'All' || c.category === selectedCategory;
+        const matchesSearch =
+          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.category.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCat && matchesSearch;
+      })
+      .sort((a, b) => b.educationMatch.score - a.educationMatch.score);
+  }, [processedCourses, selectedCategory, searchQuery]);
 
   const handleEnroll = (courseId: string) => {
     setCourses((prev) =>
@@ -404,34 +653,44 @@ export const HerLearnPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Australian Qualifications Gateway Callout */}
-              <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-slate-50 p-4 rounded-2xl border border-teal-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-teal-800 text-white font-bold text-xs">
-                    🇦🇺 AQF
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-xs font-bold text-slate-900">
-                        Australian Qualifications Recommended for Your Education
-                      </h4>
-                      {userEducation && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-900 border border-teal-200">
-                          {userEducation}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
-                      Explore official diplomas, Cert III/IV, and RTO pathways matched to your qualification level from training.gov.au.
-                    </p>
+              {/* Academic Qualification Recommendation Banner */}
+              <div className="bg-gradient-to-r from-purple-900 via-[#4A154B] to-pink-800 text-white p-5 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="relative z-10 max-w-xl">
+                  <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                    Courses Recommended for: <span className="text-pink-300 underline decoration-pink-400 decoration-2 underline-offset-4">{activeEducation}</span>
+                  </h3>
+                  <p className="text-xs text-purple-100/90 mt-1.5 leading-relaxed">
+                    Accredited masterclasses calibrated to build directly upon your academic credentials, maximize career return on investment, and accelerate high-skill placement.
+                  </p>
+                </div>
+
+                <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full md:w-auto">
+                  <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2.5 rounded-2xl flex items-center justify-between sm:justify-start gap-2">
+                    <span className="text-[11px] font-bold text-purple-200 whitespace-nowrap">Your Qualification:</span>
+                    <select
+                      value={activeEducation}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setActiveEducation(val);
+                        try {
+                          localStorage.setItem('herrise_active_qualification', val);
+                        } catch {}
+                        showToast('Education Updated', `Curated course recommendations for ${val}`, 'info');
+                      }}
+                      className="bg-white text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl outline-none shadow-md cursor-pointer border border-purple-200 focus:ring-2 focus:ring-pink-300"
+                    >
+                      <option value="BCA / Computer Applications">BCA / Computer Applications</option>
+                      <option value="B.Tech / B.E. Computer Science">B.Tech / B.E. Computer Science</option>
+                      <option value="MCA / Master of Computer Applications">MCA / Master of Computer Applications</option>
+                      <option value="B.Com / Accounting & Finance">B.Com / Accounting & Finance</option>
+                      <option value="MBA / Business Administration">MBA / Business Administration</option>
+                      <option value="B.Sc / General Science">B.Sc / General Science</option>
+                      <option value="B.Sc Nursing / Healthcare">B.Sc Nursing / Healthcare</option>
+                      <option value="Diploma / Polytechnic">Diploma / Polytechnic</option>
+                      <option value="Year 12 / High School">Year 12 / High School</option>
+                    </select>
                   </div>
                 </div>
-                <button
-                  onClick={() => setActiveTab('australian')}
-                  className="px-4 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs transition-all cursor-pointer shrink-0 shadow-2xs"
-                >
-                  View Matched Qualifications →
-                </button>
               </div>
 
               {/* Categories */}
@@ -476,6 +735,12 @@ export const HerLearnPage: React.FC = () => {
                           {c.category}
                         </span>
                       )}
+                      {c.educationMatch.isDirectMatch && (
+                        <span className="absolute top-3 right-3 bg-amber-400 text-purple-950 font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-purple-900 fill-purple-900" />
+                          Top Fit
+                        </span>
+                      )}
                       <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-medium px-2 py-0.5 rounded-md">
                         {c.duration} • {c.totalLessons} Lessons
                       </span>
@@ -489,6 +754,18 @@ export const HerLearnPage: React.FC = () => {
                           className="w-6 h-6 rounded-full object-cover border border-purple-200"
                         />
                         <span className="text-xs text-gray-700 font-semibold">{c.instructor}</span>
+                      </div>
+
+                      {/* Dynamic Education Match Badge */}
+                      <div className="pt-0.5 space-y-1.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] border shadow-2xs ${c.educationMatch.badgeColor}`}>
+                          <Sparkles className="w-3 h-3 shrink-0" />
+                          <span>{c.educationMatch.badge}</span>
+                        </span>
+                        <p className="text-[11px] text-purple-900/90 bg-purple-50/70 border border-purple-100 rounded-xl px-2.5 py-1.5 flex items-start gap-1.5 leading-snug">
+                          <GraduationCap className="w-3.5 h-3.5 text-[#4A154B] shrink-0 mt-0.5" />
+                          <span>{c.educationMatch.reason}</span>
+                        </p>
                       </div>
 
                       <h3 className="font-extrabold text-sm text-gray-900 group-hover:text-[#4A154B] transition-colors leading-snug">
@@ -577,7 +854,7 @@ export const HerLearnPage: React.FC = () => {
                         onClick={() => handleEnroll(c.id)}
                         className="w-full bg-purple-50 hover:bg-[#4A154B] hover:text-white text-[#4A154B] py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer"
                       >
-                        Enroll Free (Demo)
+                        Enroll Free
                       </button>
                     )}
                   </div>

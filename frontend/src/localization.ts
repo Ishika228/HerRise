@@ -777,17 +777,36 @@ export function applyGoogleTranslation(targetLang: Language): void {
   const hostname = window.location.hostname;
 
   if (targetLang === 'en') {
-    // Clear translation cookies to return cleanly to English
-    document.cookie = 'googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    document.cookie = `googtrans=;path=/;domain=${hostname};expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
-    if (hostname.includes('.')) {
-      document.cookie = `googtrans=;path=/;domain=.${hostname};expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    // Clear all translation cookies across all paths and domains to return cleanly to English
+    const cookies = ['googtrans', 'googtrans_en'];
+    const domains = ['', hostname, `.${hostname}`];
+    const paths = ['/', '', window.location.pathname];
+    for (const c of cookies) {
+      for (const d of domains) {
+        for (const p of paths) {
+          document.cookie = `${c}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;max-age=0;path=${p};${d ? `domain=${d};` : ''}`;
+        }
+      }
     }
 
+    document.documentElement.lang = 'en';
+    document.documentElement.dir = 'ltr';
+    document.documentElement.removeAttribute('dir');
+    if (document.body) {
+      document.body.removeAttribute('dir');
+    }
+    document.documentElement.classList.remove('translated-ltr', 'translated-rtl');
+
     const select = document.querySelector<HTMLSelectElement>('.goog-te-combo');
-    if (select && select.value !== 'en') {
-      select.value = 'en';
-      select.dispatchEvent(new Event('change'));
+    if (select) {
+      if (select.value && select.value !== 'en') {
+        select.value = 'en';
+        select.dispatchEvent(new Event('change'));
+      }
+      if (select.value && select.value !== '') {
+        select.value = '';
+        select.dispatchEvent(new Event('change'));
+      }
     }
     return;
   }

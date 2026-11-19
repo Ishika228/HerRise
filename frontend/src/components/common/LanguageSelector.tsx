@@ -52,7 +52,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   // Mobile layout
   if (variant === 'mobile') {
     return (
-      <div className={`space-y-2.5 w-full ${className}`}>
+      <div translate="no" className={`notranslate space-y-2.5 w-full ${className}`}>
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500 font-semibold flex items-center gap-1.5">
             <Globe className="w-3.5 h-3.5 text-[#4A154B]" />
@@ -161,7 +161,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className={`relative inline-flex items-center bg-purple-50/90 hover:bg-purple-50 border border-purple-100/90 rounded-xl p-1 text-xs font-semibold text-gray-700 shadow-xs transition-all ${className}`}
+      translate="no"
+      className={`notranslate relative inline-flex items-center bg-purple-50/90 hover:bg-purple-50 border border-purple-100/90 rounded-xl p-1 text-xs font-semibold text-gray-700 shadow-xs transition-all ${className}`}
     >
       <Globe className="w-3.5 h-3.5 text-[#4A154B] ml-1.5 mr-1 shrink-0" />
 

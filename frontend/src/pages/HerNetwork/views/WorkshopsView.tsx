@@ -71,27 +71,19 @@ export const WorkshopsView: React.FC<WorkshopsViewProps> = ({
       <div className="bg-gradient-to-r from-[#4A154B] via-[#631c64] to-[#be185d] rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-sm">
         <div className="absolute right-0 top-0 w-80 h-80 bg-white/5 rounded-full blur-2xl pointer-events-none" />
         <div className="relative z-10 max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-pink-200 text-xs font-bold backdrop-blur-xs">
-            <Sparkles className="w-3.5 h-3.5 text-pink-300" />
-            <span>Interactive Upskilling & Peer Learning</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Workshops & Skill Masterclasses
           </h1>
           <p className="text-xs sm:text-sm text-purple-100 leading-relaxed max-w-xl">
             Hands-on weekend cohorts and virtual bootcamps led by experienced practitioners. Learn actionable frameworks, build real portfolios, and connect with like-minded women.
           </p>
-          <div className="pt-2 text-[11px] text-pink-200/90 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-300" />
-            <span>Demo Sessions & Sample Event Rosters</span>
-          </div>
         </div>
       </div>
 
-      {/* Search and Filters Bar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* Search Bar */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-xs flex items-center justify-between gap-4">
         {/* Search */}
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -100,50 +92,6 @@ export const WorkshopsView: React.FC<WorkshopsViewProps> = ({
             placeholder="Search workshops by topic or mentor..."
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#4A154B] rounded-xl text-xs outline-none transition-colors"
           />
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-purple-50/70 p-1 rounded-2xl w-full md:w-auto text-xs font-bold">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              filter === 'all'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            All Workshops ({workshops.length})
-          </button>
-          <button
-            onClick={() => setFilter('upcoming')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              filter === 'upcoming'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            Upcoming
-          </button>
-          <button
-            onClick={() => setFilter('online')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              filter === 'online'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            Online Virtual
-          </button>
-          <button
-            onClick={() => setFilter('offline')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              filter === 'offline'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            In-Person Hub
-          </button>
         </div>
       </div>
 
@@ -263,9 +211,6 @@ export const WorkshopsView: React.FC<WorkshopsViewProps> = ({
             <h3 className="text-base font-extrabold text-gray-900">Upcoming Community Calendar</h3>
             <p className="text-xs text-gray-500">Fast overview of upcoming masterclasses and cohort deadlines.</p>
           </div>
-          <span className="text-xs font-bold text-[#4A154B] bg-purple-50 px-3 py-1 rounded-xl">
-            Sample Live Schedule
-          </span>
         </div>
 
         <div className="divide-y divide-purple-50">

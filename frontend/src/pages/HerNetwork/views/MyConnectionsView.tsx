@@ -58,10 +58,6 @@ export const MyConnectionsView: React.FC<MyConnectionsViewProps> = ({
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#4A154B] via-[#631c64] to-[#701a75] rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xs">
         <div className="relative z-10 max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-pink-200 text-xs font-bold">
-            <UserCheck className="w-3.5 h-3.5 text-emerald-300" />
-            <span>Professional Network & Trusted Circles</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             My Connections & Mentorship Circle
           </h1>
@@ -86,10 +82,10 @@ export const MyConnectionsView: React.FC<MyConnectionsViewProps> = ({
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* Search Bar */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-xs flex items-center justify-between gap-4">
         {/* Search */}
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -98,55 +94,6 @@ export const MyConnectionsView: React.FC<MyConnectionsViewProps> = ({
             placeholder="Search connections by name or industry..."
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#4A154B] rounded-xl text-xs outline-none transition-colors"
           />
-        </div>
-
-        {/* Tab Filters */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-purple-50/70 p-1 rounded-2xl w-full md:w-auto text-xs font-bold">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            All ({connections.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('mentor')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'mentor'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            My Mentors ({mentorsCount})
-          </button>
-          <button
-            onClick={() => setActiveTab('connected')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'connected'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            My Connections ({connectedCount})
-          </button>
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer relative ${
-              activeTab === 'pending'
-                ? 'bg-[#4A154B] text-white shadow-xs'
-                : 'text-gray-700 hover:text-[#4A154B]'
-            }`}
-          >
-            <span>Pending Requests</span>
-            {pendingCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-amber-950 font-black">
-                {pendingCount}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 

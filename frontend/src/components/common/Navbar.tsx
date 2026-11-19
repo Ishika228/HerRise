@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
             />
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-[#3b0764] via-[#4A154B] to-[#be185d] bg-clip-text text-transparent">
+                <span translate="no" className="notranslate font-extrabold text-2xl tracking-tight bg-gradient-to-r from-[#3b0764] via-[#4A154B] to-[#be185d] bg-clip-text text-transparent">
                   HerRise
                 </span>
               </div>

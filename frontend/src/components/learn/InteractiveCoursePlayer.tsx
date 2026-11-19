@@ -219,7 +219,7 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.35);
-    } catch {}
+    } catch { }
   }, [isMuted, volume]);
 
   // Test speaker voice button action
@@ -297,7 +297,7 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
         JSON.stringify({ event: 'listening', id: 1 }),
         '*'
       );
-    } catch {}
+    } catch { }
   };
 
   // Watch-time counter for Video Lecture mode
@@ -350,7 +350,7 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
       try {
         const stored = localStorage.getItem(storageKey);
         if (stored) localProgress = JSON.parse(stored);
-      } catch {}
+      } catch { }
 
       const progress = remoteProgress || localProgress;
 
@@ -406,13 +406,13 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
       const computedPercent = completedNow
         ? 100
         : Math.min(
-            99,
-            Math.round(
-              ((completedIds.length + (timeToSave / (currentDuration || 360)) * 0.9) /
-                course.modules.length) *
-                100
-            )
-          );
+          99,
+          Math.round(
+            ((completedIds.length + (timeToSave / (currentDuration || 360)) * 0.9) /
+              course.modules.length) *
+            100
+          )
+        );
 
       const payload = {
         userEmail,
@@ -429,7 +429,7 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
 
       try {
         localStorage.setItem(storageKey, JSON.stringify(payload));
-      } catch {}
+      } catch { }
 
       try {
         const res = await fetch(`${API_BASE}/api/courses/progress`, {
@@ -616,12 +616,12 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
       stopVoiceNarration();
 
       const remaining = course.modules.filter((m) => m.id !== activeModule.id && !m.completed);
-      const isNowCompleted = remaining.length === 0;      if (isNowCompleted) {
+      const isNowCompleted = remaining.length === 0; if (isNowCompleted) {
         setIsCompleted(true);
         setIsPlaying(false);
         try {
           confetti({ particleCount: 110, spread: 80, origin: { y: 0.55 } });
-        } catch {}
+        } catch { }
 
         try {
           const res = await fetch(`${API_BASE}/api/courses/complete`, {
@@ -650,7 +650,7 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
               credentialType: 'Verified Course Credential'
             });
           }
-        } catch {}
+        } catch { }
 
         onToast?.(
           'Course 100% Completed! 🎓',
@@ -812,22 +812,20 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                     setPlayerMode('video');
                     stopVoiceNarration();
                   }}
-                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                    playerMode === 'video'
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${playerMode === 'video'
                       ? 'bg-[#4A154B] text-white shadow-xs'
                       : 'text-gray-700 hover:text-[#4A154B]'
-                  }`}
+                    }`}
                 >
                   <MonitorPlay className="w-3.5 h-3.5" />
                   <span>Video Lecture (Spoken Audio)</span>
                 </button>
                 <button
                   onClick={() => setPlayerMode('interactive')}
-                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                    playerMode === 'interactive'
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${playerMode === 'interactive'
                       ? 'bg-[#4A154B] text-white shadow-xs'
                       : 'text-gray-700 hover:text-[#4A154B]'
-                  }`}
+                    }`}
                 >
                   <Presentation className="w-3.5 h-3.5" />
                   <span>Interactive Masterclass (AI Voice)</span>
@@ -994,9 +992,11 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                         ⏸ Paused — Press Play to earn watch time
                       </span>
                     )}
+                    <span>{activeModule?.title}</span>
                   </div>
                   <p className="text-[11px] text-gray-500 truncate">
                     Playing: <strong className="text-gray-700">{activeModule?.title}</strong>. Watch must be fully earned — no skipping.
+                    {course.instructor} • {activeModule?.duration || '15 mins'}
                   </p>
                 </div>
               </div>
@@ -1134,13 +1134,12 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                           ? `Watch ${formatTime(Math.max(0, watchThreshold - watchedSeconds))} more to unlock`
                           : ''
                       }
-                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all ${
-                        activeModule?.completed
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all ${activeModule?.completed
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
                           : isWatchComplete
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                          : 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
-                      }`}
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                            : 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+                        }`}
                     >
                       {activeModule?.completed ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -1153,8 +1152,8 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                         {activeModule?.completed
                           ? 'Lesson Completed ✓'
                           : isWatchComplete
-                          ? 'Mark Lesson Complete'
-                          : `Watch ${formatTime(Math.max(0, watchThreshold - watchedSeconds))} more`}
+                            ? 'Mark Lesson Complete'
+                            : `Watch ${formatTime(Math.max(0, watchThreshold - watchedSeconds))} more`}
                       </span>
                     </button>
                   );
@@ -1252,21 +1251,19 @@ export const InteractiveCoursePlayer: React.FC<InteractiveCoursePlayerProps> = (
                   <div
                     key={m.id}
                     onClick={() => onSelectModule(idx)}
-                    className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-2 ${
-                      isSelected
+                    className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-2 ${isSelected
                         ? 'border-[#4A154B] bg-purple-50/70 shadow-xs'
                         : 'border-gray-100 hover:border-purple-200'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
-                          m.completed
+                        className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${m.completed
                             ? 'bg-emerald-600 text-white'
                             : isSelected
-                            ? 'bg-[#4A154B] text-white'
-                            : 'bg-gray-200 text-gray-600'
-                        }`}
+                              ? 'bg-[#4A154B] text-white'
+                              : 'bg-gray-200 text-gray-600'
+                          }`}
                       >
                         {m.completed ? '✓' : idx + 1}
                       </div>

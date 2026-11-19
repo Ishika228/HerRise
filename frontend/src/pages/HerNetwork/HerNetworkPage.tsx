@@ -370,17 +370,7 @@ export const HerNetworkPage: React.FC = () => {
               <span>Complete Mentorship Registration</span>
             </button>
           </div>
-        ) : (
-          <div className="bg-purple-50/60 border border-purple-100 px-4 py-2 rounded-2xl flex items-center justify-between text-xs text-purple-900">
-            <span>✓ Verified Sisterhood Profile Active: <strong>{user?.networkProfile?.mentorshipDomain || 'Mentorship Focus'}</strong></span>
-            <button
-              onClick={() => setGateOpen(true)}
-              className="font-bold text-[#4A154B] hover:underline cursor-pointer"
-            >
-              Edit Mentorship Focus
-            </button>
-          </div>
-        )}
+        ) : null}
 
         {/* HerNetwork Dedicated Navigation Header Bar */}
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -393,9 +383,6 @@ export const HerNetworkPage: React.FC = () => {
                 <h1 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
                   HerNetwork
                 </h1>
-                <span className="text-[10px] bg-pink-100 text-[#be185d] px-2 py-0.5 rounded-full font-bold">
-                  Sisterhood Hub
-                </span>
               </div>
               <p className="text-[11px] text-gray-500">
                 Connect with mentors, participate in discussions, and join live masterclasses.

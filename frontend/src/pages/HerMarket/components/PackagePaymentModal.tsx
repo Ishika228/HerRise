@@ -1053,15 +1053,7 @@ export const PackagePaymentModal: React.FC<PackagePaymentModalProps> = ({
                             Save
                           </button>
                         </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setIsEditingUpi(true)}
-                          className="text-[10px] text-[#4A154B] hover:text-purple-900 underline font-semibold cursor-pointer"
-                        >
-                          ✎ Set Your Own Real UPI / GPay ID (to receive money)
-                        </button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
@@ -1213,12 +1205,7 @@ export const PackagePaymentModal: React.FC<PackagePaymentModalProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-purple-100">
-                <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                  <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Stripe 256-Bit SSL Encrypted Checkout</span>
-                </div>
-
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-purple-100">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     type="button"

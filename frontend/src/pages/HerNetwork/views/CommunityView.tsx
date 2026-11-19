@@ -308,24 +308,6 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               <li>✦ Protect everyone's privacy</li>
             </ul>
           </div>
-
-          {/* Quick Stats */}
-          <div className="bg-white rounded-3xl border border-purple-100 shadow-xs p-4">
-            <p className="text-xs font-bold text-gray-700 mb-3">📊 Community Stats</p>
-            <div className="space-y-2">
-              {[
-                { label: 'Total Members', value: '2,847' },
-                { label: 'Posts This Week', value: `${posts.length + 12}` },
-                { label: 'Active Today', value: '134' },
-                { label: 'Mentors Online', value: '8' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex justify-between items-center">
-                  <span className="text-[11px] text-gray-500">{stat.label}</span>
-                  <span className="text-[11px] font-bold text-[#4A154B]">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

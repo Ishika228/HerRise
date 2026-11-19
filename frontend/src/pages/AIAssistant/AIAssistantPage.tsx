@@ -449,10 +449,7 @@ export const AIAssistantPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-base sm:text-lg text-gray-900">Unified HerRise Assistant</h1>
-                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Ready • Multi-Discipline AI
-                </span>
+                <h1 className="font-extrabold text-base sm:text-lg text-gray-900">Unified HerRise AI Assistant</h1>
               </div>
               <p className="text-xs sm:text-sm text-gray-500">
                 Autonomous Copilot for Finance, Careers, Ventures, Capital & Mentorship
@@ -564,11 +561,10 @@ export const AIAssistantPage: React.FC = () => {
 
                 {/* Footer time & copy */}
                 <div
-                  className={`mt-2.5 pt-1.5 flex items-center justify-between text-[10px] ${
-                    msg.sender === 'user'
-                      ? 'text-purple-200 border-t border-white/20'
-                      : 'text-gray-400 border-t border-gray-100/50'
-                  }`}
+                  className={`mt-2.5 pt-1.5 flex items-center justify-between text-[10px] ${msg.sender === 'user'
+                    ? 'text-purple-200 border-t border-white/20'
+                    : 'text-gray-400 border-t border-gray-100/50'
+                    }`}
                 >
                   <span className={msg.sender === 'user' ? 'text-purple-200 font-medium' : 'text-gray-400'}>
                     {msg.timestamp}
@@ -600,7 +596,7 @@ export const AIAssistantPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" />
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce [animation-delay:0.2s]" />
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce [animation-delay:0.4s]" />
-              <span className="text-[11px] font-medium text-gray-500">HerRise is synthesizing strategy...</span>
+              <span className="text-[11px] font-medium text-gray-500">HerRise AI is synthesizing strategy...</span>
             </div>
           )}
 
